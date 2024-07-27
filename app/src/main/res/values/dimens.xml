@@ -1,0 +1,5 @@
+<resources>
+    <dimen name="margin_big">32dp</dimen>
+    <dimen name="margin_med">16dp</dimen>
+    <dimen name="margin_sm">8dp</dimen>
+</resources>

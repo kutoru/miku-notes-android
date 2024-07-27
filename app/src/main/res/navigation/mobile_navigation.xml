@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navShelf">
+
+    <fragment
+        android:id="@+id/navShelf"
+        android:name="com.kutoru.mikunotes.ui.ShelfFragment"
+        android:label="@string/menu_shelf"
+        tools:layout="@layout/fragment_shelf" />
+
+    <fragment
+        android:id="@+id/navNotes"
+        android:name="com.kutoru.mikunotes.ui.NotesFragment"
+        android:label="@string/menu_notes"
+        tools:layout="@layout/fragment_notes" />
+
+    <fragment
+        android:id="@+id/navSettings"
+        android:name="com.kutoru.mikunotes.ui.SettingsFragment"
+        android:label="@string/menu_settings"
+        tools:layout="@layout/fragment_settings" />
+</navigation>

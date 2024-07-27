@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Miku Notes</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="menu_shelf">Shelf</string>
+    <string name="menu_notes">Notes</string>
+    <string name="menu_settings">Settings</string>
+</resources>
