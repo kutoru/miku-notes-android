@@ -28,7 +28,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".viewmodel.ApiService"/>
+        <service android:name=".logic.ApiService"/>
 
 <!--        <receiver android:name=".viewmodel.ApiService$NotificationReceiver" android:exported="false">-->
 <!--            <intent-filter>-->

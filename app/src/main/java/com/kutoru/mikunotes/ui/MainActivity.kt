@@ -2,7 +2,6 @@ package com.kutoru.mikunotes.ui
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
@@ -16,7 +15,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.appcompat.app.AppCompatActivity
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityMainBinding
-import com.kutoru.mikunotes.utils.DOWNLOAD_NOTIFICATION_CHANNEL_ID
+import com.kutoru.mikunotes.logic.DOWNLOAD_NOTIFICATION_CHANNEL_ID
 
 class MainActivity : AppCompatActivity() {
 

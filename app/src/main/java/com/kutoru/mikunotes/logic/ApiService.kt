@@ -1,28 +1,20 @@
-package com.kutoru.mikunotes.viewmodel
+package com.kutoru.mikunotes.logic
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Binder
 import android.os.Build
 import android.os.Environment
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.FileProvider
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.kutoru.mikunotes.R
-import com.kutoru.mikunotes.utils.DOWNLOAD_NOTIFICATION_CHANNEL_ID
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -114,7 +106,7 @@ class ApiService : Service() {
             file = File("$downloadDir/$fileName")
         }
 
-        val notification = getDownloadNotificationBuilder(fileName)
+        val notification = NotificationHelper.getDownloadInProgress(applicationContext, fileName)
         if (notificationPermissionGranted()) {
             notificationManager.notify(currentDownloadIdx, notification.build())
         }
@@ -141,46 +133,11 @@ class ApiService : Service() {
         }
 
         if (notificationPermissionGranted()) {
-            val notification = getDownloadFinishedNotification(file)
-            notificationManager.notify(currentDownloadIdx, notification)
+            val notification = NotificationHelper.getDownloadFinished(applicationContext, file)
+            notificationManager.notify(currentDownloadIdx, notification.build())
         }
 
         println("A file saved to ${file.path}")
-    }
-
-    private fun getDownloadNotificationBuilder(fileName: String): NotificationCompat.Builder {
-        return NotificationCompat
-            .Builder(applicationContext, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_download)
-            .setContentTitle("Download")
-            .setContentText(fileName)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setProgress(100, 0, false)
-            .setAutoCancel(true)
-    }
-
-    private fun getDownloadFinishedNotification(file: File): Notification {
-        val uri = FileProvider.getUriForFile(applicationContext, applicationContext.packageName + ".provider", file)
-        val intent = Intent(Intent.ACTION_VIEW, uri)
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-        val pendingIntent = PendingIntent.getActivity(
-            applicationContext, 0, intent, PendingIntent.FLAG_IMMUTABLE,
-        )
-
-        return NotificationCompat
-            .Builder(applicationContext, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_download)
-            .setContentTitle("Download")
-            .setContentText("${file.name} has been downloaded")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setOngoing(false)
-            .setOnlyAlertOnce(true)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
     }
 
     private fun notificationPermissionGranted(): Boolean {

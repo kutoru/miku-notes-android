@@ -1,16 +1,10 @@
 package com.kutoru.mikunotes.ui
 
 import android.Manifest
-import android.annotation.SuppressLint
-import android.app.PendingIntent
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.SystemClock
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,17 +12,13 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.material.snackbar.Snackbar
-import com.kutoru.mikunotes.R
-import com.kutoru.mikunotes.viewmodel.ApiService
+import com.kutoru.mikunotes.logic.ApiService
 import com.kutoru.mikunotes.databinding.FragmentNotesBinding
-import java.io.File
+import com.kutoru.mikunotes.logic.NotificationHelper
 
 class NotesFragment : Fragment() {
 
@@ -51,7 +41,7 @@ class NotesFragment : Fragment() {
         }
 
         binding.btnDownload.setOnClickListener {
-            if (!notificationPermissionGranted()) {
+            if (!NotificationHelper.permissionGranted(requireContext())) {
                 permissionActivityLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
 
@@ -77,15 +67,5 @@ class NotesFragment : Fragment() {
         }
 
         return binding.root
-    }
-
-    private fun notificationPermissionGranted(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            return true
-        }
-
-        return ActivityCompat.checkSelfPermission(
-            requireContext(), Manifest.permission.POST_NOTIFICATIONS,
-        ) == PackageManager.PERMISSION_GRANTED
     }
 }
