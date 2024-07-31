@@ -14,13 +14,17 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.FileProvider
+import com.google.protobuf.compiler.PluginProtos
 import com.kutoru.mikunotes.R
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.prepareGet
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentLength
+import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.core.isEmpty
 import io.ktor.utils.io.core.readBytes
@@ -28,6 +32,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import shelves.ShelfKt
+import shelves.ShelvesOuterClass.Shelf
 import java.io.File
 import java.util.Calendar
 
@@ -38,10 +44,15 @@ class ApiService : Service() {
 
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
-    private val client = HttpClient()
-    private val apiUrl = "http://192.168.1.12:3030"
-    private val cookieValue = "at=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjI0Mzk4NzcsImlhdCI6MTcyMjQzMjY3Nywic3ViIjoiMSJ9.fyCn-_vEwFDFkb1V1y5e8UYU52HJ6OTmsp1KDsnoCgY"
     private var downloadIdx = 0
+
+    private val apiUrl = "http://192.168.1.12:3030"
+    private val cookieValue = "at=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjI0NTQwOTQsImlhdCI6MTcyMjQ0Njg5NCwic3ViIjoiMSJ9.TwQRyHu9w-8pJ-CwLtu_NZ20EUK2Oze2z248GEpHS5Y"
+    private val client = HttpClient(CIO) {
+        install(ContentNegotiation) {
+            json()
+        }
+    }
 
     private lateinit var notificationManager: NotificationManagerCompat
 
@@ -55,8 +66,8 @@ class ApiService : Service() {
 
         scope.launch {
             try {
-//                getShelf()
-                getFile(fileHash)
+                getShelf()
+//                getFile(fileHash)
             } catch (e: Throwable) {
                 println("Got an err: $e")
             }
@@ -75,7 +86,7 @@ class ApiService : Service() {
             return
         }
 
-        val body: String = res.body()
+        val body: Shelf = res.body()
         println(body)
     }
 
