@@ -3,7 +3,9 @@ package com.kutoru.mikunotes.logic
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Service
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Binder
 import android.os.Build
@@ -11,6 +13,7 @@ import android.os.Environment
 import android.os.IBinder
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.edit
 import com.kutoru.mikunotes.models.LoginBody
 import com.kutoru.mikunotes.models.ResultBody
 import com.kutoru.mikunotes.models.Shelf
@@ -18,12 +21,14 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.cookies.ConstantCookiesStorage
 import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.prepareGet
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.Cookie
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentLength
 import io.ktor.http.contentType
@@ -31,32 +36,20 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.core.isEmpty
 import io.ktor.utils.io.core.readBytes
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import java.io.File
+import java.net.HttpCookie
 import java.util.Calendar
 
-// https://ktor.io/docs/client-serialization.html
-// https://ktor.io/docs/client-cookies.html
 // https://ktor.io/docs/client-requests.html#upload_file
 
 class ApiService : Service() {
 
-    private val job = SupervisorJob()
-    private val scope = CoroutineScope(Dispatchers.IO + job)
     private val binder = ServiceBinder()
     private var downloadIdx = 0
 
-    private val apiUrl = "http://192.168.1.12:3030"
-    private val client = HttpClient(CIO) {
-        install(HttpCookies)
-        install(ContentNegotiation) {
-            json()
-        }
-    }
-
     private lateinit var notificationManager: NotificationManagerCompat
+    private lateinit var persistentStorage: SharedPreferences
+    private lateinit var httpClient: HttpClient
 
     override fun onCreate() {
         super.onCreate()
@@ -64,24 +57,43 @@ class ApiService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-//        val fileHash = intent!!.getStringExtra("FILE_HASH")
-//
-//        scope.launch {
-//            try {
-//                login()
-//                getShelf()
-//                getFile(fileHash!!)
-//            } catch (e: Throwable) {
-//                println("Got an err: $e")
-//            }
-//        }
+        persistentStorage = getSharedPreferences(PREFERENCE_FILE_KEY, Context.MODE_PRIVATE)
+
+        val accessCookieValue = persistentStorage.getString(ACCESS_TOKEN_COOKIE_KEY, null)
+        val refreshCookieValue = persistentStorage.getString(REFRESH_TOKEN_COOKIE_KEY, null)
+
+        val parsedAccessCookie = HttpCookie.parse(accessCookieValue)[0]
+        val accessCookie = Cookie(
+            name = parsedAccessCookie.name,
+            value = parsedAccessCookie.value,
+            maxAge = parsedAccessCookie.maxAge.toInt(),
+            domain = API_DOMAIN,
+        )
+
+        val parsedRefreshCookie = HttpCookie.parse(refreshCookieValue)[0]
+        val refreshCookie = Cookie(
+            name = parsedRefreshCookie.name,
+            value = parsedRefreshCookie.value,
+            maxAge = parsedRefreshCookie.maxAge.toInt(),
+            domain = API_DOMAIN,
+        )
+
+        httpClient = HttpClient(CIO) {
+            install(ContentNegotiation) {
+                json()
+            }
+
+            install(HttpCookies) {
+                storage = ConstantCookiesStorage(accessCookie, refreshCookie)
+            }
+        }
 
         return START_STICKY
     }
 
     suspend fun getShelf(): Shelf? {
-        val url = "$apiUrl/shelf"
-        val res = client.get(url)
+        val url = "$API_URL/shelf"
+        val res = httpClient.get(url)
 
         if (!handleHttpStatus(res.status)) {
             return null
@@ -93,15 +105,32 @@ class ApiService : Service() {
     }
 
     suspend fun login(loginBody: LoginBody) {
-        val url = "$apiUrl/login"
+        val url = "$API_URL/login"
 
-        val res = client.post(url) {
+        val res = httpClient.post(url) {
             contentType(ContentType.Application.Json)
             setBody(loginBody)
         }
 
         if (!handleHttpStatus(res.status)) {
             return
+        }
+
+        val cookies = res.headers.getAll("set-cookie")
+        if (cookies == null || cookies.size != 2) {
+            return
+        }
+
+        if (cookies[0].startsWith("at=")) {
+            persistentStorage.edit {
+                putString(ACCESS_TOKEN_COOKIE_KEY, cookies[0])
+                putString(REFRESH_TOKEN_COOKIE_KEY, cookies[1])
+            }
+        } else {
+            persistentStorage.edit {
+                putString(ACCESS_TOKEN_COOKIE_KEY, cookies[1])
+                putString(REFRESH_TOKEN_COOKIE_KEY, cookies[0])
+            }
         }
 
         val body: ResultBody<Unit> = res.body()
@@ -112,8 +141,8 @@ class ApiService : Service() {
     suspend fun getFile(fileHash: String) {
         val currentDownloadIdx = ++downloadIdx
 
-        val url = "$apiUrl/files/dl/$fileHash"
-        val req = client.prepareGet(url)
+        val url = "$API_URL/files/dl/$fileHash"
+        val req = httpClient.prepareGet(url)
 
         val res = req.execute()
         if (!handleHttpStatus(res.status)) {
@@ -187,11 +216,6 @@ class ApiService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? {
         return binder
-    }
-
-    override fun onDestroy() {
-        job.cancel()
-        super.onDestroy()
     }
 
     inner class ServiceBinder : Binder() {
