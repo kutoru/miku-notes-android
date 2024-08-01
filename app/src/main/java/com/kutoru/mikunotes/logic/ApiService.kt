@@ -2,28 +2,31 @@ package com.kutoru.mikunotes.logic
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Binder
 import android.os.Build
 import android.os.Environment
 import android.os.IBinder
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.FileProvider
-import com.google.protobuf.compiler.PluginProtos
-import com.kutoru.mikunotes.R
+import com.kutoru.mikunotes.models.LoginBody
+import com.kutoru.mikunotes.models.ResultBody
+import com.kutoru.mikunotes.models.Shelf
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.request.get
+import io.ktor.client.request.post
 import io.ktor.client.request.prepareGet
+import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentLength
+import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.core.isEmpty
@@ -31,24 +34,23 @@ import io.ktor.utils.io.core.readBytes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import shelves.ShelfKt
-import shelves.ShelvesOuterClass.Shelf
 import java.io.File
 import java.util.Calendar
 
 // https://ktor.io/docs/client-serialization.html
 // https://ktor.io/docs/client-cookies.html
+// https://ktor.io/docs/client-requests.html#upload_file
 
 class ApiService : Service() {
 
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
+    private val binder = ServiceBinder()
     private var downloadIdx = 0
 
     private val apiUrl = "http://192.168.1.12:3030"
-    private val cookieValue = "at=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjI0NTQwOTQsImlhdCI6MTcyMjQ0Njg5NCwic3ViIjoiMSJ9.TwQRyHu9w-8pJ-CwLtu_NZ20EUK2Oze2z248GEpHS5Y"
     private val client = HttpClient(CIO) {
+        install(HttpCookies)
         install(ContentNegotiation) {
             json()
         }
@@ -62,42 +64,56 @@ class ApiService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val fileHash = intent!!.getStringExtra("FILE_HASH")!!
-
-        scope.launch {
-            try {
-                getShelf()
-//                getFile(fileHash)
-            } catch (e: Throwable) {
-                println("Got an err: $e")
-            }
-        }
+//        val fileHash = intent!!.getStringExtra("FILE_HASH")
+//
+//        scope.launch {
+//            try {
+//                login()
+//                getShelf()
+//                getFile(fileHash!!)
+//            } catch (e: Throwable) {
+//                println("Got an err: $e")
+//            }
+//        }
 
         return START_STICKY
     }
 
-    private suspend fun getShelf() {
+    suspend fun getShelf(): Shelf? {
         val url = "$apiUrl/shelf"
-        val res = client.get(url) {
-            this.headers.append("Cookie", cookieValue)
+        val res = client.get(url)
+
+        if (!handleHttpStatus(res.status)) {
+            return null
+        }
+
+        val body: ResultBody<Shelf> = res.body()
+//        println(body)
+        return body.data
+    }
+
+    suspend fun login(loginBody: LoginBody) {
+        val url = "$apiUrl/login"
+
+        val res = client.post(url) {
+            contentType(ContentType.Application.Json)
+            setBody(loginBody)
         }
 
         if (!handleHttpStatus(res.status)) {
             return
         }
 
-        val body: Shelf = res.body()
+        val body: ResultBody<Unit> = res.body()
         println(body)
     }
 
     @SuppressLint("MissingPermission")
-    private suspend fun getFile(fileHash: String) {
+    suspend fun getFile(fileHash: String) {
         val currentDownloadIdx = ++downloadIdx
 
         val url = "$apiUrl/files/dl/$fileHash"
-        val req = client.prepareGet(url){
-            this.headers.append("Cookie", cookieValue)
-        }
+        val req = client.prepareGet(url)
 
         val res = req.execute()
         if (!handleHttpStatus(res.status)) {
@@ -170,7 +186,17 @@ class ApiService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? {
-        println("service onbind")
-        return null
+        return binder
+    }
+
+    override fun onDestroy() {
+        job.cancel()
+        super.onDestroy()
+    }
+
+    inner class ServiceBinder : Binder() {
+        fun getService(): ApiService {
+            return this@ApiService
+        }
     }
 }

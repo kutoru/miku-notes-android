@@ -1,11 +1,14 @@
 package com.kutoru.mikunotes.ui
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
+import android.os.IBinder
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,17 +20,46 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import com.google.android.material.snackbar.Snackbar
-import com.kutoru.mikunotes.logic.ApiService
 import com.kutoru.mikunotes.databinding.FragmentNotesBinding
+import com.kutoru.mikunotes.logic.ApiService
 import com.kutoru.mikunotes.logic.NotificationHelper
+import com.kutoru.mikunotes.models.LoginBody
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class NotesFragment : Fragment() {
+
+    private val job = Job()
+    private val scope = CoroutineScope(Dispatchers.Main + job)
 
     private lateinit var binding: FragmentNotesBinding
     private lateinit var activity: FragmentActivity
     private lateinit var notificationManager: NotificationManagerCompat
     private lateinit var notificationPermissionActivityLauncher: ActivityResultLauncher<String>
     private lateinit var storagePermissionActivityLauncher: ActivityResultLauncher<String>
+    private lateinit var apiService: ApiService
+    private var serviceIsBound = false
+
+    private val fileHash = "f37e3f64-14b4-4c87-9f1a-f183182115c2"
+    private val email = "kuromix@mail.ru"
+    private val pass = "12345678"
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            println("onServiceConnected")
+
+            val binder = service as ApiService.ServiceBinder
+            apiService = binder.getService()
+            serviceIsBound = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            println("onServiceDisconnected")
+            serviceIsBound = false
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -52,7 +84,9 @@ class NotesFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            downloadFile()
+            scope.launch {
+                apiService.getFile(fileHash)
+            }
         }
 
         notificationManager = NotificationManagerCompat.from(requireContext())
@@ -80,11 +114,46 @@ class NotesFragment : Fragment() {
                     Toast.LENGTH_LONG,
                 ).show()
             } else {
-                downloadFile()
+                scope.launch {
+                    apiService.getFile(fileHash)
+                }
             }
         }
 
+        binding.btnGetShelf.setOnClickListener {
+            scope.launch {
+                val shelf = apiService.getShelf()
+                println("shelf: $shelf")
+            }
+        }
+
+        binding.btnLogin.setOnClickListener {
+            scope.launch {
+                apiService.login(LoginBody(email, pass))
+            }
+        }
+
+        startApiService()
+
         return binding.root
+    }
+
+    override fun onDestroy() {
+        if (serviceIsBound) {
+            activity.unbindService(serviceConnection)
+            serviceIsBound = false
+        }
+
+        job.cancel()
+        super.onDestroy()
+    }
+
+    private fun startApiService() {
+        val intent = Intent(activity, ApiService::class.java)
+        activity.startService(intent)
+
+        val bindIntent = Intent(activity, ApiService::class.java)
+        activity.bindService(bindIntent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
     private fun storagePermissionGranted(): Boolean {
@@ -95,12 +164,5 @@ class NotesFragment : Fragment() {
         return ActivityCompat.checkSelfPermission(
             requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE,
         ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun downloadFile() {
-        val intent = Intent(activity, ApiService::class.java)
-        val fileHash = "f37e3f64-14b4-4c87-9f1a-f183182115c2"
-        intent.putExtra("FILE_HASH", fileHash)
-        activity.startService(intent)
     }
 }
