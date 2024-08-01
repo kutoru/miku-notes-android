@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,7 +26,8 @@ class NotesFragment : Fragment() {
     private lateinit var binding: FragmentNotesBinding
     private lateinit var activity: FragmentActivity
     private lateinit var notificationManager: NotificationManagerCompat
-    private lateinit var permissionActivityLauncher: ActivityResultLauncher<String>
+    private lateinit var notificationPermissionActivityLauncher: ActivityResultLauncher<String>
+    private lateinit var storagePermissionActivityLauncher: ActivityResultLauncher<String>
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,30 +44,63 @@ class NotesFragment : Fragment() {
 
         binding.btnDownload.setOnClickListener {
             if (!NotificationHelper.permissionGranted(requireContext())) {
-                permissionActivityLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                notificationPermissionActivityLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
 
-            val intent = Intent(activity, ApiService::class.java)
-            val fileHash = "0249b1a3-7f06-4e39-88b7-1d6ab30400dd"
-            intent.putExtra("FILE_HASH", fileHash)
-            activity.startService(intent)
+            if (!storagePermissionGranted()) {
+                storagePermissionActivityLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                return@setOnClickListener
+            }
+
+            downloadFile()
         }
 
         notificationManager = NotificationManagerCompat.from(requireContext())
 
         val permissionContract = ActivityResultContracts.RequestPermission()
-        permissionActivityLauncher = registerForActivityResult(permissionContract) {
-            println("permission granted: $it")
+        notificationPermissionActivityLauncher = registerForActivityResult(permissionContract) {
+            println("notification permission granted: $it")
 
             if (!it) {
                 Toast.makeText(
                     requireContext(),
-                    "You won't see download progress notifications without the notification permission",
+                    "You won't see download notifications without the notification permission",
                     Toast.LENGTH_LONG,
                 ).show()
             }
         }
 
+        storagePermissionActivityLauncher = registerForActivityResult(permissionContract) {
+            println("storage permission granted: $it")
+
+            if (!it) {
+                Toast.makeText(
+                    requireContext(),
+                    "You won't be able to download files without the storage permission",
+                    Toast.LENGTH_LONG,
+                ).show()
+            } else {
+                downloadFile()
+            }
+        }
+
         return binding.root
+    }
+
+    private fun storagePermissionGranted(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return true
+        }
+
+        return ActivityCompat.checkSelfPermission(
+            requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun downloadFile() {
+        val intent = Intent(activity, ApiService::class.java)
+        val fileHash = "f37e3f64-14b4-4c87-9f1a-f183182115c2"
+        intent.putExtra("FILE_HASH", fileHash)
+        activity.startService(intent)
     }
 }
