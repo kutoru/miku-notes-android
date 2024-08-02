@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import com.kutoru.mikunotes.databinding.FragmentShelfBinding
-import com.kutoru.mikunotes.logic.CustomFragment
 import com.kutoru.mikunotes.logic.InvalidUrl
 import com.kutoru.mikunotes.logic.Unauthorized
 import com.kutoru.mikunotes.logic.UrlPropertyDialog
@@ -55,12 +54,13 @@ class ShelfFragment : CustomFragment() {
         scope.launch {
             try {
                 apiService.updateUrl()
-                apiService.getAccess()
+                apiService.access()
             } catch(e: InvalidUrl) {
                 println("InvalidUrl")
 
                 UrlPropertyDialog.launch(
                     requireContext(),
+                    false,
                     "Could not connect to the backend, make sure that the url properties are correct",
                     ::initializeShelf,
                 )

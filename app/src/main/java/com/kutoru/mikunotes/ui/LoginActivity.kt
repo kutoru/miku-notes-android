@@ -6,19 +6,27 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
-import android.view.View
-import android.widget.Button
-import android.widget.CheckBox
-import android.widget.EditText
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityLoginBinding
 import com.kutoru.mikunotes.logic.ApiService
-import com.kutoru.mikunotes.logic.PersistentStorage
+import com.kutoru.mikunotes.logic.BadRequest
+import com.kutoru.mikunotes.logic.InvalidUrl
+import com.kutoru.mikunotes.logic.ServerError
+import com.kutoru.mikunotes.logic.UrlPropertyDialog
+import com.kutoru.mikunotes.models.LoginBody
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
+
+    private val job = Job()
+    private val scope = CoroutineScope(Dispatchers.Main + job)
 
     private lateinit var binding: ActivityLoginBinding
 
@@ -43,11 +51,13 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        binding.btnLoginLogin.setOnClickListener { handleLogin() }
+        binding.btnLoginRegister.setOnClickListener { handleRegister() }
+
         setSupportActionBar(binding.toolbarLogin)
         supportActionBar?.title = "Log in or Register"
 
         startApiService()
-        checkBackendUrlValidity()
     }
 
     override fun onDestroy() {
@@ -56,6 +66,7 @@ class LoginActivity : AppCompatActivity() {
             serviceIsBound = false
         }
 
+        job.cancel()
         super.onDestroy()
     }
 
@@ -65,61 +76,59 @@ class LoginActivity : AppCompatActivity() {
         moveTaskToBack(true)
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.login, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.actionLoginPropertyDialog -> {
+                UrlPropertyDialog.launch(this, true, callback = { apiService.updateUrl() })
+                return true
+            }
+        }
+
+        return super.onOptionsItemSelected(item)
+    }
+
     private fun startApiService() {
         val bindIntent = Intent(this, ApiService::class.java)
         bindService(bindIntent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
-    private fun checkBackendUrlValidity() {
-        val storage = PersistentStorage(this)
-        val domain = storage.domain
-        val port = storage.port
-        val isSecure = storage.isSecure
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    }
 
-        if (domain == null || port == null || isSecure == null) {
-            val view = View.inflate(this, R.layout.dialog_url_properties, null)
-            val etDomain = view.findViewById<EditText>(R.id.etDomain)
-            val etPort = view.findViewById<EditText>(R.id.etPort)
-            val cbIsSecure = view.findViewById<CheckBox>(R.id.cbIsSecure)
-            val btnSubmit = view.findViewById<Button>(R.id.btnSubmit)
+    private fun handleLogin() {
+        val email = binding.etLoginEmail.text.toString().trim()
+        val password = binding.etLoginPassword.text.toString().trim()
 
-            if (domain != null) {
-                etDomain.setText(domain)
-            }
-            if (port != null) {
-                etPort.setText(port.toString())
-            }
-            if (isSecure != null) {
-                cbIsSecure.isChecked = isSecure
-            }
+        if (email.isEmpty() || password.isEmpty()) {
+            showToast("Email and password cannot be empty")
+            return
+        }
 
-            val dialog = AlertDialog
-                .Builder(this)
-                .setCancelable(false)
-                .setView(view)
-                .show()
-
-            btnSubmit.setOnClickListener {
-                val domain = etDomain.text.toString().trim()
-                if (domain.isEmpty()) {
-                    Toast.makeText(this, "The domain/IP field cannot be empty", Toast.LENGTH_LONG).show()
-                    return@setOnClickListener
+        scope.launch {
+            try {
+                apiService.login(LoginBody(email, password))
+                finish()
+            } catch (e: Exception) {
+                when (e) {
+                    is InvalidUrl -> showToast("Could not connect to the backend. Make sure that the backend url is valid")
+                    is BadRequest -> showToast("Could not log in. Check your email and password")
+                    is ServerError -> showToast("Server error")
+                    else -> {
+                        println("unknown err on login: $e")
+                        throw e
+                    }
                 }
-
-                val port = etPort.text.toString().trim().toIntOrNull()
-                if (port == null || port < 0 || port > 65000) {
-                    Toast.makeText(this, "The port field should be a valid unsigned 16bit int", Toast.LENGTH_LONG).show()
-                    return@setOnClickListener
-                }
-
-                val isSecure = cbIsSecure.isChecked
-
-                storage.domain = domain
-                storage.port = port
-                storage.isSecure = isSecure
-                Toast.makeText(this, "The url properties have successfully been set", Toast.LENGTH_LONG).show()
-                dialog.dismiss()
             }
         }
+    }
+
+    private fun handleRegister() {
+        showToast("Not implemented")
     }
 }

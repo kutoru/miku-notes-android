@@ -1,6 +1,7 @@
 package com.kutoru.mikunotes.logic
 
 class InvalidUrl : Exception()
-class ServerError : Exception()
 class Unauthorized : Exception()
+class BadRequest : Exception()
+class ServerError : Exception()
 class UnknownError : Exception()

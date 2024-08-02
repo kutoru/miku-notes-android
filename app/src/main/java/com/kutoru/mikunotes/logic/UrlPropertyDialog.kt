@@ -12,7 +12,7 @@ import com.kutoru.mikunotes.R
 
 class UrlPropertyDialog {
     companion object {
-        fun launch(context: Context, customMessage: String? = null, callback: (() -> Unit)? = null) {
+        fun launch(context: Context, cancelable: Boolean, customMessage: String? = null, callback: (() -> Unit)? = null) {
             val storage = PersistentStorage(context)
             val domain = storage.domain
             val port = storage.port
@@ -46,6 +46,7 @@ class UrlPropertyDialog {
                 .Builder(context)
                 .setCancelable(false)
                 .setView(view)
+                .setCancelable(cancelable)
                 .show()
 
             btnSubmit.setOnClickListener {

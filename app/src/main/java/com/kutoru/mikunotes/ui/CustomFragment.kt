@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.logic
+package com.kutoru.mikunotes.ui
 
 import android.content.ComponentName
 import android.content.Context
@@ -9,8 +9,8 @@ import android.os.IBinder
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
+import com.kutoru.mikunotes.logic.ApiService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -20,7 +20,6 @@ open class CustomFragment : Fragment() {
     private val job = Job()
     protected val scope = CoroutineScope(Dispatchers.Main + job)
 
-    protected lateinit var notificationManager: NotificationManagerCompat
     protected lateinit var apiService: ApiService
     protected var serviceIsBound = false
     protected var onServiceBoundListener: (() -> Unit)? = null
@@ -46,7 +45,6 @@ open class CustomFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View? {
-        notificationManager = NotificationManagerCompat.from(requireContext())
         startApiService()
         return super.onCreateView(inflater, container, savedInstanceState)
     }

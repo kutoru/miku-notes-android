@@ -13,7 +13,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import com.google.android.material.snackbar.Snackbar
 import com.kutoru.mikunotes.databinding.FragmentNotesBinding
-import com.kutoru.mikunotes.logic.CustomFragment
 import com.kutoru.mikunotes.logic.NotificationHelper
 import com.kutoru.mikunotes.models.LoginBody
 import kotlinx.coroutines.launch

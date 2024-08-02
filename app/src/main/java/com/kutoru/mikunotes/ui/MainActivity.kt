@@ -21,7 +21,6 @@ import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityMainBinding
 import com.kutoru.mikunotes.logic.ApiService
 import com.kutoru.mikunotes.logic.DOWNLOAD_NOTIFICATION_CHANNEL_ID
-import com.kutoru.mikunotes.logic.PersistentStorage
 
 class MainActivity : AppCompatActivity() {
 
@@ -46,9 +45,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val storage = PersistentStorage(this)
-        storage.accessCookie = null
-        storage.refreshCookie = null
+//        val storage = PersistentStorage(this)
+//        storage.accessCookie = null
+//        storage.refreshCookie = null
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

@@ -18,16 +18,12 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.cookies.ConstantCookiesStorage
-import io.ktor.client.plugins.cookies.HttpCookies
-import io.ktor.client.request.get
 import io.ktor.client.request.prepareGet
 import io.ktor.client.request.preparePost
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.HttpStatement
 import io.ktor.http.ContentType
-import io.ktor.http.Cookie
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLParserException
 import io.ktor.http.contentLength
@@ -36,9 +32,11 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.core.isEmpty
 import io.ktor.utils.io.core.readBytes
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import java.io.File
 import java.net.ConnectException
-import java.net.HttpCookie
 import java.nio.channels.UnresolvedAddressException
 import java.util.Calendar
 
@@ -46,14 +44,24 @@ import java.util.Calendar
 
 class ApiService : Service() {
 
+    private val job = Job()
+    private val scope = CoroutineScope(Dispatchers.Main + job)
+
     private val binder = ServiceBinder()
     private var downloadIdx = 0
 
     private var apiDomain: String? = null
-    private var apiUrl: String? = null
+    private lateinit var apiUrl: String
+    private lateinit var accessCookie: String
+    private lateinit var refreshCookie: String
+
     private lateinit var notificationManager: NotificationManagerCompat
     private lateinit var persistentStorage: PersistentStorage
-    private lateinit var httpClient: HttpClient
+    private val httpClient = HttpClient(CIO) {
+        install(ContentNegotiation) {
+            json()
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -64,52 +72,19 @@ class ApiService : Service() {
         persistentStorage = PersistentStorage(applicationContext)
 
         updateUrl()
-
-        val accessCookieValue = persistentStorage.accessCookie
-        val refreshCookieValue = persistentStorage.refreshCookie
-
-        val cookies = mutableListOf<Cookie>()
-
-        if (accessCookieValue != null) {
-            val parsedAccessCookie = HttpCookie.parse(accessCookieValue)[0]
-            val accessCookie = Cookie(
-                name = parsedAccessCookie.name,
-                value = parsedAccessCookie.value,
-                maxAge = parsedAccessCookie.maxAge.toInt(),
-                domain = apiDomain,
-            )
-
-            cookies.add(accessCookie)
-        }
-
-        if (refreshCookieValue != null) {
-            val parsedRefreshCookie = HttpCookie.parse(refreshCookieValue)[0]
-            val refreshCookie = Cookie(
-                name = parsedRefreshCookie.name,
-                value = parsedRefreshCookie.value,
-                maxAge = parsedRefreshCookie.maxAge.toInt(),
-                domain = apiDomain,
-            )
-
-            cookies.add(refreshCookie)
-        }
-
-        httpClient = HttpClient(CIO) {
-            install(ContentNegotiation) {
-                json()
-            }
-
-            install(HttpCookies) {
-                storage = ConstantCookiesStorage(*cookies.toTypedArray())
-            }
-        }
+        updateCookies()
 
         return START_STICKY
     }
 
+    override fun onDestroy() {
+        job.cancel()
+        super.onDestroy()
+    }
+
     fun updateUrl() {
         val domain = persistentStorage.domain
-        val port = persistentStorage.port
+        val port = persistentStorage.port ?: 0
         val isSecure = persistentStorage.isSecure
 
         apiDomain = domain
@@ -117,14 +92,21 @@ class ApiService : Service() {
         apiUrl = "$protocol://$domain:$port"
     }
 
+    private fun updateCookies() {
+        accessCookie = persistentStorage.accessCookie ?: ""
+        refreshCookie = persistentStorage.refreshCookie ?: ""
+    }
+
     suspend fun getShelf(): Shelf? {
         val url = "$apiUrl/shelf"
-        val res = httpClient.get(url)
+        val req = httpClient.prepareGet(url) {
+            headers.append("Cookie", accessCookie)
+        }
 
+        val res = handleRequest(req)
         handleHttpStatus(res.status)
 
         val body: ResultBody<Shelf> = res.body()
-//        println(body)
         return body.data
     }
 
@@ -138,10 +120,12 @@ class ApiService : Service() {
         val res = handleRequest(req)
         handleHttpStatus(res.status)
 
-        val cookies = res.headers.getAll("set-cookie")
-        if (cookies == null || cookies.size != 2) {
+        val rawCookies = res.headers.getAll("set-cookie")
+        if (rawCookies == null || rawCookies.size != 2) {
             throw ServerError()
         }
+
+        val cookies = rawCookies.map { it.split(';')[0] }
 
         if (cookies[0].startsWith("at=")) {
             persistentStorage.accessCookie = cookies[0]
@@ -150,6 +134,8 @@ class ApiService : Service() {
             persistentStorage.accessCookie = cookies[1]
             persistentStorage.refreshCookie = cookies[0]
         }
+
+        updateCookies()
     }
 
     @SuppressLint("MissingPermission")
@@ -157,9 +143,11 @@ class ApiService : Service() {
         val currentDownloadIdx = ++downloadIdx
 
         val url = "$apiUrl/files/dl/$fileHash"
-        val req = httpClient.prepareGet(url)
+        val req = httpClient.prepareGet(url) {
+            headers.append("Cookie", accessCookie)
+        }
 
-        val res = req.execute()
+        val res = handleRequest(req)
         handleHttpStatus(res.status)
 
         val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
@@ -209,25 +197,19 @@ class ApiService : Service() {
         println("A file saved to ${file.path}")
     }
 
-    suspend fun getAccess() {
+    suspend fun access() {
         val url = "$apiUrl/access"
-        val res: HttpResponse
-
-        try {
-            res = httpClient.get(url)
-        } catch (e: Exception) {
-            throw when (e) {
-                is ConnectException,
-                is UnresolvedAddressException,
-                is URLParserException -> InvalidUrl()
-                else -> e
-            }
+        val req = httpClient.prepareGet(url) {
+            headers.append("Cookie", refreshCookie)
         }
 
+        val res = handleRequest(req)
         handleHttpStatus(res.status)
 
         val accessCookie = res.headers["set-cookie"] ?: throw ServerError()
         persistentStorage.accessCookie = accessCookie
+
+        updateCookies()
     }
 
     private fun notificationPermissionGranted(): Boolean {
@@ -255,11 +237,11 @@ class ApiService : Service() {
 
     private fun handleHttpStatus(status: HttpStatusCode) {
         println("Got a response with $status")
-
-        return when (status) {
-            HttpStatusCode.OK, HttpStatusCode.Created -> {}
-            HttpStatusCode.Unauthorized -> throw Unauthorized()
-            HttpStatusCode.InternalServerError -> throw ServerError()
+        when (status.value) {
+            200, 201 -> {}
+            401 -> throw Unauthorized()
+            in 400..<500 -> throw BadRequest()
+            500 -> throw ServerError()
             else -> throw UnknownError()
         }
     }
