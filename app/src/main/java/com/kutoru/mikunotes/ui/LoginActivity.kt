@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityLoginBinding
@@ -97,8 +96,8 @@ class LoginActivity : AppCompatActivity() {
         bindService(bindIntent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    private fun showMessage(message: String) {
+        binding.tvLoginMessage.text = message
     }
 
     private fun handleLogin() {
@@ -106,19 +105,19 @@ class LoginActivity : AppCompatActivity() {
         val password = binding.etLoginPassword.text.toString().trim()
 
         if (email.isEmpty() || password.isEmpty()) {
-            showToast("Email and password cannot be empty")
+            showMessage("Email and password cannot be empty")
             return
         }
 
         scope.launch {
             try {
-                apiService.login(LoginBody(email, password))
+                apiService.getLogin(LoginBody(email, password))
                 finish()
             } catch (e: Exception) {
                 when (e) {
-                    is InvalidUrl -> showToast("Could not connect to the backend. Make sure that the backend url is valid")
-                    is BadRequest -> showToast("Could not log in. Check your email and password")
-                    is ServerError -> showToast("Server error")
+                    is InvalidUrl -> showMessage("Could not connect to the backend. Make sure that the backend url is valid")
+                    is BadRequest -> showMessage("Could not log in. Check your email and password")
+                    is ServerError -> showMessage("Server error")
                     else -> {
                         println("unknown err on login: $e")
                         throw e
@@ -129,6 +128,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun handleRegister() {
-        showToast("Not implemented")
+        showMessage("Not implemented")
     }
 }

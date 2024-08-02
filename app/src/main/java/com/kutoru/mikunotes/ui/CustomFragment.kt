@@ -14,6 +14,7 @@ import com.kutoru.mikunotes.logic.ApiService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 open class CustomFragment : Fragment() {
 
@@ -22,7 +23,7 @@ open class CustomFragment : Fragment() {
 
     protected lateinit var apiService: ApiService
     protected var serviceIsBound = false
-    protected var onServiceBoundListener: (() -> Unit)? = null
+    protected var onServiceBoundListener: (suspend () -> Unit)? = null
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -31,7 +32,9 @@ open class CustomFragment : Fragment() {
             serviceIsBound = true
 
             if (onServiceBoundListener != null) {
-                onServiceBoundListener!!.invoke()
+                scope.launch {
+                    onServiceBoundListener!!.invoke()
+                }
             }
         }
 

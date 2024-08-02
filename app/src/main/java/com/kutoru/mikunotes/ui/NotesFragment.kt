@@ -94,7 +94,7 @@ class NotesFragment : CustomFragment() {
 
         binding.btnLogin.setOnClickListener {
             scope.launch {
-                apiService.login(LoginBody(email, pass))
+                apiService.getLogin(LoginBody(email, pass))
             }
         }
 

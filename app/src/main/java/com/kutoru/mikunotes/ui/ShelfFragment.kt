@@ -8,7 +8,9 @@ import android.view.ViewGroup
 import android.widget.Toast
 import com.kutoru.mikunotes.databinding.FragmentShelfBinding
 import com.kutoru.mikunotes.logic.InvalidUrl
+import com.kutoru.mikunotes.logic.ServerError
 import com.kutoru.mikunotes.logic.Unauthorized
+import com.kutoru.mikunotes.logic.UnknownError
 import com.kutoru.mikunotes.logic.UrlPropertyDialog
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -35,7 +37,9 @@ class ShelfFragment : CustomFragment() {
     override fun onResume() {
         println("shelf onResume")
         if (serviceIsBound) {
-            initializeShelf()
+            scope.launch {
+                initializeShelf()
+            }
         } else {
             onServiceBoundListener = ::initializeShelf
         }
@@ -43,69 +47,57 @@ class ShelfFragment : CustomFragment() {
         super.onResume()
     }
 
-    override fun onStop() {
-        println("shelf onStop")
-        super.onStop()
+    override fun onPause() {
+        onServiceBoundListener = null
+        super.onPause()
     }
 
-    private fun initializeShelf() {
+    private suspend fun initializeShelf() {
         println("initializeShelf")
 
-        scope.launch {
-            try {
-                apiService.updateUrl()
-                apiService.access()
-            } catch(e: InvalidUrl) {
-                println("InvalidUrl")
+        val shelf = try {
+            apiService.getShelf()
+        } catch(e: Exception) {
+            when (e) {
+                is InvalidUrl -> {
+                    UrlPropertyDialog.launch(
+                        requireContext(),
+                        false,
+                        "Could not connect to the backend, make sure that the url properties are correct",
+                    ) {
+                        scope.launch {
+                            apiService.updateUrl()
+                            initializeShelf()
+                        }
+                    }
+                }
 
-                UrlPropertyDialog.launch(
-                    requireContext(),
-                    false,
-                    "Could not connect to the backend, make sure that the url properties are correct",
-                    ::initializeShelf,
-                )
-                return@launch
-            } catch(e: Unauthorized) {
-                println("Unauthorized")
-                val intent = Intent(requireActivity(), LoginActivity::class.java)
-                requireActivity().startActivity(intent)
-                return@launch
-            } catch (e: Throwable) {
-                println("unknown error when getting access: $e")
-                throw e
+                is Unauthorized -> {
+                    val intent = Intent(requireActivity(), LoginActivity::class.java)
+                    requireActivity().startActivity(intent)
+                }
+
+                is UnknownError, is ServerError -> {
+                    println("Unknown error when getting shelf: $e")
+                    Toast.makeText(requireContext(), "Unknown error when getting shelf: $e", Toast.LENGTH_LONG).show()
+                }
+
+                else -> throw e
             }
 
-            try {
-                val shelf = apiService.getShelf()!!
-                println("shelf: $shelf")
-
-                val lastEdited = LocalDateTime
-                    .ofEpochSecond(shelf.last_edited, 0, ZoneOffset.UTC)
-                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-
-                binding.tvShelf.text =
-                    "id: ${shelf.id}" +
-                            "\ntext: ${shelf.text}" +
-                            "\nfiles: ${shelf.files.map { it.name }}" +
-                            "\nlast edited: $lastEdited"
-            } catch (e: Throwable) {
-                println("getShelf err: $e")
-                Toast
-                    .makeText(requireContext(), "Could not get the shelf", Toast.LENGTH_LONG)
-                    .show()
-            }
+            return
         }
-    }
 
-//    inner class CreateActivityContract : ActivityResultContract<BoardSize, String?>() {
-//        override fun createIntent(context: Context, input: BoardSize): Intent {
-//            val intent = Intent(context, CreateActivity::class.java)
-//            intent.putExtra(EXTRA_BOARD_SIZE, input)
-//            return intent
-//        }
-//
-//        override fun parseResult(resultCode: Int, intent: Intent?): String? {
-//            return intent?.getStringExtra(EXTRA_GAME_NAME)
-//        }
-//    }
+        println("shelf: $shelf")
+
+        val lastEdited = LocalDateTime
+            .ofEpochSecond(shelf.last_edited, 0, ZoneOffset.UTC)
+            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+
+        binding.tvShelf.text =
+            "id: ${shelf.id}" +
+                    "\ntext: ${shelf.text}" +
+                    "\nfiles: ${shelf.files.map { it.name }}" +
+                    "\nlast edited: $lastEdited"
+    }
 }
