@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.recyclerview.widget.GridLayoutManager
 import com.kutoru.mikunotes.databinding.FragmentShelfBinding
 import com.kutoru.mikunotes.logic.InvalidUrl
 import com.kutoru.mikunotes.logic.ServerError
@@ -27,10 +28,7 @@ class ShelfFragment : CustomFragment() {
         savedInstanceState: Bundle?,
     ): View {
         super.onCreateView(inflater, container, savedInstanceState)
-
         binding = FragmentShelfBinding.inflate(inflater, container, false)
-        binding.tvShelfTitle.text = "This is the Shelf menu"
-
         return binding.root
     }
 
@@ -94,10 +92,19 @@ class ShelfFragment : CustomFragment() {
             .ofEpochSecond(shelf.last_edited, 0, ZoneOffset.UTC)
             .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
 
-        binding.tvShelf.text =
-            "id: ${shelf.id}" +
-                    "\ntext: ${shelf.text}" +
-                    "\nfiles: ${shelf.files.map { it.name }}" +
-                    "\nlast edited: $lastEdited"
+        binding.tvShelfDate.text = "Edited: $lastEdited"
+        binding.tvShelfCount.text = "Count: ${shelf.times_edited}"
+        binding.etShelfText.setText(shelf.text)
+
+        binding.rvShelfFiles.adapter = FileListAdapter(
+            requireContext(),
+            shelf.files,
+//            { fileId -> scope.launch { apiService.deleteFile(fileId) } },
+//            { fileHash -> scope.launch { apiService.getFile(fileHash) } },
+            { fileId -> scope.launch {println("delete file: $fileId")} },
+            { fileHash -> scope.launch {println("download file: $fileHash")} },
+        )
+
+        binding.rvShelfFiles.layoutManager = GridLayoutManager(requireContext(), 3)
     }
 }
