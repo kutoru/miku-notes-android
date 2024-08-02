@@ -28,15 +28,18 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ui.LoginActivity"
+            android:exported="true"
+            android:theme="@style/Theme.MikuNotes.NoActionBar"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <service android:name=".logic.ApiService"/>
-
-<!--        <receiver android:name=".viewmodel.ApiService$NotificationReceiver" android:exported="false">-->
-<!--            <intent-filter>-->
-<!--                <action android:name="Intent_Filter_Action" />-->
-<!--            </intent-filter>-->
-<!--        </receiver>-->
-
-        <receiver android:name=".ui.NotifReceiver" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
