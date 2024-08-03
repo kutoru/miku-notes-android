@@ -98,6 +98,8 @@ class NotesFragment : CustomFragment() {
             }
         }
 
+        (requireActivity() as MainActivity).setNotesOptionsMenu()
+
         return binding.root
     }
 

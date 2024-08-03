@@ -2,6 +2,7 @@ package com.kutoru.mikunotes.logic
 
 import android.app.Service
 import android.content.Intent
+import android.net.Uri
 import android.os.Binder
 import android.os.IBinder
 import com.kutoru.mikunotes.logic.requests.RequestManager
@@ -12,12 +13,12 @@ import com.kutoru.mikunotes.logic.requests.getFile
 import com.kutoru.mikunotes.logic.requests.getLogin
 import com.kutoru.mikunotes.logic.requests.getShelf
 import com.kutoru.mikunotes.logic.requests.patchShelf
+import com.kutoru.mikunotes.logic.requests.postFileToNote
+import com.kutoru.mikunotes.logic.requests.postFileToShelf
 import com.kutoru.mikunotes.logic.requests.postShelfToNote
 import com.kutoru.mikunotes.models.LoginBody
 import com.kutoru.mikunotes.models.ShelfPatch
 import com.kutoru.mikunotes.models.ShelfToNote
-
-// https://ktor.io/docs/client-requests.html#upload_file
 
 class ApiService : Service() {
 
@@ -39,6 +40,8 @@ class ApiService : Service() {
     private suspend fun getAccess() = requestManager.getAccess()
     suspend fun getLogin(loginBody: LoginBody) = requestManager.getLogin(loginBody)
 
+    suspend fun postFileToNote(fileUri: Uri, noteId: Int) = makeRequest { requestManager.postFileToNote(fileUri, noteId) }
+    suspend fun postFileToShelf(fileUri: Uri, shelfId: Int) = makeRequest { requestManager.postFileToShelf(fileUri, shelfId) }
     suspend fun getFile(fileHash: String) = makeRequest { requestManager.getFile(fileHash) }
     suspend fun deleteFile(fileId: Int) = makeRequest { requestManager.deleteFile(fileId) }
 

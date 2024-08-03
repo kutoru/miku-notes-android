@@ -18,6 +18,7 @@ class SettingsFragment : Fragment() {
     ): View {
         binding = FragmentSettingsBinding.inflate(inflater, container, false)
         binding.textSlideshow.text = "This is the Settings menu"
+        (requireActivity() as MainActivity).setSettingsOptionsMenu()
         return binding.root
     }
 }

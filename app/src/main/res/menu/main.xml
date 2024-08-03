@@ -1,9 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <item
-        android:id="@+id/action_settings"
+        android:id="@+id/actionShelfRefresh"
+        android:icon="@drawable/ic_refresh"
         android:orderInCategory="100"
-        android:title="Some action"
+        android:title="Refresh"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/actionShelfCopy"
+        android:icon="@drawable/ic_copy"
+        android:orderInCategory="100"
+        android:title="Copy the text"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/actionShelfSave"
+        android:icon="@drawable/ic_save"
+        android:orderInCategory="100"
+        android:title="Save"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/actionShelfClear"
+        android:icon="@drawable/ic_delete"
+        android:orderInCategory="100"
+        android:title="Clear"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/actionShelfConvert"
+        android:orderInCategory="100"
+        android:title="Convert to note"
+        app:showAsAction="never" />
+
 </menu>

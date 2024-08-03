@@ -1,7 +1,6 @@
 package com.kutoru.mikunotes.logic
 
 import android.Manifest
-import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -14,7 +13,6 @@ import com.kutoru.mikunotes.R
 import java.io.File
 
 class NotificationHelper {
-
     companion object {
         fun permissionGranted(context: Context): Boolean {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
@@ -36,7 +34,7 @@ class NotificationHelper {
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setProgress(100, 0, false)
-                .setAutoCancel(true)
+                .setAutoCancel(false)
         }
 
         fun getDownloadFinished(context: Context, file: File): NotificationCompat.Builder {
@@ -57,6 +55,31 @@ class NotificationHelper {
                 .setOngoing(false)
                 .setOnlyAlertOnce(true)
                 .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+        }
+
+        fun getUploadInProgress(context: Context, fileName: String): NotificationCompat.Builder {
+            return NotificationCompat
+                .Builder(context, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_upload)
+                .setContentTitle("Upload")
+                .setContentText(fileName)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setProgress(100, 0, true)
+                .setAutoCancel(false)
+        }
+
+        fun getUploadFinished(context: Context, fileName: String): NotificationCompat.Builder {
+            return NotificationCompat
+                .Builder(context, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_upload)
+                .setContentTitle("Upload")
+                .setContentText("$fileName has been uploaded")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setOngoing(false)
+                .setOnlyAlertOnce(true)
                 .setAutoCancel(true)
         }
     }

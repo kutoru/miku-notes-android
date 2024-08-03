@@ -14,6 +14,7 @@ import com.kutoru.mikunotes.models.File
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import kotlin.math.round
 
 class FileListAdapter(
     private val context: Context,
@@ -60,7 +61,16 @@ class FileListAdapter(
                 .ofEpochSecond(file.created, 0, ZoneOffset.UTC)
                 .format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss"))
 
-            tvSize.text = "${file.size}"
+            val mul = 1000f
+
+            val (fileSize, postFix) = when {
+                file.size < mul -> Pair(file.size.toFloat(), "b")
+                file.size < mul * mul -> Pair(file.size / mul, "KB")
+                file.size < mul * mul * mul -> Pair(file.size / (mul * mul), "MB")
+                else -> Pair(file.size / (mul * mul * mul), "GB")
+            }
+
+            tvSize.text = "${round(fileSize * 100) / 100}$postFix"
             btnDelete.setOnClickListener { deleteFile(position) }
             btnDownload.setOnClickListener { downloadFile(position) }
             tvTitle.text = file.name

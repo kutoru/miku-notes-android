@@ -40,7 +40,7 @@ class RequestManager(
         }
     }
 
-    var downloadIdx = 0
+    var notificationIndex = 0
 
     init {
         updateUrl()

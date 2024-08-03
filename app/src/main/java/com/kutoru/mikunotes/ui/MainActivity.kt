@@ -9,6 +9,7 @@ import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.findNavController
@@ -26,6 +27,14 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
+    private lateinit var optionsMenu: Menu
+
+    var initializeOptionsMenu: () -> Unit = ::setDefaultOptionsMenu
+    private var actionShelfSave: (() -> Unit)? = null
+    private var actionShelfClear: (() -> Unit)? = null
+    private var actionShelfRefresh: (() -> Unit)? = null
+    private var actionShelfConvert: (() -> Unit)? = null
+    private var actionShelfCopy: (() -> Unit)? = null
 
     private lateinit var apiService: ApiService
     private var serviceIsBound = false
@@ -69,8 +78,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
+        optionsMenu = menu
         menuInflater.inflate(R.menu.main, menu)
+        initializeOptionsMenu()
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.actionShelfSave -> actionShelfSave?.invoke()
+            R.id.actionShelfClear -> actionShelfClear?.invoke()
+            R.id.actionShelfRefresh -> actionShelfRefresh?.invoke()
+            R.id.actionShelfConvert -> actionShelfConvert?.invoke()
+            R.id.actionShelfCopy -> actionShelfCopy?.invoke()
+            else -> return super.onOptionsItemSelected(item)
+        }
+
         return true
     }
 
@@ -105,5 +128,65 @@ class MainActivity : AppCompatActivity() {
 
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(channel)
+    }
+
+    private fun setOptionVisibility(optionId: Int, visible: Boolean) {
+        optionsMenu.findItem(optionId).isVisible = visible
+    }
+
+    private fun setDefaultOptionsMenu() {
+        setOptionVisibility(R.id.actionShelfSave, false)
+        setOptionVisibility(R.id.actionShelfClear, false)
+        setOptionVisibility(R.id.actionShelfRefresh, false)
+        setOptionVisibility(R.id.actionShelfConvert, false)
+        setOptionVisibility(R.id.actionShelfCopy, false)
+    }
+
+    fun setShelfOptionsMenu(
+        actionShelfSave: () -> Unit,
+        actionShelfClear: () -> Unit,
+        actionShelfRefresh: () -> Unit,
+        actionShelfConvert: () -> Unit,
+        actionShelfCopy: () -> Unit,
+    ) {
+        try {
+            setDefaultOptionsMenu()
+
+            this.actionShelfSave = actionShelfSave
+            this.actionShelfClear = actionShelfClear
+            this.actionShelfRefresh = actionShelfRefresh
+            this.actionShelfConvert = actionShelfConvert
+            this.actionShelfCopy = actionShelfCopy
+
+            setOptionVisibility(R.id.actionShelfSave, true)
+            setOptionVisibility(R.id.actionShelfClear, true)
+            setOptionVisibility(R.id.actionShelfRefresh, true)
+            setOptionVisibility(R.id.actionShelfConvert, true)
+            setOptionVisibility(R.id.actionShelfCopy, true)
+        } catch (e: UninitializedPropertyAccessException) {
+            initializeOptionsMenu = { setShelfOptionsMenu(
+                actionShelfSave,
+                actionShelfClear,
+                actionShelfRefresh,
+                actionShelfConvert,
+                actionShelfCopy,
+            ) }
+        }
+    }
+
+    fun setNotesOptionsMenu() {
+        try {
+            setDefaultOptionsMenu()
+        } catch (e: UninitializedPropertyAccessException) {
+            initializeOptionsMenu = ::setNotesOptionsMenu
+        }
+    }
+
+    fun setSettingsOptionsMenu() {
+        try {
+            setDefaultOptionsMenu()
+        } catch (e: UninitializedPropertyAccessException) {
+            initializeOptionsMenu = ::setSettingsOptionsMenu
+        }
     }
 }
