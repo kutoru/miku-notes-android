@@ -14,7 +14,7 @@ suspend fun RequestManager.getAccess() {
         headers.append("Cookie", refreshCookie)
     }
 
-    val res = handleRequest(req)
+    val res = executeRequest(req)
     handleHttpStatus(res.status)
 
     val accessCookie = res.headers["set-cookie"] ?: throw ServerError()
@@ -30,7 +30,7 @@ suspend fun RequestManager.getLogin(loginBody: LoginBody) {
         setBody(loginBody)
     }
 
-    val res = handleRequest(req)
+    val res = executeRequest(req)
     handleHttpStatus(res.status)
 
     val rawCookies = res.headers.getAll("set-cookie")

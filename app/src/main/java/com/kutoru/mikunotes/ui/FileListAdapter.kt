@@ -17,9 +17,9 @@ import java.time.format.DateTimeFormatter
 
 class FileListAdapter(
     private val context: Context,
-    private val files: Array<File>,
-    private val deleteFile: (fileId: Int) -> Unit,
-    private val downloadFile: (fileHash: String) -> Unit,
+    var files: List<File>,
+    private val deleteFile: (position: Int) -> Unit,
+    private val downloadFile: (position: Int) -> Unit,
 ) : RecyclerView.Adapter<FileListAdapter.ViewHolder>() {
 
     companion object {
@@ -61,8 +61,8 @@ class FileListAdapter(
                 .format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss"))
 
             tvSize.text = "${file.size}"
-            btnDelete.setOnClickListener { deleteFile(file.id) }
-            btnDownload.setOnClickListener { downloadFile(file.hash) }
+            btnDelete.setOnClickListener { deleteFile(position) }
+            btnDownload.setOnClickListener { downloadFile(position) }
             tvTitle.text = file.name
             tvDate.text = created
         }

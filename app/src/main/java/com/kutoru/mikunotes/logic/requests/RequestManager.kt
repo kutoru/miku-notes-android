@@ -61,7 +61,7 @@ class RequestManager(
         refreshCookie = persistentStorage.refreshCookie ?: ""
     }
 
-    suspend fun handleRequest(request: HttpStatement): HttpResponse {
+    suspend fun executeRequest(request: HttpStatement): HttpResponse {
         try {
             return request.execute()
         } catch (e: Exception) {

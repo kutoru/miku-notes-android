@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.os.Environment
 import com.kutoru.mikunotes.logic.NotificationHelper
 import io.ktor.client.call.body
+import io.ktor.client.request.prepareDelete
 import io.ktor.client.request.prepareGet
 import io.ktor.http.contentLength
 import io.ktor.utils.io.ByteReadChannel
@@ -21,7 +22,7 @@ suspend fun RequestManager.getFile(fileHash: String) {
         headers.append("Cookie", accessCookie)
     }
 
-    val res = handleRequest(req)
+    val res = executeRequest(req)
     handleHttpStatus(res.status)
 
     val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
@@ -69,4 +70,14 @@ suspend fun RequestManager.getFile(fileHash: String) {
     }
 
     println("A file saved to ${file.path}")
+}
+
+suspend fun RequestManager.deleteFile(fileId: Int) {
+    val url = "$apiUrl/files/$fileId"
+    val req = httpClient.prepareDelete(url) {
+        headers.append("Cookie", accessCookie)
+    }
+
+    val res = executeRequest(req)
+    handleHttpStatus(res.status)
 }

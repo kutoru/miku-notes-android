@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import com.kutoru.mikunotes.logic.requests.RequestManager
+import com.kutoru.mikunotes.logic.requests.deleteFile
 import com.kutoru.mikunotes.logic.requests.deleteShelf
 import com.kutoru.mikunotes.logic.requests.getAccess
 import com.kutoru.mikunotes.logic.requests.getFile
@@ -39,6 +40,7 @@ class ApiService : Service() {
     suspend fun getLogin(loginBody: LoginBody) = requestManager.getLogin(loginBody)
 
     suspend fun getFile(fileHash: String) = makeRequest { requestManager.getFile(fileHash) }
+    suspend fun deleteFile(fileId: Int) = makeRequest { requestManager.deleteFile(fileId) }
 
     suspend fun getShelf() = makeRequest { requestManager.getShelf() }
     suspend fun deleteShelf() = makeRequest { requestManager.deleteShelf() }

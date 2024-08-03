@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Shelf(
     val id: Int,
-    val files: Array<File>,
+    val files: MutableList<File>,
     val created: Long,
     val last_edited: Long,
     val text: String,

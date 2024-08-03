@@ -19,7 +19,7 @@ suspend fun RequestManager.getShelf(): Shelf {
         headers.append("Cookie", accessCookie)
     }
 
-    val res = handleRequest(req)
+    val res = executeRequest(req)
     handleHttpStatus(res.status)
     val body: ResultBody<Shelf> = res.body()
     return handleBody(body)
@@ -31,7 +31,7 @@ suspend fun RequestManager.deleteShelf(): Shelf {
         headers.append("Cookie", accessCookie)
     }
 
-    val res = handleRequest(req)
+    val res = executeRequest(req)
     handleHttpStatus(res.status)
     val body: ResultBody<Shelf> = res.body()
     return handleBody(body)
@@ -45,7 +45,7 @@ suspend fun RequestManager.patchShelf(body: ShelfPatch): Shelf {
         setBody(body)
     }
 
-    val res = handleRequest(req)
+    val res = executeRequest(req)
     handleHttpStatus(res.status)
     val body: ResultBody<Shelf> = res.body()
     return handleBody(body)
@@ -59,7 +59,7 @@ suspend fun RequestManager.postShelfToNote(body: ShelfToNote): Shelf {
         setBody(body)
     }
 
-    val res = handleRequest(req)
+    val res = executeRequest(req)
     handleHttpStatus(res.status)
     val body: ResultBody<Shelf> = res.body()
     return handleBody(body)

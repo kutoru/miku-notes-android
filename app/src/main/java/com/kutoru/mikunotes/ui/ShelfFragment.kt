@@ -13,6 +13,7 @@ import com.kutoru.mikunotes.logic.ServerError
 import com.kutoru.mikunotes.logic.Unauthorized
 import com.kutoru.mikunotes.logic.UnknownError
 import com.kutoru.mikunotes.logic.UrlPropertyDialog
+import com.kutoru.mikunotes.models.Shelf
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -21,6 +22,8 @@ import java.time.format.DateTimeFormatter
 class ShelfFragment : CustomFragment() {
 
     private lateinit var binding: FragmentShelfBinding
+    private lateinit var adapter: FileListAdapter
+    private var currShelf: Shelf? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -29,6 +32,31 @@ class ShelfFragment : CustomFragment() {
     ): View {
         super.onCreateView(inflater, container, savedInstanceState)
         binding = FragmentShelfBinding.inflate(inflater, container, false)
+
+        adapter = FileListAdapter(
+            requireContext(),
+            listOf(),
+            { fileIndex -> scope.launch {
+                val shelf = currShelf!!
+                val fileId = shelf.files[fileIndex].id
+
+                if (handleRequest { apiService.deleteFile(fileId) } != null) {
+                    showToast("The file got successfully deleted")
+
+                    shelf.files.removeAt(fileIndex)
+                    adapter.files = shelf.files
+                    adapter.notifyItemRemoved(fileIndex)
+                }
+            } },
+            { fileIndex -> scope.launch {
+                val fileHash = currShelf!!.files[fileIndex].hash
+                handleRequest { apiService.getFile(fileHash) }
+            } },
+        )
+
+        binding.rvShelfFiles.adapter = adapter
+        binding.rvShelfFiles.layoutManager = GridLayoutManager(requireContext(), 3)
+
         return binding.root
     }
 
@@ -50,11 +78,9 @@ class ShelfFragment : CustomFragment() {
         super.onPause()
     }
 
-    private suspend fun initializeShelf() {
-        println("initializeShelf")
-
-        val shelf = try {
-            apiService.getShelf()
+    private suspend fun <T>handleRequest(requestFn: (suspend () -> T)): T? {
+        try {
+            return requestFn()
         } catch(e: Exception) {
             when (e) {
                 is InvalidUrl -> {
@@ -68,25 +94,32 @@ class ShelfFragment : CustomFragment() {
                             initializeShelf()
                         }
                     }
+
+                    return null
                 }
 
                 is Unauthorized -> {
                     val intent = Intent(requireActivity(), LoginActivity::class.java)
                     requireActivity().startActivity(intent)
+                    return null
                 }
 
                 is UnknownError, is ServerError -> {
-                    println("Unknown error when getting shelf: $e")
-                    Toast.makeText(requireContext(), "Unknown error when getting shelf: $e", Toast.LENGTH_LONG).show()
+                    println("Unknown error when calling backend: $e")
+                    Toast.makeText(requireContext(), "Unknown error when calling backend: $e", Toast.LENGTH_LONG).show()
+                    return null
                 }
 
                 else -> throw e
             }
-
-            return
         }
+    }
 
-        println("shelf: $shelf")
+    private suspend fun initializeShelf() {
+        println("initializeShelf")
+
+        val shelf = handleRequest { apiService.getShelf() } ?: return
+        currShelf = shelf
 
         val lastEdited = LocalDateTime
             .ofEpochSecond(shelf.last_edited, 0, ZoneOffset.UTC)
@@ -96,15 +129,11 @@ class ShelfFragment : CustomFragment() {
         binding.tvShelfCount.text = "Count: ${shelf.times_edited}"
         binding.etShelfText.setText(shelf.text)
 
-        binding.rvShelfFiles.adapter = FileListAdapter(
-            requireContext(),
-            shelf.files,
-//            { fileId -> scope.launch { apiService.deleteFile(fileId) } },
-//            { fileHash -> scope.launch { apiService.getFile(fileHash) } },
-            { fileId -> scope.launch {println("delete file: $fileId")} },
-            { fileHash -> scope.launch {println("download file: $fileHash")} },
-        )
+        adapter.files = shelf.files
+        adapter.notifyDataSetChanged()
+    }
 
-        binding.rvShelfFiles.layoutManager = GridLayoutManager(requireContext(), 3)
+    private fun showToast(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
     }
 }
