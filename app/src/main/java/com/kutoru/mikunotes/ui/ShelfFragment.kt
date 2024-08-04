@@ -124,7 +124,13 @@ class ShelfFragment : CustomFragment() {
 
     override fun onPause() {
         onServiceBoundListener = null
-        scope.launch { saveShelf(true) }
+
+        scope.launch {
+            try {
+                saveShelf(true)
+            } catch (e: UninitializedPropertyAccessException) {}
+        }
+
         super.onPause()
     }
 

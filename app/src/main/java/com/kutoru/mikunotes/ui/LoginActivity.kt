@@ -111,7 +111,7 @@ class LoginActivity : AppCompatActivity() {
 
         scope.launch {
             try {
-                apiService.getLogin(LoginBody(email, password))
+                apiService.postLogin(LoginBody(email, password))
                 finish()
             } catch (e: Exception) {
                 when (e) {
@@ -128,6 +128,29 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun handleRegister() {
-        showMessage("Not implemented")
+        val email = binding.etLoginEmail.text.toString().trim()
+        val password = binding.etLoginPassword.text.toString().trim()
+
+        if (email.isEmpty() || password.isEmpty()) {
+            showMessage("Email and password cannot be empty")
+            return
+        }
+
+        scope.launch {
+            try {
+                apiService.postRegister(LoginBody(email, password))
+                finish()
+            } catch (e: Exception) {
+                when (e) {
+                    is InvalidUrl -> showMessage("Could not connect to the backend. Make sure that the backend url is valid")
+                    is BadRequest -> showMessage("Could not register. Your email or password might be invalid, or the user already exists")
+                    is ServerError -> showMessage("Server error")
+                    else -> {
+                        println("unknown err on login: $e")
+                        throw e
+                    }
+                }
+            }
+        }
     }
 }
