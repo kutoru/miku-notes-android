@@ -76,4 +76,14 @@ class PersistentStorage(context: Context) {
                 putString(REFRESH_TOKEN_STORAGE_KEY, value)
             }
         }
+
+    var email: String?
+        get() {
+            return storage.getString(EMAIL_STORAGE_KEY, null)
+        }
+        set(value) {
+            storage.edit {
+                putString(EMAIL_STORAGE_KEY, value)
+            }
+        }
 }

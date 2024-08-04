@@ -6,10 +6,13 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
+import android.os.Parcelable
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.findNavController
@@ -22,6 +25,7 @@ import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityMainBinding
 import com.kutoru.mikunotes.logic.ApiService
 import com.kutoru.mikunotes.logic.DOWNLOAD_NOTIFICATION_CHANNEL_ID
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -75,6 +79,7 @@ class MainActivity : AppCompatActivity() {
 
         startApiService()
         createNotificationChannels()
+        handleSharedData(intent)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -109,6 +114,42 @@ class MainActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+    }
+
+    private fun handleSharedData(intent: Intent) {
+        if (intent.action == Intent.ACTION_SEND && intent.type == "text/plain") {
+            val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+            if (text == null) {
+                showToast("Could not get the shared text")
+                return
+            }
+
+            val fragment = supportFragmentManager.fragments[0].childFragmentManager.fragments[0] as ShelfFragment
+            fragment.handleSharedText(text)
+        } else if (intent.action == Intent.ACTION_SEND) {
+            val fileUri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
+            if (fileUri == null) {
+                showToast("Could not get the shared file")
+                return
+            }
+
+            val fragment = supportFragmentManager.fragments[0].childFragmentManager.fragments[0] as ShelfFragment
+            fragment.handleSharedFiles(listOf(fileUri))
+        } else if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
+            val fileUris = intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)?.map { it as? Uri }
+            if (fileUris == null || fileUris.any { it == null }) {
+                showToast("Could not get the shared files")
+                return
+            }
+
+            val checkedFileUris = fileUris.map { it!! }
+            val fragment = supportFragmentManager.fragments[0].childFragmentManager.fragments[0] as ShelfFragment
+            fragment.handleSharedFiles(checkedFileUris)
+        }
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     private fun startApiService() {

@@ -48,6 +48,7 @@ suspend fun RequestManager.postLogin(loginBody: LoginBody) {
         persistentStorage.refreshCookie = cookies[0]
     }
 
+    persistentStorage.email = loginBody.email
     updateCookies()
 }
 
@@ -76,18 +77,26 @@ suspend fun RequestManager.postRegister(loginBody: LoginBody) {
         persistentStorage.refreshCookie = cookies[0]
     }
 
+    persistentStorage.email = loginBody.email
     updateCookies()
 }
 
 suspend fun RequestManager.getLogout() {
     val url = "$apiUrl/logout"
-    val req = httpClient.prepareGet(url)
+    val req = httpClient.prepareGet(url) {
+        headers.append("Cookie", accessCookie)
+    }
 
     val res = executeRequest(req)
     handleHttpStatus(res.status)
 
+    println("Before: ${persistentStorage.accessCookie}; ${persistentStorage.refreshCookie}; ${persistentStorage.email}")
+
     persistentStorage.accessCookie = null
     persistentStorage.refreshCookie = null
 
+    persistentStorage.email = null
     updateCookies()
+
+    println("After: ${persistentStorage.accessCookie}; ${persistentStorage.refreshCookie}; ${persistentStorage.email}")
 }

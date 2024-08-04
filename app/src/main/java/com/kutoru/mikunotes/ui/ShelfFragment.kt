@@ -44,6 +44,9 @@ class ShelfFragment : CustomFragment() {
     private lateinit var loadDialog: ProgressDialog
     private lateinit var shelf: Shelf
 
+    private var fromShareCallback: (suspend () -> Unit)? = null
+    private var initialized = false
+
     private val readFilesPermission = android.Manifest.permission.READ_EXTERNAL_STORAGE
     private val postNotificationPermission = android.Manifest.permission.POST_NOTIFICATIONS
 
@@ -103,20 +106,31 @@ class ShelfFragment : CustomFragment() {
         loadDialog = ProgressDialog(requireContext())
         loadDialog.setMessage("Loading the shelf...")
         loadDialog.setCancelable(false)
-        loadDialog.show()
 
         return binding.root
     }
 
     override fun onResume() {
-        println("shelf onResume")
+        loadDialog.show()
 
         if (serviceIsBound) {
             scope.launch {
                 refreshShelf(true)
+                if (initialized && fromShareCallback != null) {
+                    loadDialog.show()
+                    fromShareCallback?.invoke()
+                    loadDialog.dismiss()
+                }
             }
         } else {
-            onServiceBoundListener = { refreshShelf(true) }
+            onServiceBoundListener = {
+                refreshShelf(true)
+                if (initialized && fromShareCallback != null) {
+                    loadDialog.show()
+                    fromShareCallback?.invoke()
+                    loadDialog.dismiss()
+                }
+            }
         }
 
         super.onResume()
@@ -126,9 +140,9 @@ class ShelfFragment : CustomFragment() {
         onServiceBoundListener = null
 
         scope.launch {
-            try {
+            if (initialized) {
                 saveShelf(true)
-            } catch (e: UninitializedPropertyAccessException) {}
+            }
         }
 
         super.onPause()
@@ -215,6 +229,7 @@ class ShelfFragment : CustomFragment() {
     private suspend fun refreshShelf(silent: Boolean) {
         shelf = handleRequest { apiService.getShelf() } ?: return
         updateCurrentShelf(true)
+        initialized = true
         loadDialog.dismiss()
         if (!silent) {
             showToast("The shelf has been refreshed")
@@ -308,5 +323,24 @@ class ShelfFragment : CustomFragment() {
         return ContextCompat.checkSelfPermission(
             requireContext(), readFilesPermission,
         ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun handleSharedText(text: String) {
+        println("handleSharedText $text")
+        fromShareCallback = {
+            scope.launch {
+                binding.etShelfText.setText(text)
+                saveShelf(true)
+            }
+        }
+    }
+
+    fun handleSharedFiles(fileUris: List<Uri>) {
+        println("handleSharedFiles $fileUris")
+        fromShareCallback = {
+            scope.launch {
+                uploadFiles(fileUris)
+            }
+        }
     }
 }

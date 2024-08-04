@@ -68,7 +68,8 @@ class RequestManager(
             throw when (e) {
                 is ConnectException,
                 is UnresolvedAddressException,
-                is URLParserException -> InvalidUrl()
+                is URLParserException,
+                is IllegalArgumentException -> InvalidUrl()
                 else -> e
             }
         }
