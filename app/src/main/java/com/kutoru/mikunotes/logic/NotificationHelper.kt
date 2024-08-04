@@ -67,7 +67,7 @@ class NotificationHelper {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
-                .setProgress(100, 0, true)
+                .setProgress(100, 0, false)
                 .setAutoCancel(false)
         }
 

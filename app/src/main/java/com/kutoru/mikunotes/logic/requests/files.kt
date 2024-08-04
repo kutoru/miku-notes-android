@@ -9,6 +9,7 @@ import com.kutoru.mikunotes.logic.NotificationHelper
 import com.kutoru.mikunotes.models.File
 import com.kutoru.mikunotes.models.ResultBody
 import io.ktor.client.call.body
+import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.forms.InputProvider
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.prepareFormWithBinaryData
@@ -23,9 +24,9 @@ import io.ktor.utils.io.core.readBytes
 import io.ktor.utils.io.streams.asInput
 import java.util.Calendar
 
-private fun getFileName(contentResolver: ContentResolver, fileUri: Uri): String {
+private fun getFileInfo(contentResolver: ContentResolver, fileUri: Uri, openableColumn: String): String {
     val returnCursor = contentResolver.query(fileUri, null, null, null, null)!!
-    val nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+    val nameIndex = returnCursor.getColumnIndex(openableColumn)
     returnCursor.moveToFirst()
     val name = returnCursor.getString(nameIndex)
     returnCursor.close()
@@ -45,7 +46,8 @@ suspend fun RequestManager.postFile(fileUri: Uri, attachId: Int, attachKey: Stri
     val currNotifIndex = ++notificationIndex
 
     val fileStream = context.contentResolver.openInputStream(fileUri)!!
-    val fileName = getFileName(context.contentResolver, fileUri)
+    val fileName = getFileInfo(context.contentResolver, fileUri, OpenableColumns.DISPLAY_NAME)
+    val fileSize = getFileInfo(context.contentResolver, fileUri, OpenableColumns.SIZE)
 
     val form = formData {
         append(attachKey, "$attachId")
@@ -60,14 +62,25 @@ suspend fun RequestManager.postFile(fileUri: Uri, attachId: Int, attachKey: Stri
         )
     }
 
-    val url = "$apiUrl/files"
-    val req = httpClient.prepareFormWithBinaryData(url, form) {
-        headers.append("Cookie", accessCookie)
-    }
-
+    var lastUpdated = Calendar.getInstance().timeInMillis
     var notification = NotificationHelper.getUploadInProgress(context, fileName)
     if (notificationPermissionGranted()) {
         notificationManager.notify(currNotifIndex, notification.build())
+    }
+
+    val url = "$apiUrl/files"
+    val req = httpClient.prepareFormWithBinaryData(url, form) {
+        headers.append("Cookie", accessCookie)
+        onUpload { bytesSentTotal, _ ->
+            val progress = ((bytesSentTotal / fileSize.toFloat()) * 100).toInt()
+            notification.setProgress(100, progress, false)
+
+            val current = Calendar.getInstance().timeInMillis
+            if (notificationPermissionGranted() && lastUpdated + 1000 <= current) {
+                lastUpdated = current
+                notificationManager.notify(currNotifIndex, notification.build())
+            }
+        }
     }
 
     val res = executeRequest(req)
