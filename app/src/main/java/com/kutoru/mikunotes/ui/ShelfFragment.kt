@@ -268,7 +268,7 @@ class ShelfFragment : CustomFragment() {
 
     private fun convertShelfToNote() {
         val view = View.inflate(requireContext(), R.layout.dialog_convert_shelf, null)
-        val etNoteTitle = view.findViewById<EditText>(R.id.etNoteTitle)
+        val etNoteTitle = view.findViewById<EditText>(R.id.etConvertNoteTitle)
 
         AlertDialog
             .Builder(requireContext())

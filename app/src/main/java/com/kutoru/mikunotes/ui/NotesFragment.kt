@@ -1,6 +1,7 @@
 package com.kutoru.mikunotes.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -23,10 +24,6 @@ class NotesFragment : CustomFragment() {
     private lateinit var notificationPermissionActivityLauncher: ActivityResultLauncher<String>
     private lateinit var storagePermissionActivityLauncher: ActivityResultLauncher<String>
 
-    private val fileHash = "f37e3f64-14b4-4c87-9f1a-f183182115c2"
-    private val email = "kuromix@mail.ru"
-    private val pass = "12345678"
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -36,66 +33,18 @@ class NotesFragment : CustomFragment() {
 
         binding = FragmentNotesBinding.inflate(inflater, container, false)
 
-        binding.tvNote.text = "This is the Notes menu"
         binding.fabAddNote.setOnClickListener {
-            Snackbar.make(it, "*add a note*", Snackbar.LENGTH_LONG).show()
-        }
-
-        binding.btnDownload.setOnClickListener {
-            if (!NotificationHelper.permissionGranted(requireContext())) {
-                notificationPermissionActivityLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-
-            if (!storagePermissionGranted()) {
-                storagePermissionActivityLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                return@setOnClickListener
-            }
-
-            scope.launch {
-                apiService.getFile(fileHash)
-            }
+            val intent = Intent(requireActivity(), NoteActivity::class.java)
+            requireActivity().startActivity(intent)
         }
 
         val permissionContract = ActivityResultContracts.RequestPermission()
         notificationPermissionActivityLauncher = registerForActivityResult(permissionContract) {
-            println("notification permission granted: $it")
-
-            if (!it) {
-                Toast.makeText(
-                    requireContext(),
-                    "You won't see download notifications without the notification permission",
-                    Toast.LENGTH_LONG,
-                ).show()
-            }
+            println("notificationPermissionActivityLauncher $it")
         }
 
         storagePermissionActivityLauncher = registerForActivityResult(permissionContract) {
-            println("storage permission granted: $it")
-
-            if (!it) {
-                Toast.makeText(
-                    requireContext(),
-                    "You won't be able to download files without the storage permission",
-                    Toast.LENGTH_LONG,
-                ).show()
-            } else {
-                scope.launch {
-                    apiService.getFile(fileHash)
-                }
-            }
-        }
-
-        binding.btnGetShelf.setOnClickListener {
-            scope.launch {
-                val shelf = apiService.getShelf()
-                println("shelf: $shelf")
-            }
-        }
-
-        binding.btnLogin.setOnClickListener {
-            scope.launch {
-                apiService.postLogin(LoginBody(email, pass))
-            }
+            println("storagePermissionActivityLauncher $it")
         }
 
         (requireActivity() as MainActivity).setNotesOptionsMenu()

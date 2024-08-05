@@ -16,7 +16,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
+        app:layout_constraintTop_toBottomOf="@+id/tvConvertTitle" />
 
     <CheckBox
         android:id="@+id/cbIsSecure"
@@ -43,7 +43,7 @@
         app:layout_constraintTop_toBottomOf="@+id/etDomain" />
 
     <TextView
-        android:id="@+id/tvTitle"
+        android:id="@+id/tvConvertTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Set backend url properties"

@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Binder
 import android.os.IBinder
-import android.widget.Toast
 import com.kutoru.mikunotes.logic.requests.RequestManager
 import com.kutoru.mikunotes.logic.requests.deleteFile
 import com.kutoru.mikunotes.logic.requests.deleteShelf
@@ -59,8 +58,6 @@ class ApiService : Service() {
         return try {
             fnToCall()
         } catch (e: Unauthorized) {
-            Toast.makeText(applicationContext, "Trying to refresh the access token", Toast.LENGTH_LONG).show()
-            println("Trying to refresh the access token")
             getAccess()
             fnToCall()
         }

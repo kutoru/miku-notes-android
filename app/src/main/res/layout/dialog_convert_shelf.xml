@@ -6,7 +6,7 @@
     android:padding="8dp">
 
     <TextView
-        android:id="@+id/tvTitle"
+        android:id="@+id/tvConvertTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Convert the shelf to a new note"
@@ -16,7 +16,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
-        android:id="@+id/etNoteTitle"
+        android:id="@+id/etConvertNoteTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -25,6 +25,6 @@
         android:inputType="text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvTitle" />
+        app:layout_constraintTop_toBottomOf="@+id/tvConvertTitle" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

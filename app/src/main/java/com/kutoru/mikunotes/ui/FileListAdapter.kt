@@ -54,7 +54,7 @@ class FileListAdapter(
             val tvSize = cardView.findViewById<TextView>(R.id.tvSize)
             val btnDelete = cardView.findViewById<Button>(R.id.btnDelete)
             val btnDownload = cardView.findViewById<Button>(R.id.btnDownload)
-            val tvTitle = cardView.findViewById<TextView>(R.id.tvTitle)
+            val tvTitle = cardView.findViewById<TextView>(R.id.tvConvertTitle)
             val tvDate = cardView.findViewById<TextView>(R.id.tvDate)
 
             val created = LocalDateTime
