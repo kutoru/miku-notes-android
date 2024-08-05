@@ -24,8 +24,10 @@ class FileListAdapter(
 ) : RecyclerView.Adapter<FileListAdapter.ViewHolder>() {
 
     companion object {
-        private const val MARGIN_SIZE = 16
+        const val MARGIN_SIZE = 16
     }
+
+    var setHeightCallback: ((cardSideLength: Int) -> Unit)? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FileListAdapter.ViewHolder {
         val cardSideLength = parent.width / 3 - (2 * MARGIN_SIZE)
@@ -35,6 +37,8 @@ class FileListAdapter(
         layoutParams.width = cardSideLength
         layoutParams.height = cardSideLength
         layoutParams.setMargins(MARGIN_SIZE)
+
+        setHeightCallback?.invoke(cardSideLength)
 
         return ViewHolder(view)
     }
@@ -59,7 +63,7 @@ class FileListAdapter(
 
             val created = LocalDateTime
                 .ofEpochSecond(file.created, 0, ZoneOffset.UTC)
-                .format(DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss"))
+                .format(DateTimeFormatter.ofPattern("yy/MM/dd HH:mm"))
 
             val mul = 1000f
 
