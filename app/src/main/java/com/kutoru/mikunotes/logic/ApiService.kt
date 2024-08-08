@@ -8,19 +8,24 @@ import android.os.IBinder
 import com.kutoru.mikunotes.logic.requests.RequestManager
 import com.kutoru.mikunotes.logic.requests.deleteFile
 import com.kutoru.mikunotes.logic.requests.deleteShelf
+import com.kutoru.mikunotes.logic.requests.deleteTags
 import com.kutoru.mikunotes.logic.requests.getAccess
 import com.kutoru.mikunotes.logic.requests.getFile
 import com.kutoru.mikunotes.logic.requests.getLogout
 import com.kutoru.mikunotes.logic.requests.getShelf
+import com.kutoru.mikunotes.logic.requests.getTags
 import com.kutoru.mikunotes.logic.requests.patchShelf
+import com.kutoru.mikunotes.logic.requests.patchTags
 import com.kutoru.mikunotes.logic.requests.postFileToNote
 import com.kutoru.mikunotes.logic.requests.postFileToShelf
 import com.kutoru.mikunotes.logic.requests.postLogin
 import com.kutoru.mikunotes.logic.requests.postRegister
 import com.kutoru.mikunotes.logic.requests.postShelfToNote
+import com.kutoru.mikunotes.logic.requests.postTags
 import com.kutoru.mikunotes.models.LoginBody
 import com.kutoru.mikunotes.models.ShelfPatch
 import com.kutoru.mikunotes.models.ShelfToNote
+import com.kutoru.mikunotes.models.TagPost
 
 class ApiService : Service() {
 
@@ -48,6 +53,11 @@ class ApiService : Service() {
     suspend fun postFileToShelf(fileUri: Uri, shelfId: Int) = makeRequest { requestManager.postFileToShelf(fileUri, shelfId) }
     suspend fun getFile(fileHash: String) = makeRequest { requestManager.getFile(fileHash) }
     suspend fun deleteFile(fileId: Int) = makeRequest { requestManager.deleteFile(fileId) }
+
+    suspend fun getTags() = makeRequest { requestManager.getTags() }
+    suspend fun postTags(body: TagPost) = makeRequest { requestManager.postTags(body) }
+    suspend fun deleteTags(tagId: Int) = makeRequest { requestManager.deleteTags(tagId) }
+    suspend fun patchTags(body: TagPost) = makeRequest { requestManager.patchTags(body) }
 
     suspend fun getShelf() = makeRequest { requestManager.getShelf() }
     suspend fun deleteShelf() = makeRequest { requestManager.deleteShelf() }

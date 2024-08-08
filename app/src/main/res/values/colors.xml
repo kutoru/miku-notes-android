@@ -17,4 +17,7 @@
 
     <color name="bg">#030706</color>
     <color name="bg_sec">#354D63</color>
+
+    <color name="bg_main">#121212</color>
+    <color name="bg_main_sec">#424242</color>
 </resources>

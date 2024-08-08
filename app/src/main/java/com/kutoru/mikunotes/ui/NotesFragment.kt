@@ -8,15 +8,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
-import com.google.android.material.snackbar.Snackbar
 import com.kutoru.mikunotes.databinding.FragmentNotesBinding
-import com.kutoru.mikunotes.logic.NotificationHelper
-import com.kutoru.mikunotes.models.LoginBody
-import kotlinx.coroutines.launch
 
 class NotesFragment : CustomFragment() {
 

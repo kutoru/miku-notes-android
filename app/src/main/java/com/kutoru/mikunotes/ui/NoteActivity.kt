@@ -4,12 +4,17 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityNoteBinding
 import com.kutoru.mikunotes.logic.ApiService
@@ -19,6 +24,7 @@ import com.kutoru.mikunotes.models.Tag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -29,8 +35,11 @@ class NoteActivity : AppCompatActivity() {
     private val scope = CoroutineScope(Dispatchers.Main + job)
 
     private lateinit var binding: ActivityNoteBinding
+    private lateinit var tagDialog: View
     private lateinit var tagAdapter: TagListAdapter
     private lateinit var fileAdapter: FileListAdapter
+    private lateinit var tagDialogAdapter: TagDialogAdapter
+    private var tags = mutableListOf<Tag>()
     private lateinit var note: Note
     private var initialized = false
 
@@ -95,11 +104,21 @@ class NoteActivity : AppCompatActivity() {
             }
         }
 
+        tagDialogAdapter = TagDialogAdapter(
+            this,
+            listOf(),
+            ::dialogMoveTag,
+            ::dialogSaveTag,
+            ::dialogDeleteTag,
+            ::dialogGetMoveButtonIcon,
+        )
+
         binding.rvNoteTags.adapter = tagAdapter
 
         binding.rvNoteFiles.adapter = fileAdapter
         binding.rvNoteFiles.layoutManager = GridLayoutManager(this, 3)
 
+        setupTagDialog()
         startApiService()
     }
 
@@ -172,10 +191,6 @@ class NoteActivity : AppCompatActivity() {
         bindService(bindIntent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
-    private fun removeTag(position: Int) {
-        println("removeTag: ${note.tags.getOrNull(position)}")
-    }
-
     private fun deleteFile(position: Int) {
         println("deleteFile: ${note.files.getOrNull(position)}")
     }
@@ -215,6 +230,60 @@ class NoteActivity : AppCompatActivity() {
 
     private fun openTagDialog() {
         println("openTagDialog")
+        scope.launch {
+            tags = apiService.getTags()
+            tags = mutableListOf(
+                Tag(1723018115, 1, "tag name 1", null, 1), Tag(1723018115, 2, "tag name 2", null, 1),
+                Tag(1723018115, 3, "tag name 3", null, 1), Tag(1723018115, 4, "tag name 4", null, 1),
+                Tag(1723018115, 1, "tag name 5", null, 1), Tag(1723018115, 2, "tag name 6", null, 1),
+                Tag(1723018115, 3, "tag name 7", null, 1), Tag(1723018115, 4, "tag name 8", null, 1),
+                Tag(1723018115, 1, "tag name 9", null, 1), Tag(1723018115, 2, "tag name 10", null, 1),
+                Tag(1723018115, 3, "tag name 11", null, 1), Tag(1723018115, 4, "tag name 12", null, 1),
+                Tag(1723018115, 1, "tag name 13", null, 1), Tag(1723018115, 2, "tag name 14", null, 1),
+                Tag(1723018115, 3, "tag name 15", null, 1), Tag(1723018115, 4, "tag name 16", null, 1),
+            )
+            println("tags: $tags")
+
+            tagDialogAdapter.tags = tags
+            tagDialogAdapter.notifyDataSetChanged()
+
+            tagDialog.visibility = View.VISIBLE
+        }
+    }
+
+    private fun setupTagDialog() {
+        val view = View.inflate(this@NoteActivity, R.layout.dialog_add_tag, null)
+        val btnDialogTagBack = view.findViewById<Button>(R.id.btnDialogTagBack)
+        val rvDialogTags = view.findViewById<RecyclerView>(R.id.rvDialogTagList)
+        val btnDialogTagAdd = view.findViewById<Button>(R.id.btnDialogTagAdd)
+
+        btnDialogTagBack.setOnClickListener {
+            tagDialog.visibility = View.GONE
+            val inputManager = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            inputManager?.hideSoftInputFromWindow(binding.root.windowToken, 0)
+        }
+
+        rvDialogTags.adapter = tagDialogAdapter
+        tagDialogAdapter.tags = tags
+        tagDialogAdapter.notifyDataSetChanged()
+
+        btnDialogTagAdd.setOnClickListener {
+            createNewTag()
+        }
+
+        view.visibility = View.GONE
+        binding.root.addView(view)
+
+        val viewParams = view.layoutParams
+        viewParams.height = -1
+        viewParams.width = -1
+        view.layoutParams = viewParams
+
+        tagDialog = view
+    }
+
+    private fun removeTag(position: Int) {
+        println("removeTag: ${note.tags.getOrNull(position)}")
     }
 
     private fun refreshNote() {
@@ -227,5 +296,29 @@ class NoteActivity : AppCompatActivity() {
 
     private fun deleteNote() {
         println("deleteNote")
+    }
+
+    private fun dialogGetMoveButtonIcon(position: Int): Drawable {
+        return if (note.tags.contains(tags[position])) {
+            getDrawable(R.drawable.ic_cross)!!
+        } else {
+            getDrawable(R.drawable.ic_add)!!
+        }
+    }
+
+    private fun dialogMoveTag(position: Int) {
+        println("dialogMoveTag")
+    }
+
+    private fun dialogSaveTag(position: Int) {
+        println("dialogSaveTag")
+    }
+
+    private fun dialogDeleteTag(position: Int) {
+        println("dialogDeleteTag")
+    }
+
+    private fun createNewTag() {
+        println("createNewTag")
     }
 }
