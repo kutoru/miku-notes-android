@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui
+package com.kutoru.mikunotes.ui.fragments
 
 import android.content.ComponentName
 import android.content.Context
@@ -16,14 +16,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-open class CustomFragment : Fragment() {
+open class ServiceBoundFragment : Fragment() {
 
     private val job = Job()
     protected val scope = CoroutineScope(Dispatchers.Main + job)
 
     protected lateinit var apiService: ApiService
     protected var serviceIsBound = false
-    protected var onServiceBoundListener: (suspend () -> Unit)? = null
+    protected var onServiceBound: (suspend ApiService.() -> Unit)? = null
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -31,9 +31,10 @@ open class CustomFragment : Fragment() {
             apiService = binder.getService()
             serviceIsBound = true
 
-            if (onServiceBoundListener != null) {
+            apiService.currentContext = requireContext()
+            if (onServiceBound != null) {
                 scope.launch {
-                    onServiceBoundListener!!.invoke()
+                    onServiceBound!!.invoke(apiService)
                 }
             }
         }
@@ -59,6 +60,7 @@ open class CustomFragment : Fragment() {
 
     override fun onDestroy() {
         if (serviceIsBound) {
+            apiService.currentContext = null
             requireActivity().unbindService(serviceConnection)
             serviceIsBound = false
         }

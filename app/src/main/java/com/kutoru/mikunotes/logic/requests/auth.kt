@@ -2,40 +2,23 @@ package com.kutoru.mikunotes.logic.requests
 
 import com.kutoru.mikunotes.logic.ServerError
 import com.kutoru.mikunotes.models.LoginBody
-import io.ktor.client.request.prepareGet
-import io.ktor.client.request.preparePost
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
+import io.ktor.http.HttpMethod
 
 suspend fun RequestManager.getAccess() {
-    val url = "$apiUrl/access"
-    val req = httpClient.prepareGet(url) {
-        headers.append("Cookie", refreshCookie)
-    }
+    val res = executeRequestUntilResponse("$apiUrl/access", HttpMethod.Get)
 
-    val res = executeRequest(req)
-    handleHttpStatus(res.status)
-
-    val accessCookie = res.headers["set-cookie"] ?: throw ServerError()
+    val accessCookie = res.headers["set-cookie"] ?: throw ServerError("Did not get the access cookie")
     persistentStorage.accessCookie = accessCookie
 
     updateCookies()
 }
 
-suspend fun RequestManager.postLogin(loginBody: LoginBody) {
-    val url = "$apiUrl/login"
-    val req = httpClient.preparePost(url) {
-        contentType(ContentType.Application.Json)
-        setBody(loginBody)
-    }
-
-    val res = executeRequest(req)
-    handleHttpStatus(res.status)
+suspend fun RequestManager.postLogin(body: LoginBody) {
+    val res = executeRequestUntilResponse("$apiUrl/login", HttpMethod.Post, body)
 
     val rawCookies = res.headers.getAll("set-cookie")
     if (rawCookies == null || rawCookies.size != 2) {
-        throw ServerError()
+        throw ServerError("Got invalid cookies")
     }
 
     val cookies = rawCookies.map { it.split(';')[0] }
@@ -48,23 +31,16 @@ suspend fun RequestManager.postLogin(loginBody: LoginBody) {
         persistentStorage.refreshCookie = cookies[0]
     }
 
-    persistentStorage.email = loginBody.email
+    persistentStorage.email = body.email
     updateCookies()
 }
 
-suspend fun RequestManager.postRegister(loginBody: LoginBody) {
-    val url = "$apiUrl/register"
-    val req = httpClient.preparePost(url) {
-        contentType(ContentType.Application.Json)
-        setBody(loginBody)
-    }
-
-    val res = executeRequest(req)
-    handleHttpStatus(res.status)
+suspend fun RequestManager.postRegister(body: LoginBody) {
+    val res = executeRequestUntilResponse("$apiUrl/register", HttpMethod.Post, body)
 
     val rawCookies = res.headers.getAll("set-cookie")
     if (rawCookies == null || rawCookies.size != 2) {
-        throw ServerError()
+        throw ServerError("Got invalid cookies")
     }
 
     val cookies = rawCookies.map { it.split(';')[0] }
@@ -77,26 +53,16 @@ suspend fun RequestManager.postRegister(loginBody: LoginBody) {
         persistentStorage.refreshCookie = cookies[0]
     }
 
-    persistentStorage.email = loginBody.email
+    persistentStorage.email = body.email
     updateCookies()
 }
 
 suspend fun RequestManager.getLogout() {
-    val url = "$apiUrl/logout"
-    val req = httpClient.prepareGet(url) {
-        headers.append("Cookie", accessCookie)
-    }
-
-    val res = executeRequest(req)
-    handleHttpStatus(res.status)
-
-    println("Before: ${persistentStorage.accessCookie}; ${persistentStorage.refreshCookie}; ${persistentStorage.email}")
+    executeRequestUntilResponse("$apiUrl/logout", HttpMethod.Get)
 
     persistentStorage.accessCookie = null
     persistentStorage.refreshCookie = null
 
     persistentStorage.email = null
     updateCookies()
-
-    println("After: ${persistentStorage.accessCookie}; ${persistentStorage.refreshCookie}; ${persistentStorage.email}")
 }

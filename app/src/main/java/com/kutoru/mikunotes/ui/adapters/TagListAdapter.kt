@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui
+package com.kutoru.mikunotes.ui.adapters
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -21,8 +21,8 @@ class TagListAdapter (
         private const val MARGIN_SIZE = 16
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TagListAdapter.ViewHolder {
-        val view = LayoutInflater.from(context).inflate(R.layout.tag_card, parent, false)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = LayoutInflater.from(context).inflate(R.layout.card_tag, parent, false)
         val layoutParams = view.findViewById<CardView>(R.id.cardView).layoutParams as ViewGroup.MarginLayoutParams
         layoutParams.setMargins(MARGIN_SIZE)
         return ViewHolder(view)

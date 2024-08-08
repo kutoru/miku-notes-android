@@ -1,48 +1,21 @@
-package com.kutoru.mikunotes.ui
+package com.kutoru.mikunotes.ui.activities
 
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
 import android.os.Bundle
-import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
-import androidx.appcompat.app.AppCompatActivity
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityLoginBinding
-import com.kutoru.mikunotes.logic.ApiService
 import com.kutoru.mikunotes.logic.BadRequest
 import com.kutoru.mikunotes.logic.InvalidUrl
+import com.kutoru.mikunotes.logic.LAUNCHED_LOGIN_FROM_ERROR
 import com.kutoru.mikunotes.logic.ServerError
-import com.kutoru.mikunotes.logic.UrlPropertyDialog
 import com.kutoru.mikunotes.models.LoginBody
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import com.kutoru.mikunotes.ui.UrlPropertyDialog
 import kotlinx.coroutines.launch
 
-class LoginActivity : AppCompatActivity() {
-
-    private val job = Job()
-    private val scope = CoroutineScope(Dispatchers.Main + job)
+class LoginActivity : ServiceBoundActivity() {
 
     private lateinit var binding: ActivityLoginBinding
-
-    private lateinit var apiService: ApiService
-    private var serviceIsBound = false
-
-    private val serviceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as ApiService.ServiceBinder
-            apiService = binder.getService()
-            serviceIsBound = true
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            serviceIsBound = false
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,24 +27,16 @@ class LoginActivity : AppCompatActivity() {
         binding.btnLoginRegister.setOnClickListener { handleRegister() }
 
         setSupportActionBar(binding.toolbarLogin)
-        supportActionBar?.title = "Log in or Register"
+        supportActionBar?.title = "Log In or Register"
 
-        startApiService()
-    }
-
-    override fun onDestroy() {
-        if (serviceIsBound) {
-            unbindService(serviceConnection)
-            serviceIsBound = false
+        val fromError = intent.getBooleanExtra(LAUNCHED_LOGIN_FROM_ERROR, false)
+        if (fromError) {
+            showMessage("The login session is invalid. Log in again")
         }
-
-        job.cancel()
-        super.onDestroy()
     }
 
     override fun onBackPressed() {
         super.onBackPressed()
-        println("onBackPressed")
         moveTaskToBack(true)
     }
 
@@ -83,17 +48,12 @@ class LoginActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.actionLoginPropertyDialog -> {
-                UrlPropertyDialog.launch(this, true, callback = { apiService.updateUrl() })
-                return true
+                UrlPropertyDialog.launch(this, null, true) { apiService.updateUrl() }
             }
+            else -> return super.onOptionsItemSelected(item)
         }
 
-        return super.onOptionsItemSelected(item)
-    }
-
-    private fun startApiService() {
-        val bindIntent = Intent(this, ApiService::class.java)
-        bindService(bindIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+        return true
     }
 
     private fun showMessage(message: String) {
@@ -115,11 +75,11 @@ class LoginActivity : AppCompatActivity() {
                 finish()
             } catch (e: Exception) {
                 when (e) {
-                    is InvalidUrl -> showMessage("Could not connect to the backend. Make sure that the backend url is valid")
+                    is InvalidUrl -> showMessage("Could not connect to the server. Make sure that the URL is valid and the server is running")
                     is BadRequest -> showMessage("Could not log in. Check your email and password")
-                    is ServerError -> showMessage("Server error")
+                    is ServerError -> showMessage("Server error: $e")
                     else -> {
-                        println("unknown err on login: $e")
+                        println("Got an unknown error on login: $e")
                         throw e
                     }
                 }
@@ -142,11 +102,11 @@ class LoginActivity : AppCompatActivity() {
                 finish()
             } catch (e: Exception) {
                 when (e) {
-                    is InvalidUrl -> showMessage("Could not connect to the backend. Make sure that the backend url is valid")
-                    is BadRequest -> showMessage("Could not register. Your email or password might be invalid, or the user already exists")
-                    is ServerError -> showMessage("Server error")
+                    is InvalidUrl -> showMessage("Could not connect to the server. Make sure that the URL is valid and the server is running")
+                    is BadRequest -> showMessage("Could not register. Your email or password might be invalid, or a user with such email might already exist")
+                    is ServerError -> showMessage("Server error: $e")
                     else -> {
-                        println("unknown err on login: $e")
+                        println("Got an unknown error on register: $e")
                         throw e
                     }
                 }

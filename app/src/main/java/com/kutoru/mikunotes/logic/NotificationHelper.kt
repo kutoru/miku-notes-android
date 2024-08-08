@@ -14,7 +14,7 @@ import java.io.File
 
 class NotificationHelper {
     companion object {
-        fun permissionGranted(context: Context): Boolean {
+        fun canSend(context: Context): Boolean {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                 return true
             }

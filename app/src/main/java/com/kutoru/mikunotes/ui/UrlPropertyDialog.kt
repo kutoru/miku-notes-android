@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.logic
+package com.kutoru.mikunotes.ui
 
 import android.content.Context
 import android.view.View
@@ -9,10 +9,11 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.kutoru.mikunotes.R
+import com.kutoru.mikunotes.logic.PersistentStorage
 
 class UrlPropertyDialog {
     companion object {
-        fun launch(context: Context, cancelable: Boolean, customMessage: String? = null, callback: (() -> Unit)? = null) {
+        fun launch(context: Context, customMessage: String?, cancelable: Boolean, onSave: (() -> Unit)?) {
             val storage = PersistentStorage(context)
             val domain = storage.domain
             val port = storage.port
@@ -23,7 +24,7 @@ class UrlPropertyDialog {
             val etPort = view.findViewById<EditText>(R.id.etPort)
             val cbIsSecure = view.findViewById<CheckBox>(R.id.cbIsSecure)
             val tvMessage = view.findViewById<TextView>(R.id.tvMessage)
-            val btnSubmit = view.findViewById<Button>(R.id.btnSubmit)
+            val btnSave = view.findViewById<Button>(R.id.btnSave)
 
             if (domain != null) {
                 etDomain.setText(domain)
@@ -44,36 +45,32 @@ class UrlPropertyDialog {
 
             val dialog = AlertDialog
                 .Builder(context)
-                .setCancelable(false)
-                .setView(view)
                 .setCancelable(cancelable)
+                .setView(view)
                 .show()
 
-            btnSubmit.setOnClickListener {
+            btnSave.setOnClickListener {
                 val domain = etDomain.text.toString().trim()
                 if (domain.isEmpty()) {
                     Toast.makeText(context, "The domain/IP field cannot be empty", Toast.LENGTH_LONG).show()
                     return@setOnClickListener
                 }
 
-                val port = etPort.text.toString().trim().toIntOrNull()
-                if (port == null || port < 0 || port > 65000) {
-                    Toast.makeText(context, "The port field should be a valid unsigned 16bit int", Toast.LENGTH_LONG).show()
+                val port = etPort.text.toString().trim().toUShortOrNull()
+                if (port == null) {
+                    Toast.makeText(context, "The port field should be a valid port", Toast.LENGTH_LONG).show()
                     return@setOnClickListener
                 }
 
                 val isSecure = cbIsSecure.isChecked
 
                 storage.domain = domain
-                storage.port = port
+                storage.port = port.toInt()
                 storage.isSecure = isSecure
 
-                Toast.makeText(context, "The url properties have successfully been set", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "URL properties saved", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()
-
-                if (callback != null) {
-                    callback()
-                }
+                onSave?.invoke()
             }
         }
     }

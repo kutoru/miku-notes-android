@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui
+package com.kutoru.mikunotes.ui.adapters
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -29,10 +29,10 @@ class FileListAdapter(
 
     var setHeightCallback: ((cardSideLength: Int) -> Unit)? = null
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FileListAdapter.ViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val cardSideLength = parent.width / 3 - (2 * MARGIN_SIZE)
 
-        val view = LayoutInflater.from(context).inflate(R.layout.file_card, parent, false)
+        val view = LayoutInflater.from(context).inflate(R.layout.card_file, parent, false)
         val layoutParams = view.findViewById<CardView>(R.id.cardView).layoutParams as ViewGroup.MarginLayoutParams
         layoutParams.width = cardSideLength
         layoutParams.height = cardSideLength

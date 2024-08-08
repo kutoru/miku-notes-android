@@ -7,16 +7,14 @@ import android.os.Environment
 import android.provider.OpenableColumns
 import com.kutoru.mikunotes.logic.NotificationHelper
 import com.kutoru.mikunotes.models.File
-import com.kutoru.mikunotes.models.ResultBody
 import io.ktor.client.call.body
 import io.ktor.client.plugins.onUpload
 import io.ktor.client.request.forms.InputProvider
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.prepareFormWithBinaryData
-import io.ktor.client.request.prepareDelete
-import io.ktor.client.request.prepareGet
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.contentLength
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.core.isEmpty
@@ -43,11 +41,11 @@ suspend fun RequestManager.postFileToShelf(filePath: Uri, shelfId: Int): File {
 
 @SuppressLint("MissingPermission")
 suspend fun RequestManager.postFile(fileUri: Uri, attachId: Int, attachKey: String): File {
-    val currNotifIndex = ++notificationIndex
+    val currNotificationIndex = ++notificationIndex
 
     val fileStream = context.contentResolver.openInputStream(fileUri)!!
     val fileName = getFileInfo(context.contentResolver, fileUri, OpenableColumns.DISPLAY_NAME)
-    val fileSize = getFileInfo(context.contentResolver, fileUri, OpenableColumns.SIZE)
+    val fileSize = getFileInfo(context.contentResolver, fileUri, OpenableColumns.SIZE).toFloat()
 
     val form = formData {
         append(attachKey, "$attachId")
@@ -64,49 +62,43 @@ suspend fun RequestManager.postFile(fileUri: Uri, attachId: Int, attachKey: Stri
 
     var lastUpdated = Calendar.getInstance().timeInMillis
     var notification = NotificationHelper.getUploadInProgress(context, fileName)
-    if (notificationPermissionGranted()) {
-        notificationManager.notify(currNotifIndex, notification.build())
+    if (NotificationHelper.canSend(context)) {
+        notificationManager.notify(currNotificationIndex, notification.build())
     }
 
-    val url = "$apiUrl/files"
-    val req = httpClient.prepareFormWithBinaryData(url, form) {
+    val req = httpClient.prepareFormWithBinaryData("$apiUrl/files", form) {
         headers.append("Cookie", accessCookie)
+
         onUpload { bytesSentTotal, _ ->
-            val progress = ((bytesSentTotal / fileSize.toFloat()) * 100).toInt()
+            val progress = ((bytesSentTotal / fileSize) * 100).toInt()
             notification.setProgress(100, progress, false)
 
             val current = Calendar.getInstance().timeInMillis
-            if (notificationPermissionGranted() && lastUpdated + 1000 <= current) {
+            if (NotificationHelper.canSend(context) && lastUpdated + 1000 <= current) {
                 lastUpdated = current
-                notificationManager.notify(currNotifIndex, notification.build())
+                notificationManager.notify(currNotificationIndex, notification.build())
             }
         }
     }
 
-    val res = executeRequest(req)
-    fileStream.close()
-    handleHttpStatus(res.status)
-
-    notification = NotificationHelper.getUploadFinished(context, fileName)
-    if (notificationPermissionGranted()) {
-        notificationManager.notify(currNotifIndex, notification.build())
+    val fileInfo = try {
+        executeRequestUntilBody<File>(req)
+    } finally {
+        fileStream.close()
     }
 
-    val body: ResultBody<File> = res.body()
-    return handleBody(body)
+    notification = NotificationHelper.getUploadFinished(context, fileName)
+    if (NotificationHelper.canSend(context)) {
+        notificationManager.notify(currNotificationIndex, notification.build())
+    }
+
+    return fileInfo
 }
 
 @SuppressLint("MissingPermission")
 suspend fun RequestManager.getFile(fileHash: String) {
     val currNotifIndex = ++notificationIndex
-
-    val url = "$apiUrl/files/dl/$fileHash"
-    val req = httpClient.prepareGet(url) {
-        headers.append("Cookie", accessCookie)
-    }
-
-    val res = executeRequest(req)
-    handleHttpStatus(res.status)
+    val res = executeRequestUntilResponse("$apiUrl/files/dl/$fileHash", HttpMethod.Get)
 
     val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
     var fileName = res.headers["content-disposition"]?.split('=')?.get(1)?.trim('"') ?: "file.bin"
@@ -122,7 +114,7 @@ suspend fun RequestManager.getFile(fileHash: String) {
     }
 
     val notification = NotificationHelper.getDownloadInProgress(context, fileName)
-    if (notificationPermissionGranted()) {
+    if (NotificationHelper.canSend(context)) {
         notificationManager.notify(currNotifIndex, notification.build())
     }
 
@@ -140,14 +132,14 @@ suspend fun RequestManager.getFile(fileHash: String) {
             notification.setProgress(100, progress, false)
 
             val current = Calendar.getInstance().timeInMillis
-            if (notificationPermissionGranted() && lastUpdated + 1000 <= current) {
+            if (NotificationHelper.canSend(context) && lastUpdated + 1000 <= current) {
                 lastUpdated = current
                 notificationManager.notify(currNotifIndex, notification.build())
             }
         }
     }
 
-    if (notificationPermissionGranted()) {
+    if (NotificationHelper.canSend(context)) {
         val notification = NotificationHelper.getDownloadFinished(context, file)
         notificationManager.notify(currNotifIndex, notification.build())
     }
@@ -156,11 +148,5 @@ suspend fun RequestManager.getFile(fileHash: String) {
 }
 
 suspend fun RequestManager.deleteFile(fileId: Int) {
-    val url = "$apiUrl/files/$fileId"
-    val req = httpClient.prepareDelete(url) {
-        headers.append("Cookie", accessCookie)
-    }
-
-    val res = executeRequest(req)
-    handleHttpStatus(res.status)
+    executeRequestUntilResponse("$apiUrl/files/$fileId", HttpMethod.Delete)
 }

@@ -1,10 +1,12 @@
 package com.kutoru.mikunotes.logic
 
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Binder
 import android.os.IBinder
+import android.widget.Toast
 import com.kutoru.mikunotes.logic.requests.RequestManager
 import com.kutoru.mikunotes.logic.requests.deleteFile
 import com.kutoru.mikunotes.logic.requests.deleteShelf
@@ -26,11 +28,16 @@ import com.kutoru.mikunotes.models.LoginBody
 import com.kutoru.mikunotes.models.ShelfPatch
 import com.kutoru.mikunotes.models.ShelfToNote
 import com.kutoru.mikunotes.models.TagPost
+import com.kutoru.mikunotes.ui.UrlPropertyDialog
+import com.kutoru.mikunotes.ui.activities.LoginActivity
 
 class ApiService : Service() {
 
     private val binder = ServiceBinder()
     private lateinit var requestManager: RequestManager
+
+    var afterUrlPropertySave: (() -> Unit)? = null
+    var currentContext: Context? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -42,34 +49,74 @@ class ApiService : Service() {
     }
 
     fun updateUrl() = requestManager.updateUrl()
-    private fun updateCookies() = requestManager.updateCookies()
 
     private suspend fun getAccess() = requestManager.getAccess()
     suspend fun postLogin(loginBody: LoginBody) = requestManager.postLogin(loginBody)
     suspend fun postRegister(loginBody: LoginBody) = requestManager.postRegister(loginBody)
-    suspend fun getLogout() = makeRequest { requestManager.getLogout() }
+    suspend fun getLogout(onFailMessage: String?) = makeRequest(onFailMessage) { requestManager.getLogout() }
 
-    suspend fun postFileToNote(fileUri: Uri, noteId: Int) = makeRequest { requestManager.postFileToNote(fileUri, noteId) }
-    suspend fun postFileToShelf(fileUri: Uri, shelfId: Int) = makeRequest { requestManager.postFileToShelf(fileUri, shelfId) }
-    suspend fun getFile(fileHash: String) = makeRequest { requestManager.getFile(fileHash) }
-    suspend fun deleteFile(fileId: Int) = makeRequest { requestManager.deleteFile(fileId) }
+    suspend fun postFileToNote(onFailMessage: String?, fileUri: Uri, noteId: Int) = makeRequest(onFailMessage) { requestManager.postFileToNote(fileUri, noteId) }
+    suspend fun postFileToShelf(onFailMessage: String?, fileUri: Uri, shelfId: Int) = makeRequest(onFailMessage) { requestManager.postFileToShelf(fileUri, shelfId) }
+    suspend fun getFile(onFailMessage: String?, fileHash: String) = makeRequest(onFailMessage) { requestManager.getFile(fileHash) }
+    suspend fun deleteFile(onFailMessage: String?, fileId: Int) = makeRequest(onFailMessage) { requestManager.deleteFile(fileId) }
 
-    suspend fun getTags() = makeRequest { requestManager.getTags() }
-    suspend fun postTags(body: TagPost) = makeRequest { requestManager.postTags(body) }
-    suspend fun deleteTags(tagId: Int) = makeRequest { requestManager.deleteTags(tagId) }
-    suspend fun patchTags(body: TagPost) = makeRequest { requestManager.patchTags(body) }
+    suspend fun getTags(onFailMessage: String?) = makeRequest(onFailMessage) { requestManager.getTags() }
+    suspend fun postTags(onFailMessage: String?, body: TagPost) = makeRequest(onFailMessage) { requestManager.postTags(body) }
+    suspend fun deleteTags(onFailMessage: String?, tagId: Int) = makeRequest(onFailMessage) { requestManager.deleteTags(tagId) }
+    suspend fun patchTags(onFailMessage: String?, body: TagPost) = makeRequest(onFailMessage) { requestManager.patchTags(body) }
 
-    suspend fun getShelf() = makeRequest { requestManager.getShelf() }
-    suspend fun deleteShelf() = makeRequest { requestManager.deleteShelf() }
-    suspend fun patchShelf(body: ShelfPatch) = makeRequest { requestManager.patchShelf(body) }
-    suspend fun postShelfToNote(body: ShelfToNote) = makeRequest { requestManager.postShelfToNote(body) }
+    suspend fun getShelf(onFailMessage: String?) = makeRequest(onFailMessage) { requestManager.getShelf() }
+    suspend fun deleteShelf(onFailMessage: String?) = makeRequest(onFailMessage) { requestManager.deleteShelf() }
+    suspend fun patchShelf(onFailMessage: String?, body: ShelfPatch) = makeRequest(onFailMessage) { requestManager.patchShelf(body) }
+    suspend fun postShelfToNote(onFailMessage: String?, body: ShelfToNote) = makeRequest(onFailMessage) { requestManager.postShelfToNote(body) }
 
-    private suspend fun <T>makeRequest(fnToCall: suspend () -> T): T {
-        return try {
-            fnToCall()
-        } catch (e: Unauthorized) {
-            getAccess()
-            fnToCall()
+    private suspend fun <T>makeRequest(onFailMessage: String?, requestFunction: suspend () -> T): T? {
+        return handleRequestErrors(onFailMessage) {
+            try {
+                requestFunction()
+            } catch (e: Unauthorized) {
+                getAccess()
+                requestFunction()
+            }
+        }
+    }
+
+    private suspend fun <T>handleRequestErrors(onFailMessage: String?, requestFunction: suspend () -> T): T? {
+        try {
+            return requestFunction()
+        } catch(e: Exception) {
+            if (onFailMessage != null) {
+                Toast.makeText(currentContext!!, onFailMessage, Toast.LENGTH_LONG).show()
+            }
+
+            when (e) {
+                is InvalidUrl -> {
+                    UrlPropertyDialog.launch(
+                        currentContext!!,
+                        "Could not connect to the server. Make sure that the URL properties are correct and the server is running",
+                        false,
+                    ) {
+                        updateUrl()
+                        afterUrlPropertySave?.invoke()
+                    }
+
+                    return null
+                }
+
+                is Unauthorized -> {
+                    val intent = Intent(currentContext!!, LoginActivity::class.java)
+                    intent.putExtra(LAUNCHED_LOGIN_FROM_ERROR, true)
+                    currentContext!!.startActivity(intent)
+                    return null
+                }
+
+                is ServerError -> {
+                    println("Unknown server error; Message: $onFailMessage; Error: $e;")
+                    return null
+                }
+
+                else -> throw e
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui
+package com.kutoru.mikunotes.ui.fragments
 
 import android.Manifest
 import android.content.Intent
@@ -12,8 +12,10 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import com.kutoru.mikunotes.databinding.FragmentNotesBinding
+import com.kutoru.mikunotes.ui.activities.MainActivity
+import com.kutoru.mikunotes.ui.activities.NoteActivity
 
-class NotesFragment : CustomFragment() {
+class NotesFragment : ServiceBoundFragment() {
 
     private lateinit var binding: FragmentNotesBinding
     private lateinit var notificationPermissionActivityLauncher: ActivityResultLauncher<String>
@@ -42,7 +44,8 @@ class NotesFragment : CustomFragment() {
             println("storagePermissionActivityLauncher $it")
         }
 
-        (requireActivity() as MainActivity).setNotesOptionsMenu()
+        (requireActivity() as MainActivity)
+            .setNotesOptionsMenu(null)
 
         return binding.root
     }

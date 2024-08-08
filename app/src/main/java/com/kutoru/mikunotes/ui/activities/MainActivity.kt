@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui
+package com.kutoru.mikunotes.ui.activities
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -25,20 +25,18 @@ import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityMainBinding
 import com.kutoru.mikunotes.logic.ApiService
 import com.kutoru.mikunotes.logic.DOWNLOAD_NOTIFICATION_CHANNEL_ID
-
+import com.kutoru.mikunotes.ui.MainActionBarManager
+import com.kutoru.mikunotes.ui.NotesCallbacks
+import com.kutoru.mikunotes.ui.ShelfCallbacks
+import com.kutoru.mikunotes.ui.fragments.ShelfFragment
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
-    private lateinit var optionsMenu: Menu
 
-    var initializeOptionsMenu: () -> Unit = ::setDefaultOptionsMenu
-    private var actionShelfSave: (() -> Unit)? = null
-    private var actionShelfClear: (() -> Unit)? = null
-    private var actionShelfRefresh: (() -> Unit)? = null
-    private var actionShelfConvert: (() -> Unit)? = null
-    private var actionShelfCopy: (() -> Unit)? = null
+    private lateinit var actionBarManager: MainActionBarManager
+    private var initializeOptionsMenu: (() -> Unit)? = null
 
     private lateinit var apiService: ApiService
     private var serviceIsBound = false
@@ -57,10 +55,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-//        val storage = PersistentStorage(this)
-//        storage.accessCookie = null
-//        storage.refreshCookie = null
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -83,23 +77,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        optionsMenu = menu
         menuInflater.inflate(R.menu.main, menu)
-        initializeOptionsMenu()
+        actionBarManager = MainActionBarManager(menu)
+        initializeOptionsMenu?.invoke()
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.actionShelfSave -> actionShelfSave?.invoke()
-            R.id.actionShelfClear -> actionShelfClear?.invoke()
-            R.id.actionShelfRefresh -> actionShelfRefresh?.invoke()
-            R.id.actionShelfConvert -> actionShelfConvert?.invoke()
-            R.id.actionShelfCopy -> actionShelfCopy?.invoke()
-            else -> return super.onOptionsItemSelected(item)
-        }
-
-        return true
+        return actionBarManager.onOptionsItemSelected(item) || super.onOptionsItemSelected(item)
     }
 
     override fun onDestroy() {
@@ -171,63 +156,33 @@ class MainActivity : AppCompatActivity() {
         manager.createNotificationChannel(channel)
     }
 
-    private fun setOptionVisibility(optionId: Int, visible: Boolean) {
-        optionsMenu.findItem(optionId).isVisible = visible
-    }
-
-    private fun setDefaultOptionsMenu() {
-        setOptionVisibility(R.id.actionShelfSave, false)
-        setOptionVisibility(R.id.actionShelfClear, false)
-        setOptionVisibility(R.id.actionShelfRefresh, false)
-        setOptionVisibility(R.id.actionShelfConvert, false)
-        setOptionVisibility(R.id.actionShelfCopy, false)
-    }
-
-    fun setShelfOptionsMenu(
-        actionShelfSave: () -> Unit,
-        actionShelfClear: () -> Unit,
-        actionShelfRefresh: () -> Unit,
-        actionShelfConvert: () -> Unit,
-        actionShelfCopy: () -> Unit,
-    ) {
+    fun setShelfOptionsMenu(callbacks: ShelfCallbacks?) {
         try {
-            setDefaultOptionsMenu()
-
-            this.actionShelfSave = actionShelfSave
-            this.actionShelfClear = actionShelfClear
-            this.actionShelfRefresh = actionShelfRefresh
-            this.actionShelfConvert = actionShelfConvert
-            this.actionShelfCopy = actionShelfCopy
-
-            setOptionVisibility(R.id.actionShelfSave, true)
-            setOptionVisibility(R.id.actionShelfClear, true)
-            setOptionVisibility(R.id.actionShelfRefresh, true)
-            setOptionVisibility(R.id.actionShelfConvert, true)
-            setOptionVisibility(R.id.actionShelfCopy, true)
+            actionBarManager.setShelfFragment(callbacks)
         } catch (e: UninitializedPropertyAccessException) {
-            initializeOptionsMenu = { setShelfOptionsMenu(
-                actionShelfSave,
-                actionShelfClear,
-                actionShelfRefresh,
-                actionShelfConvert,
-                actionShelfCopy,
-            ) }
+            initializeOptionsMenu = {
+                actionBarManager.setShelfFragment(callbacks)
+            }
         }
     }
 
-    fun setNotesOptionsMenu() {
+    fun setNotesOptionsMenu(callbacks: NotesCallbacks?) {
         try {
-            setDefaultOptionsMenu()
+            actionBarManager.setNotesFragment(callbacks)
         } catch (e: UninitializedPropertyAccessException) {
-            initializeOptionsMenu = ::setNotesOptionsMenu
+            initializeOptionsMenu = {
+                actionBarManager.setNotesFragment(callbacks)
+            }
         }
     }
 
     fun setSettingsOptionsMenu() {
         try {
-            setDefaultOptionsMenu()
+            actionBarManager.setSettingsFragment()
         } catch (e: UninitializedPropertyAccessException) {
-            initializeOptionsMenu = ::setSettingsOptionsMenu
+            initializeOptionsMenu = {
+                actionBarManager.setSettingsFragment()
+            }
         }
     }
 }
