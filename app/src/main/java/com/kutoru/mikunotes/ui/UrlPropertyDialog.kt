@@ -58,7 +58,7 @@ class UrlPropertyDialog {
 
                 val port = etPort.text.toString().trim().toUShortOrNull()
                 if (port == null) {
-                    Toast.makeText(context, "The port field should be a valid port", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "The port field must be a valid port", Toast.LENGTH_LONG).show()
                     return@setOnClickListener
                 }
 

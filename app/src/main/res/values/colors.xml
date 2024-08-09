@@ -15,9 +15,14 @@
 <!--    <color name="middle">#9868A5</color>-->
     <color name="middle">#755080</color>
 
-    <color name="bg">#030706</color>
-    <color name="bg_sec">#354D63</color>
+<!--    <color name="bg">#030706</color>-->
+<!--    <color name="bg_sec">#354D63</color>-->
 
-    <color name="bg_main">#121212</color>
-    <color name="bg_main_sec">#424242</color>
+    <color name="bg">#ffffff</color>
+    <color name="bg_sec">#e6e6e6</color>
+
+    <color name="fg">@color/black</color>
+    <color name="fg_sec">#57595b</color>
+
+    <color name="fg_warning">#918000</color>
 </resources>

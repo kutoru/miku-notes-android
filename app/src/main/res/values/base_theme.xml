@@ -4,15 +4,33 @@
     <style name="Theme.MikuNotes.Base" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_var</item>
-        <item name="colorOnPrimary">@color/black</item>
+        <item name="colorOnPrimary">@color/white</item>
         <item name="colorSecondary">@color/secondary</item>
         <item name="colorSecondaryVariant">@color/secondary_var</item>
         <item name="colorOnSecondary">@color/white</item>
 
         <item name="android:statusBarColor">?attr/colorPrimary</item>
+        <!--makes the default buttons in the action bar white-->
+        <item name="actionBarTheme">@style/Theme.MikuNotes.AppBarOverlay.Base</item>
+        <!--makes the text in the action bar white-->
+        <item name="toolbarStyle">@style/Theme.MikuNotes.Toolbar.Base</item>
     </style>
 
-    <style name="Theme.MikuNotes.AppBarOverlay.Base" parent="ThemeOverlay.AppCompat.DayNight.ActionBar" />
+    <style name="Theme.MikuNotes.AppBarOverlay.Base" parent="ThemeOverlay.AppCompat.DayNight.ActionBar">
+        <!--button on the very left-->
+        <item name="colorControlNormal">@color/white</item>
+        <!--button on the very right-->
+        <item name="actionOverflowButtonStyle">@style/Theme.MikuNotes.ActionButton.Overflow.Base</item>
+    </style>
+
+    <style name="Theme.MikuNotes.Toolbar.Base" parent="Widget.AppCompat.Toolbar">
+        <item name="titleTextColor">@color/white</item>
+    </style>
+
+    <style name="Theme.MikuNotes.ActionButton.Overflow.Base" parent="Widget.AppCompat.ActionButton.Overflow">
+        <!--text color of the action bar overflow menu-->
+        <item name="android:tint">@color/white</item>
+    </style>
 
     <style name="Theme.MikuNotes.PopupOverlay.Base" parent="ThemeOverlay.AppCompat.Dark" />
 

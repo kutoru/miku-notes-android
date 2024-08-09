@@ -5,6 +5,6 @@
         android:id="@+id/actionLoginPropertyDialog"
         android:icon="@drawable/ic_settings"
         android:orderInCategory="100"
-        android:title="Edit the backend url"
+        android:title="Edit the server URL"
         app:showAsAction="always" />
 </menu>

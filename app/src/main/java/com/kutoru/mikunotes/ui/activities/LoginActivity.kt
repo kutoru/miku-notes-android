@@ -23,6 +23,7 @@ class LoginActivity : ServiceBoundActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        binding.tvLoginMessage.text = ""
         binding.btnLoginLogin.setOnClickListener { handleLogin() }
         binding.btnLoginRegister.setOnClickListener { handleRegister() }
 
@@ -31,7 +32,7 @@ class LoginActivity : ServiceBoundActivity() {
 
         val fromError = intent.getBooleanExtra(LAUNCHED_LOGIN_FROM_ERROR, false)
         if (fromError) {
-            showMessage("The login session is invalid. Log in again")
+            showMessage("The login session is invalid. Log in with your credentials")
         }
     }
 

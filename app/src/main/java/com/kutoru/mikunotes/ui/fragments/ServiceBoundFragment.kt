@@ -53,9 +53,12 @@ open class ServiceBoundFragment : Fragment() {
         return super.onCreateView(inflater, container, savedInstanceState)
     }
 
-    private fun startApiService() {
-        val bindIntent = Intent(requireActivity(), ApiService::class.java)
-        requireActivity().bindService(bindIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+    override fun onResume() {
+        if (serviceIsBound && apiService.currentContext == null) {
+            apiService.currentContext = requireContext()
+        }
+
+        super.onResume()
     }
 
     override fun onDestroy() {
@@ -67,5 +70,10 @@ open class ServiceBoundFragment : Fragment() {
 
         job.cancel()
         super.onDestroy()
+    }
+
+    private fun startApiService() {
+        val bindIntent = Intent(requireActivity(), ApiService::class.java)
+        requireActivity().bindService(bindIntent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 }

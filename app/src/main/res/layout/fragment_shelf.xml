@@ -6,24 +6,115 @@
     android:layout_height="match_parent"
     tools:context=".ui.fragments.ShelfFragment">
 
+    <HorizontalScrollView
+        android:id="@+id/svShelfInfoContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:clipToPadding="false"
+        android:overScrollMode="ifContentScrolls"
+        android:paddingHorizontal="8dp"
+        android:scrollbars="none"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/clShelfInfoContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/imageView3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="0dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_edit"
+                app:tint="@color/fg_sec" />
+
+            <TextView
+                android:id="@+id/tvShelfDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="-"
+                android:textSize="16sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/imageView3"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/imageView4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:padding="0dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/tvShelfDate"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/ic_hash"
+                app:tint="@color/fg_sec" />
+
+            <TextView
+                android:id="@+id/tvShelfCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="-"
+                android:textSize="16sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/imageView4"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </HorizontalScrollView>
+
+    <View
+        android:id="@+id/dividerShelf1"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="?android:attr/listDivider"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/svShelfInfoContainer" />
+
     <EditText
         android:id="@+id/etShelfText"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
+        android:background="@null"
         android:ems="10"
         android:gravity="start|top"
-        android:inputType="text|textMultiLine"
+        android:hint="Shelf text..."
+        android:inputType="text|textMultiLine|textNoSuggestions"
         android:nestedScrollingEnabled="true"
         android:scrollbars="vertical"
         android:singleLine="false"
-        android:text="Name"
+        app:layout_constraintBottom_toTopOf="@+id/dividerShelf2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerShelf1" />
+
+    <View
+        android:id="@+id/dividerShelf2"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="?android:attr/listDivider"
         app:layout_constraintBottom_toTopOf="@+id/rvShelfFiles"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvShelfDate" />
+        app:layout_constraintTop_toBottomOf="@+id/etShelfText" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvShelfFiles"
@@ -39,35 +130,25 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/etShelfText" />
+        app:layout_constraintTop_toBottomOf="@+id/dividerShelf2" />
 
-    <TextView
-        android:id="@+id/tvShelfDate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:text="Edited: -"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/tvShelfCount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:text="Count: -"
-        android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabShelfMoveFiles"
+        android:layout_width="@dimen/fab_size"
+        android:layout_height="@dimen/fab_size"
+        android:clickable="true"
+        app:fabCustomSize="@dimen/fab_size"
+        app:layout_constraintBottom_toBottomOf="@+id/rvShelfFiles"
+        app:layout_constraintStart_toStartOf="@+id/rvShelfFiles"
+        app:maxImageSize="32dp"
+        app:srcCompat="@drawable/ic_down" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabShelfFileUpload"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="@dimen/fab_size"
+        android:layout_height="@dimen/fab_size"
         android:clickable="true"
+        app:fabCustomSize="@dimen/fab_size"
         android:src="@drawable/ic_upload"
         app:layout_constraintBottom_toBottomOf="@+id/rvShelfFiles"
         app:layout_constraintEnd_toEndOf="@+id/rvShelfFiles" />

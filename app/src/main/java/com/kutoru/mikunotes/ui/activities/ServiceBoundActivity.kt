@@ -46,6 +46,14 @@ open class ServiceBoundActivity : AppCompatActivity() {
         return super.onCreate(savedInstanceState)
     }
 
+    override fun onResume() {
+        if (serviceIsBound && apiService.currentContext == null) {
+            apiService.currentContext = this
+        }
+
+        super.onResume()
+    }
+
     override fun onDestroy() {
         if (serviceIsBound) {
             apiService.currentContext = null

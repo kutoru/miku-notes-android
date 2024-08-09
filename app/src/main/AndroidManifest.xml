@@ -48,7 +48,8 @@
             android:name=".ui.activities.LoginActivity"
             android:exported="false"
             android:theme="@style/Theme.MikuNotes.NoActionBar"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
         </activity>
 
         <activity

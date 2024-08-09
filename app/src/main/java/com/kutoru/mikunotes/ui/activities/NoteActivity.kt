@@ -1,11 +1,20 @@
 package com.kutoru.mikunotes.ui.activities
 
+import android.animation.ValueAnimator
+import android.graphics.Rect
+import android.graphics.drawable.TransitionDrawable
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.view.View.OnFocusChangeListener
+import android.widget.EditText
 import androidx.recyclerview.widget.GridLayoutManager
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityNoteBinding
+import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
+import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
+import com.kutoru.mikunotes.logic.RECYCLER_VIEW_ITEM_MARGIN
 import com.kutoru.mikunotes.models.File
 import com.kutoru.mikunotes.models.Note
 import com.kutoru.mikunotes.models.Tag
@@ -23,6 +32,9 @@ class NoteActivity : ServiceBoundActivity() {
     private lateinit var fileAdapter: FileListAdapter
     private lateinit var tagDialog: NoteTagDialog
 
+    private var fileContainerExpanded = false
+    private var lastRootHeight = 0
+
     private lateinit var note: Note
     private var initialized = false
 
@@ -36,8 +48,24 @@ class NoteActivity : ServiceBoundActivity() {
         supportActionBar?.title = "Note"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
+        setInputOnFocusChange(
+            binding.etNoteTitle,
+            binding.dividerNote1,
+            binding.dividerNote2,
+        )
+
+        setInputOnFocusChange(
+            binding.etNoteText,
+            binding.dividerNote3,
+            binding.dividerNote4,
+        )
+
         binding.btnNoteAddTag.setOnClickListener {
             tagDialog.show(note.tags)
+        }
+
+        binding.fabNoteMoveFiles.setOnClickListener {
+            moveFileContainer(true)
         }
 
         binding.fabNoteUpload.setOnClickListener {
@@ -57,25 +85,13 @@ class NoteActivity : ServiceBoundActivity() {
             ::downloadFile,
         )
 
-        fileAdapter.setHeightCallback = { cardSideLength ->
-            val rvParams = binding.rvNoteFiles.layoutParams
-
-            val desiredHeight = if (note.files.isNotEmpty()) {
-                (FileListAdapter.MARGIN_SIZE * 2 + cardSideLength * 1.5).toInt()
-            } else {
-                0
-            }
-
-            if (rvParams.height != desiredHeight) {
-                rvParams.height = desiredHeight
-                binding.rvNoteFiles.layoutParams = rvParams
-            }
-        }
-
         binding.rvNoteTags.adapter = tagAdapter
 
+        val bottomFilesPadding = (resources.getDimension(R.dimen.fab_size) + RECYCLER_VIEW_ITEM_MARGIN).toInt()
+        binding.rvNoteFiles.setPadding(0, 0, 0, bottomFilesPadding)
+
         binding.rvNoteFiles.adapter = fileAdapter
-        binding.rvNoteFiles.layoutManager = GridLayoutManager(this, 3)
+        binding.rvNoteFiles.layoutManager = GridLayoutManager(this, RECYCLER_VIEW_FILE_COLUMNS)
 
         onServiceBound = {
             tagDialog = NoteTagDialog(
@@ -86,6 +102,18 @@ class NoteActivity : ServiceBoundActivity() {
                 ::onTagDialogRemove,
                 ::onTagDialogChange,
             )
+        }
+
+        binding.root.viewTreeObserver.addOnGlobalLayoutListener {
+            val currHeight = Rect().let {
+                binding.root.getWindowVisibleDisplayFrame(it)
+                it.height()
+            }
+
+            if (currHeight != lastRootHeight) {
+                lastRootHeight = currHeight
+                moveFileContainer(false)
+            }
         }
     }
 
@@ -108,7 +136,7 @@ class NoteActivity : ServiceBoundActivity() {
                 Tag( 1000000000, 11, "tag name4", null, 2, ),
             ),
             "note text",
-            58,
+            23,
             "note title",
             2,
         )
@@ -144,8 +172,67 @@ class NoteActivity : ServiceBoundActivity() {
     }
 
     override fun onDestroy() {
-        tagDialog.hide()
+        tagDialog.cancelJob()
         super.onDestroy()
+    }
+
+    private fun moveFileContainer(swapState: Boolean) {
+        println("moveFileContainer")
+
+        if (!swapState) {
+            // if the container isn't expanded, then there is no
+            // need to change the height, since it is static
+            if (!fileContainerExpanded) {
+                return
+            }
+
+            // otherwise, pre-swapping the state so that in the end
+            // it stays expanded
+            fileContainerExpanded = false
+        }
+
+        val currHeight = binding.rvNoteFiles.height
+        val maxHeight = (binding.etNoteText.height + currHeight) / 2
+        val minHeight = resources.getDimension(R.dimen.fab_size).toInt()
+
+        val desiredHeight = if (fileContainerExpanded) {
+            fileContainerExpanded = false
+            binding.fabNoteMoveFiles.setImageResource(R.drawable.ic_up)
+            minHeight
+        } else {
+            fileContainerExpanded = true
+            binding.fabNoteMoveFiles.setImageResource(R.drawable.ic_down)
+            maxHeight
+        }
+
+        val animator = ValueAnimator.ofInt(currHeight, desiredHeight)
+        animator.addUpdateListener {
+            val height = it.animatedValue as Int
+            val layoutParams = binding.rvNoteFiles.layoutParams
+            layoutParams.height = height
+            binding.rvNoteFiles.layoutParams = layoutParams
+        }
+
+        animator.duration = if (swapState) ANIMATION_TRANSITION_TIME.toLong() else 0
+        animator.start()
+    }
+
+    private fun setInputOnFocusChange(inputView: EditText, dividerTop: View, dividerBottom: View) {
+        dividerTop.background = getDrawable(R.drawable.input_transition)
+        dividerBottom.background = getDrawable(R.drawable.input_transition)
+
+        inputView.onFocusChangeListener = OnFocusChangeListener { _, hasFocus ->
+            val transTop = dividerTop.background as TransitionDrawable
+            val transBottom = dividerBottom.background as TransitionDrawable
+
+            if (hasFocus) {
+                transTop.startTransition(ANIMATION_TRANSITION_TIME)
+                transBottom.startTransition(ANIMATION_TRANSITION_TIME)
+            } else {
+                transTop.reverseTransition(ANIMATION_TRANSITION_TIME)
+                transBottom.reverseTransition(ANIMATION_TRANSITION_TIME)
+            }
+        }
     }
 
     private fun deleteFile(position: Int) {
@@ -199,8 +286,9 @@ class NoteActivity : ServiceBoundActivity() {
 
         binding.etNoteTitle.setText(note.title)
         binding.etNoteText.setText(note.text)
-        binding.tvNoteCreated.text = "C: $created"
-        binding.tvNoteEdited.text = "E: $lastEdited (${note.times_edited})"
+        binding.tvNoteCreated.text = created
+        binding.tvNoteEdited.text = lastEdited
+        binding.tvNoteCount.text = note.times_edited.toString()
 
         if (updateTags) {
             tagAdapter.tags = note.tags

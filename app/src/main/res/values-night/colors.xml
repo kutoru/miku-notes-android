@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#121212</color>
+    <color name="bg_sec">#424242</color>
+
+    <color name="fg">@color/white</color>
+    <color name="fg_sec">#c0c0c1</color>
+
+    <color name="fg_warning">#C5B93E</color>
+</resources>

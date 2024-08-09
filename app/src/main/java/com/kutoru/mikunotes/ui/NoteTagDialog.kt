@@ -89,12 +89,17 @@ class NoteTagDialog(
             adapter.tags = tags
             adapter.notifyDataSetChanged()
 
+            if (tags.isNotEmpty()) {
+                dialogView
+                    .findViewById<RecyclerView>(R.id.rvDialogTagList)
+                    .scrollToPosition(0)
+            }
+
             dialogView.visibility = View.VISIBLE
         }
     }
 
     fun hide() {
-        job.cancel()
         dialogView.visibility = View.GONE
         inputManager?.hideSoftInputFromWindow(dialogView.windowToken, 0)
     }
@@ -121,5 +126,9 @@ class NoteTagDialog(
 
     private fun dialogCreateNewTag() {
         println("createNewTag")
+    }
+
+    fun cancelJob() {
+        job.cancel()
     }
 }

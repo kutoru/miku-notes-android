@@ -1,9 +1,12 @@
 package com.kutoru.mikunotes.ui.fragments
 
+import android.animation.ValueAnimator
 import android.app.ProgressDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.pm.PackageManager
+import android.graphics.Rect
+import android.graphics.drawable.TransitionDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -19,7 +22,9 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.FragmentShelfBinding
+import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.NotificationHelper
+import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
 import com.kutoru.mikunotes.models.Shelf
 import com.kutoru.mikunotes.models.ShelfPatch
 import com.kutoru.mikunotes.models.ShelfToNote
@@ -42,6 +47,8 @@ class ShelfFragment : ServiceBoundFragment() {
 
     private lateinit var loadDialog: ProgressDialog
     private var onShare: (suspend () -> Unit)? = null
+    private var lastRootHeight = 0
+    private var fileContainerExpanded = true
 
     private lateinit var shelf: Shelf
     private var initialized = false
@@ -57,6 +64,12 @@ class ShelfFragment : ServiceBoundFragment() {
         super.onCreateView(inflater, container, savedInstanceState)
         binding = FragmentShelfBinding.inflate(inflater, container, false)
 
+        setInputOnFocusChange(
+            binding.etShelfText,
+            binding.dividerShelf1,
+            binding.dividerShelf2,
+        )
+
         adapter = FileListAdapter(
             requireContext(),
             listOf(),
@@ -65,7 +78,11 @@ class ShelfFragment : ServiceBoundFragment() {
         )
 
         binding.rvShelfFiles.adapter = adapter
-        binding.rvShelfFiles.layoutManager = GridLayoutManager(requireContext(), 3)
+        binding.rvShelfFiles.layoutManager = GridLayoutManager(requireContext(), RECYCLER_VIEW_FILE_COLUMNS)
+
+        binding.fabShelfMoveFiles.setOnClickListener {
+            moveFileContainer(true)
+        }
 
         binding.fabShelfFileUpload.setOnClickListener {
             if (!readFilePermissionGranted()) {
@@ -107,10 +124,25 @@ class ShelfFragment : ServiceBoundFragment() {
         loadDialog.setMessage("Loading the shelf...")
         loadDialog.setCancelable(false)
 
+        binding.root.viewTreeObserver.addOnGlobalLayoutListener {
+            val currHeight = Rect().let {
+                binding.root.getWindowVisibleDisplayFrame(it)
+                it.height()
+            }
+
+            if (currHeight != lastRootHeight) {
+                lastRootHeight = currHeight
+                moveFileContainer(false)
+            }
+        }
+
         return binding.root
     }
 
     override fun onResume() {
+        super.onResume()
+
+        binding.etShelfText.setText("")
         loadDialog.show()
 
         if (serviceIsBound) {
@@ -124,22 +156,20 @@ class ShelfFragment : ServiceBoundFragment() {
             }
         } else {
             onServiceBound = {
+                this.afterUrlPropertySave = {
+                    scope.launch {
+                        refreshShelf(true)
+                    }
+                }
+
                 refreshShelf(true)
                 if (initialized && onShare != null) {
                     loadDialog.show()
                     onShare?.invoke()
                     loadDialog.dismiss()
                 }
-
-                this.afterUrlPropertySave = {
-                    scope.launch {
-                        refreshShelf(true)
-                    }
-                }
             }
         }
-
-        super.onResume()
     }
 
     override fun onPause() {
@@ -152,6 +182,59 @@ class ShelfFragment : ServiceBoundFragment() {
         }
 
         super.onPause()
+    }
+
+    private fun setInputOnFocusChange(inputView: EditText, dividerTop: View, dividerBottom: View) {
+        dividerTop.background = requireContext().getDrawable(R.drawable.input_transition)
+        dividerBottom.background = requireContext().getDrawable(R.drawable.input_transition)
+
+        inputView.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
+            val transTop = dividerTop.background as TransitionDrawable
+            val transBottom = dividerBottom.background as TransitionDrawable
+
+            if (hasFocus) {
+                transTop.startTransition(ANIMATION_TRANSITION_TIME)
+                transBottom.startTransition(ANIMATION_TRANSITION_TIME)
+            } else {
+                transTop.reverseTransition(ANIMATION_TRANSITION_TIME)
+                transBottom.reverseTransition(ANIMATION_TRANSITION_TIME)
+            }
+        }
+    }
+
+    private fun moveFileContainer(swapState: Boolean) {
+        if (!swapState) {
+            if (!fileContainerExpanded) {
+                return
+            }
+
+            fileContainerExpanded = false
+        }
+
+        val currHeight = binding.rvShelfFiles.height
+        val maxHeight = (binding.etShelfText.height + currHeight) / 2
+        val minHeight = resources.getDimension(R.dimen.fab_size).toInt()
+
+        val desiredHeight = if (fileContainerExpanded) {
+            fileContainerExpanded = false
+            binding.fabShelfMoveFiles.setImageResource(R.drawable.ic_up)
+            minHeight
+        } else {
+            fileContainerExpanded = true
+            binding.fabShelfMoveFiles.setImageResource(R.drawable.ic_down)
+            maxHeight
+        }
+
+        val animator = ValueAnimator.ofInt(currHeight, desiredHeight)
+        animator.addUpdateListener {
+            val height = it.animatedValue as Int
+            val layoutParams = binding.rvShelfFiles.layoutParams
+            layoutParams.height = height
+            binding.rvShelfFiles.layoutParams = layoutParams
+        }
+
+        animator.duration = if (swapState) ANIMATION_TRANSITION_TIME.toLong() else 0
+        animator.start()
     }
 
     private fun deleteFile(fileIndex: Int) {
@@ -268,10 +351,10 @@ class ShelfFragment : ServiceBoundFragment() {
     private fun updateCurrentShelf(updateFiles: Boolean) {
         val lastEdited = LocalDateTime
             .ofEpochSecond(shelf.last_edited, 0, ZoneOffset.UTC)
-            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            .format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
 
-        binding.tvShelfDate.text = "Edited: $lastEdited"
-        binding.tvShelfCount.text = "Count: ${shelf.times_edited}"
+        binding.tvShelfDate.text = lastEdited
+        binding.tvShelfCount.text = shelf.times_edited.toString()
         binding.etShelfText.setText(shelf.text)
 
         if (updateFiles) {

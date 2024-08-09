@@ -9,6 +9,7 @@ import androidx.cardview.widget.CardView
 import androidx.core.view.setMargins
 import androidx.recyclerview.widget.RecyclerView
 import com.kutoru.mikunotes.R
+import com.kutoru.mikunotes.logic.RECYCLER_VIEW_ITEM_MARGIN
 import com.kutoru.mikunotes.models.Tag
 
 class TagListAdapter (
@@ -17,14 +18,10 @@ class TagListAdapter (
     private val tagOnClick: (position: Int) -> Unit,
 ) : RecyclerView.Adapter<TagListAdapter.ViewHolder>() {
 
-    companion object {
-        private const val MARGIN_SIZE = 16
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(context).inflate(R.layout.card_tag, parent, false)
         val layoutParams = view.findViewById<CardView>(R.id.cardView).layoutParams as ViewGroup.MarginLayoutParams
-        layoutParams.setMargins(MARGIN_SIZE)
+        layoutParams.setMargins(RECYCLER_VIEW_ITEM_MARGIN)
         return ViewHolder(view)
     }
 
