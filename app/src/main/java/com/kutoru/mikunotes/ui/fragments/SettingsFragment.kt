@@ -25,8 +25,7 @@ class SettingsFragment : ServiceBoundFragment() {
         super.onCreateView(inflater, container, savedInstanceState)
         binding = FragmentSettingsBinding.inflate(inflater, container, false)
 
-        val email = PersistentStorage(requireContext()).email
-        binding.tvSettingsEmail.text = if (email != null) "Email: $email" else "Email is not present"
+        refreshEmail()
 
         binding.btnSettingsLogout.setOnClickListener {
             scope.launch {
@@ -46,5 +45,15 @@ class SettingsFragment : ServiceBoundFragment() {
         (requireActivity() as MainActivity).setSettingsOptionsMenu()
 
         return binding.root
+    }
+
+    override fun onResume() {
+        refreshEmail()
+        super.onResume()
+    }
+
+    private fun refreshEmail() {
+        val email = PersistentStorage(requireContext()).email
+        binding.tvSettingsEmail.text = if (email != null) "Email: $email" else "Email is not present"
     }
 }
