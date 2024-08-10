@@ -9,13 +9,14 @@ import android.view.MenuItem
 import android.view.View
 import android.view.View.OnFocusChangeListener
 import android.widget.EditText
+import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityNoteBinding
 import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_ITEM_MARGIN
-import com.kutoru.mikunotes.models.File
+import com.kutoru.mikunotes.logic.SELECTED_NOTE
 import com.kutoru.mikunotes.models.Note
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.NoteTagDialog
@@ -47,6 +48,15 @@ class NoteActivity : ServiceBoundActivity() {
         setSupportActionBar(binding.toolbarNote)
         supportActionBar?.title = "Note"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        val extractedNote = intent.getSerializableExtra(SELECTED_NOTE) as? Note
+        if (extractedNote == null) {
+            Toast.makeText(this, "Tried to open an invalid note", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
+        note = extractedNote
 
         setInputOnFocusChange(
             binding.etNoteTitle,
@@ -119,27 +129,7 @@ class NoteActivity : ServiceBoundActivity() {
 
     override fun onResume() {
 
-        note = Note(
-            1722833500,
-            mutableListOf(
-                File( null, 1722833500, "laksdjf", 3, "filename1.jpg", 2342342342, 2, ),
-                File( null, 1722833500, "laksdjf", 3, "filename2.jpg", 2342342342, 2, ),
-                File( null, 1722833500, "laksdjf", 3, "filename3.jpg", 2342342342, 2, ),
-                File( null, 1722833500, "laksdjf", 3, "filename4.jpg", 2342342342, 2, ),
-            ),
-            2,
-            1722833500,
-            mutableListOf(
-                Tag( 1722833500, 1, "tag name1", null, 2, ),
-                Tag( 1000000000, 2, "tag name2", null, 2, ),
-                Tag( 1000000000, 7, "tag name3", null, 2, ),
-                Tag( 1000000000, 11, "tag name4", null, 2, ),
-            ),
-            "note text",
-            23,
-            "note title",
-            2,
-        )
+        refreshNote()
         initialized = true
 
         updateCurrentNote(true, true)

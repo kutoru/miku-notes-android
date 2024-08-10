@@ -9,4 +9,4 @@ data class Tag(
     val name: String,
     val note_id: Int?,
     val user_id: Int,
-)
+) : java.io.Serializable

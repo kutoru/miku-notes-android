@@ -142,6 +142,7 @@ class ApiService : Service() {
             else -> "Unknown error: $err"
         }
 
+        println(errorMessage)
         errorMessage += ".\nMake sure that these properties are correct and the server is running"
 
         urlDialog!!.show(false, errorMessage) {

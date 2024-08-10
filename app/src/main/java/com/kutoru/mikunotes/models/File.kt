@@ -11,4 +11,4 @@ data class File(
     val name: String,
     val size: Long,
     val user_id: Int,
-)
+) : java.io.Serializable

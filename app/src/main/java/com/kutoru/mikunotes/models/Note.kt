@@ -13,4 +13,4 @@ data class Note(
     val times_edited: Int,
     var title: String,
     val user_id: Int,
-)
+) : java.io.Serializable
