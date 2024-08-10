@@ -86,7 +86,7 @@ class ApiService : Service() {
     suspend fun getTags(onFailMessage: String?) = runRequest(onFailMessage) { requestManager.getTags() }
     suspend fun postTags(onFailMessage: String?, body: TagPost) = runRequest(onFailMessage) { requestManager.postTags(body) }
     suspend fun deleteTags(onFailMessage: String?, tagId: Int) = runRequest(onFailMessage) { requestManager.deleteTags(tagId) }
-    suspend fun patchTags(onFailMessage: String?, body: TagPost) = runRequest(onFailMessage) { requestManager.patchTags(body) }
+    suspend fun patchTags(onFailMessage: String?, tagId: Int, body: TagPost) = runRequest(onFailMessage) { requestManager.patchTags(tagId, body) }
 
     suspend fun postFileToNote(onFailMessage: String?, fileUri: Uri, noteId: Int) = runRequest(onFailMessage) { requestManager.postFileToNote(fileUri, noteId) }
     suspend fun postFileToShelf(onFailMessage: String?, fileUri: Uri, shelfId: Int) = runRequest(onFailMessage) { requestManager.postFileToShelf(fileUri, shelfId) }

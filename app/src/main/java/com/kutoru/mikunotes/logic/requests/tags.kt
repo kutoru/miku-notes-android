@@ -17,6 +17,6 @@ suspend fun RequestManager.deleteTags(tagId: Int) {
     return executeRequestUntilBody("$apiUrl/tags/$tagId", HttpMethod.Delete)
 }
 
-suspend fun RequestManager.patchTags(body: TagPost): Tag {
-    return executeRequestUntilBody("$apiUrl/tags", HttpMethod.Patch, body)
+suspend fun RequestManager.patchTags(tagId: Int, body: TagPost): Tag {
+    return executeRequestUntilBody("$apiUrl/tags/$tagId", HttpMethod.Patch, body)
 }
