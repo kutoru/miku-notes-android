@@ -109,17 +109,10 @@ class ApiService : Service() {
 
         val err = result.exceptionOrNull()
 
-        when (err) {
-            is InvalidUrl -> {
-                urlDialog!!.show(
-                    false,
-                    "Could not connect to the server. Make sure that the URL properties are correct and the server is running",
-                ) {
-                    updateUrl()
-                    afterUrlPropertySave?.invoke()
-                }
-
-                return null
+        val errorMessage = when (err) {
+            is Error -> {
+                println("Unhandleable error: $err")
+                throw err
             }
 
             is Unauthorized -> {
@@ -129,21 +122,17 @@ class ApiService : Service() {
                 return null
             }
 
-            is ServerError -> {
-                println("Server error; Message: $onFailMessage; Error: $err;")
-                return null
-            }
-
-            is Error -> {
-                println("Unhandleable error; Message: $onFailMessage; Error: $err;")
-                throw err
-            }
-
-            else -> {
-                println("Unknown error; Message: $onFailMessage; Error: $err;")
-                return null
-            }
+            is InvalidUrl -> "Could not connect to the server. Make sure that the URL properties are correct and the server is running"
+            is ServerError -> "Unexpected server error: $err"
+            else -> "Unknown error: $err"
         }
+
+        urlDialog!!.show(false, errorMessage) {
+            updateUrl()
+            afterUrlPropertySave?.invoke()
+        }
+
+        return null
     }
 
     inner class ServiceBinder : Binder() {
