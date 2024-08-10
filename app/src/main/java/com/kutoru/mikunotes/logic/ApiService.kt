@@ -65,24 +65,24 @@ class ApiService : Service() {
     private suspend fun getAccess() = requestManager.getAccess()
     suspend fun postLogin(loginBody: LoginBody) = requestManager.postLogin(loginBody)
     suspend fun postRegister(loginBody: LoginBody) = requestManager.postRegister(loginBody)
-    suspend fun getLogout(onFailMessage: String?) = makeRequest(onFailMessage) { requestManager.getLogout() }
+    suspend fun getLogout(onFailMessage: String?) = runRequest(onFailMessage) { requestManager.getLogout() }
 
-    suspend fun postFileToNote(onFailMessage: String?, fileUri: Uri, noteId: Int) = makeRequest(onFailMessage) { requestManager.postFileToNote(fileUri, noteId) }
-    suspend fun postFileToShelf(onFailMessage: String?, fileUri: Uri, shelfId: Int) = makeRequest(onFailMessage) { requestManager.postFileToShelf(fileUri, shelfId) }
-    suspend fun getFile(onFailMessage: String?, fileHash: String) = makeRequest(onFailMessage) { requestManager.getFile(fileHash) }
-    suspend fun deleteFile(onFailMessage: String?, fileId: Int) = makeRequest(onFailMessage) { requestManager.deleteFile(fileId) }
+    suspend fun postFileToNote(onFailMessage: String?, fileUri: Uri, noteId: Int) = runRequest(onFailMessage) { requestManager.postFileToNote(fileUri, noteId) }
+    suspend fun postFileToShelf(onFailMessage: String?, fileUri: Uri, shelfId: Int) = runRequest(onFailMessage) { requestManager.postFileToShelf(fileUri, shelfId) }
+    suspend fun getFile(onFailMessage: String?, fileHash: String) = runRequest(onFailMessage) { requestManager.getFile(fileHash) }
+    suspend fun deleteFile(onFailMessage: String?, fileId: Int) = runRequest(onFailMessage) { requestManager.deleteFile(fileId) }
 
-    suspend fun getTags(onFailMessage: String?) = makeRequest(onFailMessage) { requestManager.getTags() }
-    suspend fun postTags(onFailMessage: String?, body: TagPost) = makeRequest(onFailMessage) { requestManager.postTags(body) }
-    suspend fun deleteTags(onFailMessage: String?, tagId: Int) = makeRequest(onFailMessage) { requestManager.deleteTags(tagId) }
-    suspend fun patchTags(onFailMessage: String?, body: TagPost) = makeRequest(onFailMessage) { requestManager.patchTags(body) }
+    suspend fun getTags(onFailMessage: String?) = runRequest(onFailMessage) { requestManager.getTags() }
+    suspend fun postTags(onFailMessage: String?, body: TagPost) = runRequest(onFailMessage) { requestManager.postTags(body) }
+    suspend fun deleteTags(onFailMessage: String?, tagId: Int) = runRequest(onFailMessage) { requestManager.deleteTags(tagId) }
+    suspend fun patchTags(onFailMessage: String?, body: TagPost) = runRequest(onFailMessage) { requestManager.patchTags(body) }
 
-    suspend fun getShelf(onFailMessage: String?) = makeRequest(onFailMessage) { requestManager.getShelf() }
-    suspend fun deleteShelf(onFailMessage: String?) = makeRequest(onFailMessage) { requestManager.deleteShelf() }
-    suspend fun patchShelf(onFailMessage: String?, body: ShelfPatch) = makeRequest(onFailMessage) { requestManager.patchShelf(body) }
-    suspend fun postShelfToNote(onFailMessage: String?, body: ShelfToNote) = makeRequest(onFailMessage) { requestManager.postShelfToNote(body) }
+    suspend fun getShelf(onFailMessage: String?) = runRequest(onFailMessage) { requestManager.getShelf() }
+    suspend fun deleteShelf(onFailMessage: String?) = runRequest(onFailMessage) { requestManager.deleteShelf() }
+    suspend fun patchShelf(onFailMessage: String?, body: ShelfPatch) = runRequest(onFailMessage) { requestManager.patchShelf(body) }
+    suspend fun postShelfToNote(onFailMessage: String?, body: ShelfToNote) = runRequest(onFailMessage) { requestManager.postShelfToNote(body) }
 
-    private suspend fun <T>makeRequest(onFailMessage: String?, requestFunction: suspend () -> T): T? {
+    private suspend fun <T>runRequest(onFailMessage: String?, requestFunction: suspend () -> T): T? {
         return handleRequestErrors(onFailMessage) {
             try {
                 requestFunction()
@@ -94,39 +94,54 @@ class ApiService : Service() {
     }
 
     private suspend fun <T>handleRequestErrors(onFailMessage: String?, requestFunction: suspend () -> T): T? {
-        try {
-            return requestFunction()
-        } catch(e: Exception) {
-            if (onFailMessage != null) {
-                Toast.makeText(currentContext!!, onFailMessage, Toast.LENGTH_LONG).show()
+
+        val result = runCatching {
+            requestFunction()
+        }
+
+        if (result.isSuccess) {
+            return result.getOrThrow()
+        }
+
+        if (onFailMessage != null) {
+            Toast.makeText(currentContext!!, onFailMessage, Toast.LENGTH_LONG).show()
+        }
+
+        val err = result.exceptionOrNull()
+
+        when (err) {
+            is InvalidUrl -> {
+                urlDialog!!.show(
+                    false,
+                    "Could not connect to the server. Make sure that the URL properties are correct and the server is running",
+                ) {
+                    updateUrl()
+                    afterUrlPropertySave?.invoke()
+                }
+
+                return null
             }
 
-            when (e) {
-                is InvalidUrl -> {
-                    urlDialog!!.show(
-                        false,
-                        "Could not connect to the server. Make sure that the URL properties are correct and the server is running",
-                    ) {
-                        updateUrl()
-                        afterUrlPropertySave?.invoke()
-                    }
+            is Unauthorized -> {
+                val intent = Intent(currentContext!!, LoginActivity::class.java)
+                intent.putExtra(LAUNCHED_LOGIN_FROM_ERROR, true)
+                currentContext!!.startActivity(intent)
+                return null
+            }
 
-                    return null
-                }
+            is ServerError -> {
+                println("Server error; Message: $onFailMessage; Error: $err;")
+                return null
+            }
 
-                is Unauthorized -> {
-                    val intent = Intent(currentContext!!, LoginActivity::class.java)
-                    intent.putExtra(LAUNCHED_LOGIN_FROM_ERROR, true)
-                    currentContext!!.startActivity(intent)
-                    return null
-                }
+            is Error -> {
+                println("Unhandleable error; Message: $onFailMessage; Error: $err;")
+                throw err
+            }
 
-                is ServerError -> {
-                    println("Unknown server error; Message: $onFailMessage; Error: $e;")
-                    return null
-                }
-
-                else -> throw e
+            else -> {
+                println("Unknown error; Message: $onFailMessage; Error: $err;")
+                return null
             }
         }
     }
