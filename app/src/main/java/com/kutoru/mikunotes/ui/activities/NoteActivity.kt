@@ -105,9 +105,9 @@ class NoteActivity : ServiceBoundActivity() {
 
         onServiceBound = {
             tagDialog = NoteTagDialog(
-                this@NoteActivity,
-                binding.root,
                 this,
+                binding.root,
+                apiService,
                 ::onTagDialogAdd,
                 ::onTagDialogRemove,
                 ::onTagDialogChange,

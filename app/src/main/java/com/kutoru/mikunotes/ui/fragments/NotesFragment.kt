@@ -74,21 +74,24 @@ class NotesFragment : ServiceBoundFragment() {
         super.onResume()
 
         loadDialog.show()
+        initialized = false
 
         if (serviceIsBound) {
+            onResumeInit()
+        } else {
+            onServiceBound = ::onResumeInit
+        }
+    }
+
+    private fun onResumeInit() {
+        apiService.afterUrlPropertySave = {
             scope.launch {
                 refreshNotes(true)
             }
-        } else {
-            onServiceBound = {
-                this.afterUrlPropertySave = {
-                    scope.launch {
-                        refreshNotes(true)
-                    }
-                }
+        }
 
-                refreshNotes(true)
-            }
+        scope.launch {
+            refreshNotes(true)
         }
     }
 

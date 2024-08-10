@@ -139,42 +139,42 @@ class ShelfFragment : ServiceBoundFragment() {
         return binding.root
     }
 
+    override fun onStart() {
+        binding.etShelfText.setText("")
+        super.onStart()
+    }
+
     override fun onResume() {
         super.onResume()
 
-        binding.etShelfText.setText("")
         loadDialog.show()
+        initialized = false
 
         if (serviceIsBound) {
+            onResumeInit()
+        } else {
+            onServiceBound = ::onResumeInit
+        }
+    }
+
+    private fun onResumeInit() {
+        apiService.afterUrlPropertySave = {
             scope.launch {
                 refreshShelf(true)
-                if (initialized && onShare != null) {
-                    loadDialog.show()
-                    onShare?.invoke()
-                    loadDialog.dismiss()
-                }
             }
-        } else {
-            onServiceBound = {
-                this.afterUrlPropertySave = {
-                    scope.launch {
-                        refreshShelf(true)
-                    }
-                }
+        }
 
-                refreshShelf(true)
-                if (initialized && onShare != null) {
-                    loadDialog.show()
-                    onShare?.invoke()
-                    loadDialog.dismiss()
-                }
+        scope.launch {
+            refreshShelf(true)
+            if (initialized && onShare != null) {
+                loadDialog.show()
+                onShare?.invoke()
+                loadDialog.dismiss()
             }
         }
     }
 
     override fun onPause() {
-        onServiceBound = null
-
         if (initialized) {
             scope.launch {
                 saveShelf(true)
