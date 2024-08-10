@@ -94,7 +94,6 @@ class ApiService : Service() {
     }
 
     private suspend fun <T>handleRequestErrors(onFailMessage: String?, requestFunction: suspend () -> T): T? {
-
         val result = runCatching {
             requestFunction()
         }
@@ -109,7 +108,7 @@ class ApiService : Service() {
 
         val err = result.exceptionOrNull()
 
-        val errorMessage = when (err) {
+        var errorMessage = when (err) {
             is Error -> {
                 println("Unhandleable error: $err")
                 throw err
@@ -122,10 +121,12 @@ class ApiService : Service() {
                 return null
             }
 
-            is InvalidUrl -> "Could not connect to the server. Make sure that the URL properties are correct and the server is running"
+            is InvalidUrl -> "Could not connect to the server"
             is ServerError -> "Unexpected server error: $err"
             else -> "Unknown error: $err"
         }
+
+        errorMessage += ".\nMake sure that these properties are correct and the server is running"
 
         urlDialog!!.show(false, errorMessage) {
             updateUrl()
