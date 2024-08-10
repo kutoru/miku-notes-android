@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 class SettingsFragment : ServiceBoundFragment() {
 
     private lateinit var binding: FragmentSettingsBinding
+    private lateinit var urlDialog: UrlPropertyDialog
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,8 +38,10 @@ class SettingsFragment : ServiceBoundFragment() {
         }
 
         binding.btnSettingsEditUrl.setOnClickListener {
-            UrlPropertyDialog.launch(requireContext(), null, true) { apiService.updateUrl() }
+            urlDialog.show(true, null) { apiService.updateUrl() }
         }
+
+        urlDialog = UrlPropertyDialog(requireContext())
 
         (requireActivity() as MainActivity).setSettingsOptionsMenu()
 

@@ -35,9 +35,21 @@ class ApiService : Service() {
 
     private val binder = ServiceBinder()
     private lateinit var requestManager: RequestManager
+    private var urlDialog: UrlPropertyDialog? = null
 
     var afterUrlPropertySave: (() -> Unit)? = null
     var currentContext: Context? = null
+        set(value) {
+            field = value
+
+            if (currentContext == null) {
+                urlDialog?.dismiss()
+                urlDialog = null
+            } else {
+                urlDialog?.dismiss()
+                urlDialog = UrlPropertyDialog(currentContext!!)
+            }
+        }
 
     override fun onCreate() {
         super.onCreate()
@@ -91,10 +103,9 @@ class ApiService : Service() {
 
             when (e) {
                 is InvalidUrl -> {
-                    UrlPropertyDialog.launch(
-                        currentContext!!,
-                        "Could not connect to the server. Make sure that the URL properties are correct and the server is running",
+                    urlDialog!!.show(
                         false,
+                        "Could not connect to the server. Make sure that the URL properties are correct and the server is running",
                     ) {
                         updateUrl()
                         afterUrlPropertySave?.invoke()

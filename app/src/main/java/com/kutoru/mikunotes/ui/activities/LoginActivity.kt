@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 class LoginActivity : ServiceBoundActivity() {
 
     private lateinit var binding: ActivityLoginBinding
+    private lateinit var urlDialog: UrlPropertyDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +30,8 @@ class LoginActivity : ServiceBoundActivity() {
 
         setSupportActionBar(binding.toolbarLogin)
         supportActionBar?.title = "Log In or Register"
+
+        urlDialog = UrlPropertyDialog(this)
 
         val fromError = intent.getBooleanExtra(LAUNCHED_LOGIN_FROM_ERROR, false)
         if (fromError) {
@@ -49,7 +52,7 @@ class LoginActivity : ServiceBoundActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.actionLoginPropertyDialog -> {
-                UrlPropertyDialog.launch(this, null, true) { apiService.updateUrl() }
+                urlDialog.show(true, null) { apiService.updateUrl() }
             }
             else -> return super.onOptionsItemSelected(item)
         }
