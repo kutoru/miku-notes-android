@@ -9,22 +9,31 @@ import android.os.IBinder
 import android.widget.Toast
 import com.kutoru.mikunotes.logic.requests.RequestManager
 import com.kutoru.mikunotes.logic.requests.deleteFile
+import com.kutoru.mikunotes.logic.requests.deleteNotes
+import com.kutoru.mikunotes.logic.requests.deleteNotesTag
 import com.kutoru.mikunotes.logic.requests.deleteShelf
 import com.kutoru.mikunotes.logic.requests.deleteTags
 import com.kutoru.mikunotes.logic.requests.getAccess
 import com.kutoru.mikunotes.logic.requests.getFile
 import com.kutoru.mikunotes.logic.requests.getLogout
+import com.kutoru.mikunotes.logic.requests.getNotes
 import com.kutoru.mikunotes.logic.requests.getShelf
 import com.kutoru.mikunotes.logic.requests.getTags
+import com.kutoru.mikunotes.logic.requests.patchNotes
 import com.kutoru.mikunotes.logic.requests.patchShelf
 import com.kutoru.mikunotes.logic.requests.patchTags
 import com.kutoru.mikunotes.logic.requests.postFileToNote
 import com.kutoru.mikunotes.logic.requests.postFileToShelf
 import com.kutoru.mikunotes.logic.requests.postLogin
+import com.kutoru.mikunotes.logic.requests.postNotes
+import com.kutoru.mikunotes.logic.requests.postNotesTag
 import com.kutoru.mikunotes.logic.requests.postRegister
 import com.kutoru.mikunotes.logic.requests.postShelfToNote
 import com.kutoru.mikunotes.logic.requests.postTags
 import com.kutoru.mikunotes.models.LoginBody
+import com.kutoru.mikunotes.models.NotePost
+import com.kutoru.mikunotes.models.NoteQueryParameters
+import com.kutoru.mikunotes.models.NoteTagPost
 import com.kutoru.mikunotes.models.ShelfPatch
 import com.kutoru.mikunotes.models.ShelfToNote
 import com.kutoru.mikunotes.models.TagPost
@@ -67,15 +76,22 @@ class ApiService : Service() {
     suspend fun postRegister(loginBody: LoginBody) = requestManager.postRegister(loginBody)
     suspend fun getLogout(onFailMessage: String?) = runRequest(onFailMessage) { requestManager.getLogout() }
 
-    suspend fun postFileToNote(onFailMessage: String?, fileUri: Uri, noteId: Int) = runRequest(onFailMessage) { requestManager.postFileToNote(fileUri, noteId) }
-    suspend fun postFileToShelf(onFailMessage: String?, fileUri: Uri, shelfId: Int) = runRequest(onFailMessage) { requestManager.postFileToShelf(fileUri, shelfId) }
-    suspend fun getFile(onFailMessage: String?, fileHash: String) = runRequest(onFailMessage) { requestManager.getFile(fileHash) }
-    suspend fun deleteFile(onFailMessage: String?, fileId: Int) = runRequest(onFailMessage) { requestManager.deleteFile(fileId) }
+    suspend fun getNotes(onFailMessage: String?, queryParams: NoteQueryParameters) = runRequest(onFailMessage) { requestManager.getNotes(queryParams) }
+    suspend fun postNotes(onFailMessage: String?, body: NotePost) = runRequest(onFailMessage) { requestManager.postNotes(body) }
+    suspend fun deleteNotes(onFailMessage: String?, noteId: Int) = runRequest(onFailMessage) { requestManager.deleteNotes(noteId) }
+    suspend fun patchNotes(onFailMessage: String?, noteId: Int, body: NotePost) = runRequest(onFailMessage) { requestManager.patchNotes(noteId, body) }
+    suspend fun postNotesTag(onFailMessage: String?, noteId: Int, body: NoteTagPost) = runRequest(onFailMessage) { requestManager.postNotesTag(noteId, body) }
+    suspend fun deleteNotesTag(onFailMessage: String?, noteId: Int, tagId: Int) = runRequest(onFailMessage) { requestManager.deleteNotesTag(noteId, tagId) }
 
     suspend fun getTags(onFailMessage: String?) = runRequest(onFailMessage) { requestManager.getTags() }
     suspend fun postTags(onFailMessage: String?, body: TagPost) = runRequest(onFailMessage) { requestManager.postTags(body) }
     suspend fun deleteTags(onFailMessage: String?, tagId: Int) = runRequest(onFailMessage) { requestManager.deleteTags(tagId) }
     suspend fun patchTags(onFailMessage: String?, body: TagPost) = runRequest(onFailMessage) { requestManager.patchTags(body) }
+
+    suspend fun postFileToNote(onFailMessage: String?, fileUri: Uri, noteId: Int) = runRequest(onFailMessage) { requestManager.postFileToNote(fileUri, noteId) }
+    suspend fun postFileToShelf(onFailMessage: String?, fileUri: Uri, shelfId: Int) = runRequest(onFailMessage) { requestManager.postFileToShelf(fileUri, shelfId) }
+    suspend fun getFile(onFailMessage: String?, fileHash: String) = runRequest(onFailMessage) { requestManager.getFile(fileHash) }
+    suspend fun deleteFile(onFailMessage: String?, fileId: Int) = runRequest(onFailMessage) { requestManager.deleteFile(fileId) }
 
     suspend fun getShelf(onFailMessage: String?) = runRequest(onFailMessage) { requestManager.getShelf() }
     suspend fun deleteShelf(onFailMessage: String?) = runRequest(onFailMessage) { requestManager.deleteShelf() }
