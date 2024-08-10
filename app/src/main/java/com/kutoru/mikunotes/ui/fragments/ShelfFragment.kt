@@ -113,11 +113,11 @@ class ShelfFragment : ServiceBoundFragment() {
 
         (requireActivity() as MainActivity)
             .setShelfOptionsMenu(ShelfCallbacks(
-                { scope.launch { refreshShelf(false) } },
-                ::copyShelfToClipboard,
-                { scope.launch { saveShelf(false) } },
-                ::clearShelf,
-                ::convertShelfToNote,
+                refresh = { scope.launch { refreshShelf(false) } },
+                copy = ::copyShelfToClipboard,
+                save = { scope.launch { saveShelf(false) } },
+                clear = ::clearShelf,
+                convert = ::convertShelfToNote,
             ))
 
         loadDialog = ProgressDialog(requireContext())
@@ -275,7 +275,9 @@ class ShelfFragment : ServiceBoundFragment() {
     }
 
     private suspend fun refreshShelf(silent: Boolean) {
-        shelf = apiService.getShelf("Could not refresh the shelf") ?: return
+        shelf = apiService.getShelf(
+            if (!silent) "Could not refresh the shelf" else null,
+        ) ?: return
         updateCurrentShelf(true)
 
         initialized = true
