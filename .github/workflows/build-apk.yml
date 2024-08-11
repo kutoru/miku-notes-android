@@ -14,17 +14,16 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    #- name: Setup jdk
-    #  uses: actions/setup-java@v1
-    #  with:
-    #    java-version: 17
-    #- name: Make gradle executable
-    #  run: chmod +x ./gradlew
-    #- name: Build apk
-    #  run: ./gradlew assembleRelease
-
-    - name: Upload apk
+    - name: Setup JDK
+      uses: actions/setup-java@v1
+      with:
+        java-version: 17
+    - name: Make Gradle executable
+      run: chmod +x ./gradlew
+    - name: Build APK
+      run: ./gradlew assembleRelease
+    - name: Upload APK
       uses: softprops/action-gh-release@v1
       if: ${{ startsWith(github.ref, 'refs/tags/') }}
       with:
-          files: ./*.md
+          files: ./app/build/outputs/apk/release/*-release.apk
