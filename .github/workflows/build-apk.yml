@@ -8,9 +8,6 @@ on:
 jobs:
   Gradle:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -28,16 +25,3 @@ jobs:
       if: ${{ startsWith(github.ref, 'refs/tags/') }}
       with:
           files: ./README.md
-    
-    #- uses: actions/checkout@v3
-    #- name: Upload Release Asset
-    #  env:
-    #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #  run:
-    #    gh release upload ${{ github.ref }} ./README.md
-
-    #- name: Release apk
-    #  uses: kutoru/action-releaseapk@c15d873257579eb3deec722d38b5dfae27c4df76
-    #  env:
-    #   GITHUB_TOKEN: ${{ secrets.TOKEN }}
-    #   APP_FOLDER: app
