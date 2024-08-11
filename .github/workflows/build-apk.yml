@@ -32,7 +32,7 @@ jobs:
     - name: Make Gradle executable
       run: chmod +x ./gradlew
     - name: Build APK
-      run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=${{ env.HOME }}/secrets/androiduser.keystore -Pandroid.injected.signing.store.password=${{ secret.STORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secret.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secret.KEY_PASSWORD }}
+      run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=${{ env.HOME }}/secrets/androiduser.keystore -Pandroid.injected.signing.store.password=${{ secrets.STORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
     - name: Test ls
       run: ls -a ./app/build/outputs/apk/release
     - name: Upload APK
