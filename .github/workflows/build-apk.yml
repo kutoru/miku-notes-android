@@ -17,10 +17,10 @@ jobs:
         java-version: 17
     - name: Make Gradle executable
       run: chmod +x ./gradlew
-    - name: Build Release APK
-      run: ./gradlew assembleRelease
+    #- name: Build Release APK
+    #  run: ./gradlew assembleRelease
     - name: Releasing using Hub
-      uses: nightcrawler-/action-release-apk@1.0.2
+      uses: kutoru/action-releaseapk@4a9126c18df0339387f572f16c56bde17a9030d8
       env:
        GITHUB_TOKEN: ${{ secrets.TOKEN }}
        APP_FOLDER: app
