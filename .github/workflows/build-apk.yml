@@ -22,8 +22,10 @@ jobs:
       run: chmod +x ./gradlew
     - name: Build APK
       run: ./gradlew assembleRelease
+    - name: Test ls
+      run: ls -a ./app/build/outputs/apk/release
     - name: Upload APK
       uses: softprops/action-gh-release@v1
       if: ${{ startsWith(github.ref, 'refs/tags/') }}
       with:
-          files: ./app/build/outputs/apk/release/*-release.apk
+          files: ./app/build/outputs/apk/release/*-release*.apk
