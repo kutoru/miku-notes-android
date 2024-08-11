@@ -15,11 +15,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: test
-      run: echo $HOME
-    - name: test2
-      run: echo "${{ env.HOME }}"
+    - name: test echo
+      run: echo $KEYSTORE_PASSPHRASE
+      env:
+        KEYSTORE_PASSPHRASE: ${{ secrets.KEYSTORE_PASSPHRASE }}
 
+    - name: Make decrypt script executable
+      run: chmod +x ./decrypt_keystore.sh
     - name: Decrypt keystore file
       run: ./decrypt_keystore.sh
       env:
@@ -32,7 +34,8 @@ jobs:
     - name: Make Gradle executable
       run: chmod +x ./gradlew
     - name: Build APK
-      run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=${{ env.HOME }}/secrets/androiduser.keystore -Pandroid.injected.signing.store.password=${{ secrets.STORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+      run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$HOME/secrets/androiduser.keystore -Pandroid.injected.signing.store.password=${{ secrets.STORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+
     - name: Test ls
       run: ls -a ./app/build/outputs/apk/release
     - name: Upload APK
