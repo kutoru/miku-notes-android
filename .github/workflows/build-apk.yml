@@ -20,7 +20,7 @@ jobs:
     - name: Build Release APK
       run: ./gradlew assembleRelease
     - name: Releasing using Hub
-      uses: kyze8439690/action-release-releaseapk@1.0.0
+      uses: nightcrawler-/action-release-apk@1.0.2
       env:
        GITHUB_TOKEN: ${{ secrets.TOKEN }}
        APP_FOLDER: app/..
