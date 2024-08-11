@@ -9,20 +9,18 @@ jobs:
   Gradle:
     runs-on: ubuntu-latest
     steps:
-    - name: checkout code
-      uses: actions/checkout@v1
-    #- name: fix git
-    #  run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-    #- name: setup jdk
+    - name: Checkout code
+      uses: actions/checkout@v2
+    #- name: Setup jdk
     #  uses: actions/setup-java@v1
     #  with:
     #    java-version: 17
-    #- name: make gradle executable
+    #- name: Make gradle executable
     #  run: chmod +x ./gradlew
-    #- name: build apk
+    #- name: Build apk
     #  run: ./gradlew assembleRelease
-    - name: release apk
-      uses: kutoru/action-releaseapk@84c14471a8d9fa6027bb29aaf10a49a3e443c45f
+    - name: Release apk
+      uses: kutoru/action-releaseapk@c15d873257579eb3deec722d38b5dfae27c4df76
       env:
        GITHUB_TOKEN: ${{ secrets.TOKEN }}
        APP_FOLDER: app
