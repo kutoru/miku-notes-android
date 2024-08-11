@@ -31,10 +31,12 @@ jobs:
     - name: Make Gradle executable
       run: chmod +x ./gradlew
     - name: Build APK
-      run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$HOME/secrets/androiduser.keystore -Pandroid.injected.signing.store.password=${{ secrets.STORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+      run: ./gradlew assembleRelease \
+        -Pandroid.injected.signing.store.file=$HOME/secrets/androiduser.keystore \
+        -Pandroid.injected.signing.store.password=${{ secrets.STORE_PASSWORD }} \
+        -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
+        -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
 
-    - name: Test ls
-      run: ls -a ./app/build/outputs/apk/release
     - name: Upload APK
       uses: softprops/action-gh-release@v1
       if: ${{ startsWith(github.ref, 'refs/tags/') }}
