@@ -11,14 +11,14 @@ jobs:
     steps:
     - name: checkout code
       uses: actions/checkout@v2
-    #- name: setup jdk
-    #  uses: actions/setup-java@v1
-    #  with:
-    #    java-version: 17
-    #- name: Make Gradle executable
-    #  run: chmod +x ./gradlew
-    #- name: Build Release APK
-    #  run: ./gradlew assembleRelease
+    - name: setup jdk
+      uses: actions/setup-java@v1
+      with:
+        java-version: 17
+    - name: Make Gradle executable
+      run: chmod +x ./gradlew
+    - name: Build Release APK
+      run: ./gradlew assembleRelease
     - name: Releasing using Hub
       uses: kutoru/action-releaseapk@f90dc6e578d27d82a1997c5faee9e2f29364e47d
       env:
