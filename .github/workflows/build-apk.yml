@@ -13,7 +13,18 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
+
+    - name: test
+      run: echo $HOME
+    - name: test2
+      run: echo "${{ env.HOME }}"
+
+    - name: Decrypt keystore file
+      run: ./decrypt_keystore.sh
+      env:
+        KEYSTORE_PASSPHRASE: ${{ secrets.KEYSTORE_PASSPHRASE }}
+
     - name: Setup JDK
       uses: actions/setup-java@v1
       with:
@@ -21,11 +32,11 @@ jobs:
     - name: Make Gradle executable
       run: chmod +x ./gradlew
     - name: Build APK
-      run: ./gradlew assembleRelease
+      run: ./gradlew assembleRelease -Pandroid.injected.signing.store.file=${{ env.HOME }}/secrets/androiduser.keystore -Pandroid.injected.signing.store.password=${{ secret.STORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secret.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secret.KEY_PASSWORD }}
     - name: Test ls
       run: ls -a ./app/build/outputs/apk/release
     - name: Upload APK
       uses: softprops/action-gh-release@v1
       if: ${{ startsWith(github.ref, 'refs/tags/') }}
       with:
-          files: ./app/build/outputs/apk/release/*-release*.apk
+          files: ./app/build/outputs/apk/release/*-release.apk
