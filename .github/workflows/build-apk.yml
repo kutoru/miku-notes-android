@@ -8,9 +8,12 @@ on:
 jobs:
   Gradle:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     #- name: Setup jdk
     #  uses: actions/setup-java@v1
     #  with:
@@ -19,8 +22,14 @@ jobs:
     #  run: chmod +x ./gradlew
     #- name: Build apk
     #  run: ./gradlew assembleRelease
-    - name: Release apk
-      uses: kutoru/action-releaseapk@c15d873257579eb3deec722d38b5dfae27c4df76
+    - uses: actions/checkout@v3
+    - name: Upload Release Asset
       env:
-       GITHUB_TOKEN: ${{ secrets.TOKEN }}
-       APP_FOLDER: app
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run:
+        gh release upload ${{ github.ref }} ./README.md
+    #- name: Release apk
+    #  uses: kutoru/action-releaseapk@c15d873257579eb3deec722d38b5dfae27c4df76
+    #  env:
+    #   GITHUB_TOKEN: ${{ secrets.TOKEN }}
+    #   APP_FOLDER: app
