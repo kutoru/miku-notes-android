@@ -20,7 +20,7 @@ jobs:
     #- name: Build Release APK
     #  run: ./gradlew assembleRelease
     - name: Releasing using Hub
-      uses: kutoru/action-releaseapk@c1412b49aea7c8cd3aa10f67949bb116b04b96f7
+      uses: kutoru/action-releaseapk@1319140e21fe79e455430171f17536d9e993947b
       env:
        GITHUB_TOKEN: ${{ secrets.TOKEN }}
        APP_FOLDER: app
