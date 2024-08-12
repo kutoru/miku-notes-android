@@ -2,13 +2,9 @@ package com.kutoru.mikunotes.ui.activities
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Bundle
-import android.os.IBinder
 import android.os.Parcelable
 import android.view.Menu
 import android.view.MenuItem
@@ -23,7 +19,6 @@ import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.navigation.NavigationView
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityMainBinding
-import com.kutoru.mikunotes.logic.ApiService
 import com.kutoru.mikunotes.logic.DOWNLOAD_NOTIFICATION_CHANNEL_ID
 import com.kutoru.mikunotes.ui.MainActionBarManager
 import com.kutoru.mikunotes.ui.NotesCallbacks
@@ -37,21 +32,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var actionBarManager: MainActionBarManager
     private var initializeOptionsMenu: (() -> Unit)? = null
-
-    private lateinit var apiService: ApiService
-    private var serviceIsBound = false
-
-    private val serviceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as ApiService.ServiceBinder
-            apiService = binder.getService()
-            serviceIsBound = true
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            serviceIsBound = false
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,7 +51,6 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
-        startApiService()
         createNotificationChannels()
         handleSharedData(intent)
     }
@@ -85,15 +64,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return actionBarManager.onOptionsItemSelected(item) || super.onOptionsItemSelected(item)
-    }
-
-    override fun onDestroy() {
-        if (serviceIsBound) {
-            unbindService(serviceConnection)
-            serviceIsBound = false
-        }
-
-        super.onDestroy()
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -135,14 +105,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-    }
-
-    private fun startApiService() {
-        val intent = Intent(this, ApiService::class.java)
-        startService(intent)
-
-        val bindIntent = Intent(this, ApiService::class.java)
-        bindService(bindIntent, serviceConnection, Context.BIND_AUTO_CREATE)
     }
 
     private fun createNotificationChannels() {

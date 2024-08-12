@@ -3,20 +3,20 @@ package com.kutoru.mikunotes.ui.activities
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.viewModels
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityLoginBinding
 import com.kutoru.mikunotes.logic.BadRequest
 import com.kutoru.mikunotes.logic.InvalidUrl
 import com.kutoru.mikunotes.logic.LAUNCHED_LOGIN_FROM_ERROR
 import com.kutoru.mikunotes.logic.ServerError
-import com.kutoru.mikunotes.models.LoginBody
-import com.kutoru.mikunotes.ui.UrlPropertyDialog
+import com.kutoru.mikunotes.viewmodels.LoginViewModel
 import kotlinx.coroutines.launch
 
-class LoginActivity : ServiceBoundActivity() {
+class LoginActivity : ApiReadyActivity<LoginViewModel>() {
 
     private lateinit var binding: ActivityLoginBinding
-    private lateinit var urlDialog: UrlPropertyDialog
+    override val viewModel: LoginViewModel by viewModels { LoginViewModel.Factory }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,8 +30,6 @@ class LoginActivity : ServiceBoundActivity() {
 
         setSupportActionBar(binding.toolbarLogin)
         supportActionBar?.title = "Log In or Register"
-
-        urlDialog = UrlPropertyDialog(this)
 
         val fromError = intent.getBooleanExtra(LAUNCHED_LOGIN_FROM_ERROR, false)
         if (fromError) {
@@ -52,7 +50,7 @@ class LoginActivity : ServiceBoundActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.actionLoginPropertyDialog -> {
-                urlDialog.show(true, null) { apiService.updateUrl() }
+                urlDialog.show(true, null) { viewModel.updateUrl() }
             }
             else -> return super.onOptionsItemSelected(item)
         }
@@ -75,7 +73,7 @@ class LoginActivity : ServiceBoundActivity() {
 
         scope.launch {
             try {
-                apiService.postLogin(LoginBody(email, password))
+                viewModel.postLogin(email, password)
                 finish()
             } catch (e: Exception) {
                 when (e) {
@@ -102,7 +100,7 @@ class LoginActivity : ServiceBoundActivity() {
 
         scope.launch {
             try {
-                apiService.postRegister(LoginBody(email, password))
+                viewModel.postRegister(email, password)
                 finish()
             } catch (e: Exception) {
                 when (e) {

@@ -1,9 +1,8 @@
 package com.kutoru.mikunotes.logic.requests
 
-import android.content.Context
-import androidx.core.app.NotificationManagerCompat
 import com.kutoru.mikunotes.logic.BadRequest
 import com.kutoru.mikunotes.logic.InvalidUrl
+import com.kutoru.mikunotes.logic.NotificationHelper
 import com.kutoru.mikunotes.logic.PersistentStorage
 import com.kutoru.mikunotes.logic.ServerError
 import com.kutoru.mikunotes.logic.Unauthorized
@@ -25,22 +24,22 @@ import java.net.ConnectException
 import java.nio.channels.UnresolvedAddressException
 
 class RequestManager(
-    val context: Context,
+    val persistentStorage: PersistentStorage,
+    val notificationHelper: NotificationHelper,
 ) {
 
     lateinit var apiUrl: String
+        private set
     lateinit var accessCookie: String
+        private set
     lateinit var refreshCookie: String
+        private set
 
-    val notificationManager = NotificationManagerCompat.from(context)
-    val persistentStorage = PersistentStorage(context)
     val httpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json()
         }
     }
-
-    var notificationIndex = 0
 
     init {
         updateUrl()

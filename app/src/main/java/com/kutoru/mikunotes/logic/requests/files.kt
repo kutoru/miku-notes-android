@@ -1,11 +1,9 @@
 package com.kutoru.mikunotes.logic.requests
 
-import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.net.Uri
 import android.os.Environment
 import android.provider.OpenableColumns
-import com.kutoru.mikunotes.logic.NotificationHelper
 import com.kutoru.mikunotes.models.File
 import io.ktor.client.call.body
 import io.ktor.client.plugins.onUpload
@@ -31,21 +29,18 @@ private fun getFileInfo(contentResolver: ContentResolver, fileUri: Uri, openable
     return name
 }
 
-suspend fun RequestManager.postFileToNote(fileUri: Uri, noteId: Int): File {
-    return postFile(fileUri, noteId, "note_id")
+suspend fun RequestManager.postFileToNote(contentResolver: ContentResolver, fileUri: Uri, noteId: Int): File {
+    return postFile(contentResolver, fileUri, noteId, "note_id")
 }
 
-suspend fun RequestManager.postFileToShelf(filePath: Uri, shelfId: Int): File {
-    return postFile(filePath, shelfId, "shelf_id")
+suspend fun RequestManager.postFileToShelf(contentResolver: ContentResolver, filePath: Uri, shelfId: Int): File {
+    return postFile(contentResolver, filePath, shelfId, "shelf_id")
 }
 
-@SuppressLint("MissingPermission")
-suspend fun RequestManager.postFile(fileUri: Uri, attachId: Int, attachKey: String): File {
-    val currNotificationIndex = ++notificationIndex
-
-    val fileStream = context.contentResolver.openInputStream(fileUri)!!
-    val fileName = getFileInfo(context.contentResolver, fileUri, OpenableColumns.DISPLAY_NAME)
-    val fileSize = getFileInfo(context.contentResolver, fileUri, OpenableColumns.SIZE).toFloat()
+private suspend fun RequestManager.postFile(contentResolver: ContentResolver, fileUri: Uri, attachId: Int, attachKey: String): File {
+    val fileStream = contentResolver.openInputStream(fileUri)!!
+    val fileName = getFileInfo(contentResolver, fileUri, OpenableColumns.DISPLAY_NAME)
+    val fileSize = getFileInfo(contentResolver, fileUri, OpenableColumns.SIZE).toFloat()
 
     val form = formData {
         append(attachKey, "$attachId")
@@ -61,22 +56,18 @@ suspend fun RequestManager.postFile(fileUri: Uri, attachId: Int, attachKey: Stri
     }
 
     var lastUpdated = Calendar.getInstance().timeInMillis
-    var notification = NotificationHelper.getUploadInProgress(context, fileName)
-    if (NotificationHelper.canSend(context)) {
-        notificationManager.notify(currNotificationIndex, notification.build())
-    }
+    val currentNotificationIndex = notificationHelper.showUploadInProgress(null, fileName, 0)
 
     val req = httpClient.prepareFormWithBinaryData("$apiUrl/files", form) {
         headers.append("Cookie", accessCookie)
 
         onUpload { bytesSentTotal, _ ->
             val progress = ((bytesSentTotal / fileSize) * 100).toInt()
-            notification.setProgress(100, progress, false)
+            val currentTime = Calendar.getInstance().timeInMillis
 
-            val current = Calendar.getInstance().timeInMillis
-            if (NotificationHelper.canSend(context) && lastUpdated + 1000 <= current) {
-                lastUpdated = current
-                notificationManager.notify(currNotificationIndex, notification.build())
+            if (lastUpdated + 1000 <= currentTime) {
+                lastUpdated = currentTime
+                notificationHelper.showUploadInProgress(currentNotificationIndex, fileName, progress)
             }
         }
     }
@@ -87,17 +78,12 @@ suspend fun RequestManager.postFile(fileUri: Uri, attachId: Int, attachKey: Stri
         fileStream.close()
     }
 
-    notification = NotificationHelper.getUploadFinished(context, fileName)
-    if (NotificationHelper.canSend(context)) {
-        notificationManager.notify(currNotificationIndex, notification.build())
-    }
+    notificationHelper.showUploadFinished(currentNotificationIndex, fileName)
 
     return fileInfo
 }
 
-@SuppressLint("MissingPermission")
 suspend fun RequestManager.getFile(fileHash: String) {
-    val currNotifIndex = ++notificationIndex
     val res = executeRequestUntilResponse("$apiUrl/files/dl/$fileHash", HttpMethod.Get)
 
     val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
@@ -113,10 +99,7 @@ suspend fun RequestManager.getFile(fileHash: String) {
         file = java.io.File("$downloadDir/$fileName")
     }
 
-    val notification = NotificationHelper.getDownloadInProgress(context, fileName)
-    if (NotificationHelper.canSend(context)) {
-        notificationManager.notify(currNotifIndex, notification.build())
-    }
+    val currentNotificationIndex = notificationHelper.showDownloadInProgress(null, fileName, 0)
 
     val channel: ByteReadChannel = res.body()
     var lastUpdated = Calendar.getInstance().timeInMillis
@@ -128,22 +111,21 @@ suspend fun RequestManager.getFile(fileHash: String) {
             val bytes = packet.readBytes()
             file.appendBytes(bytes)
 
-            val progress = ((file.length() / res.contentLength()!!.toFloat()) * 100).toInt()
-            notification.setProgress(100, progress, false)
+            val progress = if (res.contentLength() != null) {
+                ((file.length() / res.contentLength()!!.toFloat()) * 100).toInt()
+            } else {
+                100
+            }
 
-            val current = Calendar.getInstance().timeInMillis
-            if (NotificationHelper.canSend(context) && lastUpdated + 1000 <= current) {
-                lastUpdated = current
-                notificationManager.notify(currNotifIndex, notification.build())
+            val currentTime = Calendar.getInstance().timeInMillis
+            if (lastUpdated + 1000 <= currentTime) {
+                lastUpdated = currentTime
+                notificationHelper.showDownloadInProgress(currentNotificationIndex, fileName, progress)
             }
         }
     }
 
-    if (NotificationHelper.canSend(context)) {
-        val notification = NotificationHelper.getDownloadFinished(context, file)
-        notificationManager.notify(currNotifIndex, notification.build())
-    }
-
+    notificationHelper.showDownloadFinished(currentNotificationIndex, file)
     println("A file saved to ${file.path}")
 }
 

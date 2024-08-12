@@ -10,23 +10,24 @@ import android.view.View
 import android.view.View.OnFocusChangeListener
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.recyclerview.widget.GridLayoutManager
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityNoteBinding
 import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_ITEM_MARGIN
-import com.kutoru.mikunotes.logic.SELECTED_NOTE
-import com.kutoru.mikunotes.models.Note
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.NoteTagDialog
 import com.kutoru.mikunotes.ui.adapters.FileListAdapter
 import com.kutoru.mikunotes.ui.adapters.TagListAdapter
+import com.kutoru.mikunotes.viewmodels.NoteViewModel
+import com.kutoru.mikunotes.viewmodels.TagViewModel
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-class NoteActivity : ServiceBoundActivity() {
+class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
     private lateinit var binding: ActivityNoteBinding
     private lateinit var tagAdapter: TagListAdapter
@@ -36,8 +37,7 @@ class NoteActivity : ServiceBoundActivity() {
     private var fileContainerExpanded = false
     private var lastRootHeight = 0
 
-    private lateinit var note: Note
-    private var initialized = false
+    override val viewModel: NoteViewModel by viewModels { NoteViewModel.Factory }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,14 +49,12 @@ class NoteActivity : ServiceBoundActivity() {
         supportActionBar?.title = "Note"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val extractedNote = intent.getSerializableExtra(SELECTED_NOTE) as? Note
-        if (extractedNote == null) {
+        val result = runCatching { viewModel.parseFromIntent(intent) }
+        if (result.isFailure) {
             Toast.makeText(this, "Tried to open an invalid note", Toast.LENGTH_LONG).show()
             finish()
             return
         }
-
-        note = extractedNote
 
         setInputOnFocusChange(
             binding.etNoteTitle,
@@ -71,7 +69,7 @@ class NoteActivity : ServiceBoundActivity() {
         )
 
         binding.btnNoteAddTag.setOnClickListener {
-            tagDialog.show(note.tags)
+            tagDialog.show(viewModel.note.tags)
         }
 
         binding.fabNoteMoveFiles.setOnClickListener {
@@ -103,16 +101,18 @@ class NoteActivity : ServiceBoundActivity() {
         binding.rvNoteFiles.adapter = fileAdapter
         binding.rvNoteFiles.layoutManager = GridLayoutManager(this, RECYCLER_VIEW_FILE_COLUMNS)
 
-        onServiceBound = {
-            tagDialog = NoteTagDialog(
-                this,
-                binding.root,
-                apiService,
-                ::onTagDialogAdd,
-                ::onTagDialogRemove,
-                ::onTagDialogChange,
-            )
-        }
+        val tagViewModel: TagViewModel by viewModels { TagViewModel.Factory }
+        tagDialog = NoteTagDialog(
+            this,
+            binding.root,
+            scope,
+            tagViewModel,
+            ::handleRequest,
+            ::showToast,
+            ::onTagDialogAdd,
+            ::onTagDialogRemove,
+            ::onTagDialogChange,
+        )
 
         binding.root.viewTreeObserver.addOnGlobalLayoutListener {
             val currHeight = Rect().let {
@@ -130,14 +130,13 @@ class NoteActivity : ServiceBoundActivity() {
     override fun onResume() {
 
         refreshNote()
-        initialized = true
-
         updateCurrentNote(true, true)
+
         super.onResume()
     }
 
     override fun onPause() {
-        if (initialized) {
+        if (viewModel.initialized) {
             saveNote()
         }
 
@@ -159,11 +158,6 @@ class NoteActivity : ServiceBoundActivity() {
         }
 
         return true
-    }
-
-    override fun onDestroy() {
-        tagDialog.cancelJob()
-        super.onDestroy()
     }
 
     private fun moveFileContainer(swapState: Boolean) {
@@ -226,11 +220,11 @@ class NoteActivity : ServiceBoundActivity() {
     }
 
     private fun deleteFile(position: Int) {
-        println("deleteFile: ${note.files.getOrNull(position)}")
+        println("deleteFile: ${viewModel.note.files.getOrNull(position)}")
     }
 
     private fun downloadFile(position: Int) {
-        println("downloadFile: ${note.files.getOrNull(position)}")
+        println("downloadFile: ${viewModel.note.files.getOrNull(position)}")
     }
 
     private fun uploadFile() {
@@ -238,7 +232,7 @@ class NoteActivity : ServiceBoundActivity() {
     }
 
     private fun removeTag(position: Int) {
-        println("removeTag: ${note.tags.getOrNull(position)}")
+        println("removeTag: ${viewModel.note.tags.getOrNull(position)}")
     }
 
     private fun refreshNote() {
@@ -267,27 +261,35 @@ class NoteActivity : ServiceBoundActivity() {
 
     private fun updateCurrentNote(updateTags: Boolean, updateFiles: Boolean) {
         val created = LocalDateTime
-            .ofEpochSecond(note.created, 0, ZoneOffset.UTC)
+            .ofEpochSecond(viewModel.note.created, 0, ZoneOffset.UTC)
             .format(DateTimeFormatter.ofPattern("yy/MM/dd HH:mm"))
 
         val lastEdited = LocalDateTime
-            .ofEpochSecond(note.last_edited, 0, ZoneOffset.UTC)
+            .ofEpochSecond(viewModel.note.last_edited, 0, ZoneOffset.UTC)
             .format(DateTimeFormatter.ofPattern("yy/MM/dd HH:mm"))
 
-        binding.etNoteTitle.setText(note.title)
-        binding.etNoteText.setText(note.text)
+        binding.etNoteTitle.setText(viewModel.note.title)
+        binding.etNoteText.setText(viewModel.note.text)
         binding.tvNoteCreated.text = created
         binding.tvNoteEdited.text = lastEdited
-        binding.tvNoteCount.text = note.times_edited.toString()
+        binding.tvNoteCount.text = viewModel.note.times_edited.toString()
 
         if (updateTags) {
-            tagAdapter.tags = note.tags
-            tagAdapter.notifyDataSetChanged()
+            updateCurrentTags()
         }
 
         if (updateFiles) {
-            fileAdapter.files = note.files
-            fileAdapter.notifyDataSetChanged()
+            updateCurrentFiles()
         }
+    }
+
+    private fun updateCurrentTags() {
+        tagAdapter.tags = viewModel.note.tags
+        tagAdapter.notifyDataSetChanged()
+    }
+
+    private fun updateCurrentFiles() {
+        fileAdapter.files = viewModel.note.files
+        fileAdapter.notifyDataSetChanged()
     }
 }

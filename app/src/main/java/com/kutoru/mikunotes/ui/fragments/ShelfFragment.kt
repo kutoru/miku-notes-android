@@ -14,29 +14,27 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.GridLayoutManager
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.FragmentShelfBinding
 import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
-import com.kutoru.mikunotes.logic.NotificationHelper
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
-import com.kutoru.mikunotes.models.Shelf
-import com.kutoru.mikunotes.models.ShelfPatch
-import com.kutoru.mikunotes.models.ShelfToNote
 import com.kutoru.mikunotes.ui.ShelfCallbacks
 import com.kutoru.mikunotes.ui.activities.MainActivity
 import com.kutoru.mikunotes.ui.adapters.FileListAdapter
+import com.kutoru.mikunotes.viewmodels.ShelfViewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-class ShelfFragment : ServiceBoundFragment() {
+class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
 
     private lateinit var binding: FragmentShelfBinding
     private lateinit var adapter: FileListAdapter
@@ -50,8 +48,7 @@ class ShelfFragment : ServiceBoundFragment() {
     private var lastRootHeight = 0
     private var fileContainerExpanded = true
 
-    private lateinit var shelf: Shelf
-    private var initialized = false
+    override val viewModel: ShelfViewModel by viewModels { ShelfViewModel.Factory }
 
     private val readFilesPermission = android.Manifest.permission.READ_EXTERNAL_STORAGE
     private val postNotificationPermission = android.Manifest.permission.POST_NOTIFICATIONS
@@ -73,8 +70,8 @@ class ShelfFragment : ServiceBoundFragment() {
         adapter = FileListAdapter(
             requireContext(),
             listOf(),
-            ::deleteFile,
-            ::downloadFile,
+            { pos -> scope.launch { deleteFile(pos) } },
+            { pos -> scope.launch { downloadFile(pos) } },
         )
 
         binding.rvShelfFiles.adapter = adapter
@@ -148,25 +145,10 @@ class ShelfFragment : ServiceBoundFragment() {
         super.onResume()
 
         loadDialog.show()
-        initialized = false
-
-        if (serviceIsBound) {
-            onResumeInit()
-        } else {
-            onServiceBound = ::onResumeInit
-        }
-    }
-
-    private fun onResumeInit() {
-        apiService.afterUrlPropertySave = {
-            scope.launch {
-                refreshShelf(true)
-            }
-        }
 
         scope.launch {
             refreshShelf(true)
-            if (initialized && onShare != null) {
+            if (viewModel.initialized && onShare != null) {
                 loadDialog.show()
                 onShare?.invoke()
                 loadDialog.dismiss()
@@ -174,8 +156,14 @@ class ShelfFragment : ServiceBoundFragment() {
         }
     }
 
+    override fun afterUrlDialogSave() {
+        scope.launch {
+            refreshShelf(true)
+        }
+    }
+
     override fun onPause() {
-        if (initialized) {
+        if (viewModel.initialized) {
             scope.launch {
                 saveShelf(true)
             }
@@ -237,73 +225,74 @@ class ShelfFragment : ServiceBoundFragment() {
         animator.start()
     }
 
-    private fun deleteFile(fileIndex: Int) {
-        scope.launch {
-            val fileId = shelf.files[fileIndex].id
-
-            apiService.deleteFile("Could not delete the file", fileId) ?: return@launch
-
-            showToast("The file has been deleted")
-
-            shelf.files.removeAt(fileIndex)
-            adapter.files = shelf.files
-            adapter.notifyDataSetChanged()
+    private suspend fun deleteFile(fileIndex: Int) {
+        val result = handleRequest { viewModel.deleteFile(fileIndex) }
+        if (result.isFailure) {
+            showToast("Could not delete the file")
+            return
         }
+
+        updateCurrentFiles()
+
+        showToast("The file has been deleted")
     }
 
-    private fun downloadFile(fileIndex: Int) {
-        if (!NotificationHelper.canSend(requireContext())) {
+    private suspend fun downloadFile(fileIndex: Int) {
+        if (!canSendNotifications()) {
             notificationPermissionActivityLauncher.launch(postNotificationPermission)
         }
 
-        scope.launch {
-            val fileHash = shelf.files[fileIndex].hash
-            apiService.getFile("Could not download the file", fileHash)
+        val result = handleRequest { viewModel.getFile(fileIndex) }
+        if (result.isFailure) {
+            showToast("Could not download the file")
         }
     }
 
     private fun uploadFiles(fileUris: List<Uri>) {
         fileUris.forEach { uri ->
             scope.launch {
-                val file = apiService.postFileToShelf("Could not upload the file", uri, shelf.id) ?: return@launch
+                val result = handleRequest { viewModel.postFile(
+                    requireContext().contentResolver, uri,
+                ) }
+                if (result.isFailure) {
+                    showToast("Could not upload the file")
+                    return@launch
+                }
 
-                shelf.files.add(file)
-                adapter.files = shelf.files
-                adapter.notifyDataSetChanged()
+                updateCurrentFiles()
             }
         }
     }
 
     private suspend fun refreshShelf(silent: Boolean) {
-        shelf = apiService.getShelf(
-            if (!silent) "Could not refresh the shelf" else null,
-        ) ?: return
-        updateCurrentShelf(true)
+        val result = handleRequest { viewModel.getShelf() }
+        if (result.isFailure) {
+            if (!silent) showToast("Could not refresh the shelf")
+            return
+        }
 
-        initialized = true
+        updateCurrentShelf(true)
         loadDialog.dismiss()
 
-        if (!silent) {
-            showToast("The shelf has been refreshed")
-        }
+        if (!silent) showToast("The shelf has been refreshed")
     }
 
     private suspend fun saveShelf(silent: Boolean) {
         val newText = binding.etShelfText.text.toString()
-        if (shelf.text == newText) {
-            if (!silent) {
-                showToast("The shelf hasn't changed since last save")
-            }
-
+        if (viewModel.shelf.text == newText) {
+            if (!silent) showToast("The shelf hasn't changed since last save")
             return
         }
 
-        shelf = apiService.patchShelf("Could not save the shelf", ShelfPatch(newText)) ?: return
+        val result = handleRequest { viewModel.patchShelf(newText) }
+        if (result.isFailure) {
+            if (!silent) showToast("Could not save the shelf")
+            return
+        }
+
         updateCurrentShelf(false)
 
-        if (!silent) {
-            showToast("The shelf has been saved")
-        }
+        if (!silent) showToast("The shelf has been saved")
     }
 
     private fun clearShelf() {
@@ -313,7 +302,12 @@ class ShelfFragment : ServiceBoundFragment() {
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Clear") { _, _ ->
                 scope.launch {
-                    shelf = apiService.deleteShelf("Could not clear the shelf") ?: return@launch
+                    val result = handleRequest { viewModel.deleteShelf() }
+                    if (result.isFailure) {
+                        showToast("Could not clear the shelf")
+                        return@launch
+                    }
+
                     updateCurrentShelf(true)
                 }
             }
@@ -336,37 +330,42 @@ class ShelfFragment : ServiceBoundFragment() {
                 }
 
                 scope.launch {
-                    shelf = apiService.postShelfToNote("Could not convert the shelf", ShelfToNote(title, shelf.text)) ?: return@launch
+                    val result = handleRequest { viewModel.postShelfToNote(title) }
+                    if (result.isFailure) {
+                        showToast("Could not convert the shelf")
+                        return@launch
+                    }
+
                     updateCurrentShelf(true)
                 }
             }
             .show()
     }
 
-    private fun copyShelfToClipboard() {
-        val clipboard = requireContext().getSystemService(ClipboardManager::class.java)
-        val clipData = ClipData.newPlainText("shelf text", shelf.text)
-        clipboard.setPrimaryClip(clipData)
-        showToast("The text has been copied to clipboard")
-    }
-
     private fun updateCurrentShelf(updateFiles: Boolean) {
         val lastEdited = LocalDateTime
-            .ofEpochSecond(shelf.last_edited, 0, ZoneOffset.UTC)
+            .ofEpochSecond(viewModel.shelf.last_edited, 0, ZoneOffset.UTC)
             .format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
 
         binding.tvShelfDate.text = lastEdited
-        binding.tvShelfCount.text = shelf.times_edited.toString()
-        binding.etShelfText.setText(shelf.text)
+        binding.tvShelfCount.text = viewModel.shelf.times_edited.toString()
+        binding.etShelfText.setText(viewModel.shelf.text)
 
         if (updateFiles) {
-            adapter.files = shelf.files
-            adapter.notifyDataSetChanged()
+            updateCurrentFiles()
         }
     }
 
-    private fun showToast(message: String) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+    private fun updateCurrentFiles() {
+        adapter.files = viewModel.shelf.files
+        adapter.notifyDataSetChanged()
+    }
+
+    private fun copyShelfToClipboard() {
+        val clipboard = requireContext().getSystemService(ClipboardManager::class.java)
+        val clipData = ClipData.newPlainText("shelf text", viewModel.shelf.text)
+        clipboard.setPrimaryClip(clipData)
+        showToast("The text has been copied to clipboard")
     }
 
     private fun readFilePermissionGranted(): Boolean {
@@ -396,5 +395,15 @@ class ShelfFragment : ServiceBoundFragment() {
                 uploadFiles(fileUris)
             }
         }
+    }
+
+    private fun canSendNotifications(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return true
+        }
+
+        return ActivityCompat.checkSelfPermission(
+            requireContext(), android.Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
     }
 }

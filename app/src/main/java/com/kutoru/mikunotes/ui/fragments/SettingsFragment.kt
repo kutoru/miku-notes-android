@@ -5,17 +5,19 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.viewModels
 import com.kutoru.mikunotes.databinding.FragmentSettingsBinding
 import com.kutoru.mikunotes.logic.PersistentStorage
-import com.kutoru.mikunotes.ui.UrlPropertyDialog
 import com.kutoru.mikunotes.ui.activities.LoginActivity
 import com.kutoru.mikunotes.ui.activities.MainActivity
+import com.kutoru.mikunotes.viewmodels.SettingsViewModel
 import kotlinx.coroutines.launch
 
-class SettingsFragment : ServiceBoundFragment() {
+class SettingsFragment : ApiReadyFragment<SettingsViewModel>() {
 
     private lateinit var binding: FragmentSettingsBinding
-    private lateinit var urlDialog: UrlPropertyDialog
+
+    override val viewModel: SettingsViewModel by viewModels { SettingsViewModel.Factory }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -29,7 +31,11 @@ class SettingsFragment : ServiceBoundFragment() {
 
         binding.btnSettingsLogout.setOnClickListener {
             scope.launch {
-                apiService.getLogout("Could not log out") ?: return@launch
+                val result = handleRequest { viewModel.getLogout() }
+                if (result.isFailure) {
+                    showToast("Could not log out")
+                    return@launch
+                }
 
                 val intent = Intent(requireActivity(), LoginActivity::class.java)
                 requireActivity().startActivity(intent)
@@ -37,10 +43,8 @@ class SettingsFragment : ServiceBoundFragment() {
         }
 
         binding.btnSettingsEditUrl.setOnClickListener {
-            urlDialog.show(true, null) { apiService.updateUrl() }
+            urlDialog.show(true, null) { viewModel.updateUrl() }
         }
-
-        urlDialog = UrlPropertyDialog(requireContext())
 
         (requireActivity() as MainActivity).setSettingsOptionsMenu()
 
@@ -54,6 +58,10 @@ class SettingsFragment : ServiceBoundFragment() {
 
     private fun refreshEmail() {
         val email = PersistentStorage(requireContext()).email
-        binding.tvSettingsEmail.text = if (email != null) "Email: $email" else "Email is not present"
+        binding.tvSettingsEmail.text = if (email != null) {
+            "Email: $email"
+        } else {
+            "Email is not present"
+        }
     }
 }
