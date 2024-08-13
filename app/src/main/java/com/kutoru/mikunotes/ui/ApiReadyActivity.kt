@@ -1,7 +1,6 @@
 package com.kutoru.mikunotes.ui
 
 import android.content.Intent
-import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.kutoru.mikunotes.logic.InvalidUrl
@@ -23,9 +22,14 @@ abstract class ApiReadyActivity<T: ApiViewModel> : AppCompatActivity() {
 
     protected abstract val viewModel: T
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        urlDialog = UrlPropertyDialog(this)
-        return super.onCreate(savedInstanceState)
+    override fun onStart() {
+        try {
+            urlDialog
+        } catch (e: UninitializedPropertyAccessException) {
+            urlDialog = UrlPropertyDialog(this)
+        }
+
+        super.onStart()
     }
 
     override fun onDestroy() {
