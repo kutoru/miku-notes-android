@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.ShelfFragment
+package com.kutoru.mikunotes.ui.shelf
 
 import android.content.ContentResolver
 import android.net.Uri

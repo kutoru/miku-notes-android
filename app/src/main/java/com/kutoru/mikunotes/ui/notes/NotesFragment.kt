@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.NotesFragment
+package com.kutoru.mikunotes.ui.notes
 
 import android.app.ProgressDialog
 import android.content.Intent
@@ -11,9 +11,9 @@ import com.kutoru.mikunotes.databinding.FragmentNotesBinding
 import com.kutoru.mikunotes.logic.SELECTED_NOTE
 import com.kutoru.mikunotes.models.NoteQueryParameters
 import com.kutoru.mikunotes.ui.ApiReadyFragment
-import com.kutoru.mikunotes.ui.MainActivity.MainActivity
-import com.kutoru.mikunotes.ui.MainActivity.NotesCallbacks
-import com.kutoru.mikunotes.ui.NoteActivity.NoteActivity
+import com.kutoru.mikunotes.ui.main.MainActivity
+import com.kutoru.mikunotes.ui.main.NotesCallbacks
+import com.kutoru.mikunotes.ui.note.NoteActivity
 import kotlinx.coroutines.launch
 
 class NotesFragment : ApiReadyFragment<NotesViewModel>() {

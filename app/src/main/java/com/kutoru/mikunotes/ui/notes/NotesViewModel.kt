@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.NotesFragment
+package com.kutoru.mikunotes.ui.notes
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData

@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.LoginActivity
+package com.kutoru.mikunotes.ui.login
 
 import android.os.Bundle
 import android.view.Menu

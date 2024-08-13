@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.NoteActivity
+package com.kutoru.mikunotes.ui.note
 
 import android.animation.ValueAnimator
 import android.graphics.Rect

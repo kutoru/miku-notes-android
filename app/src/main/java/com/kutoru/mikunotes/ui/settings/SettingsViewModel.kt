@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.SettingsFragment
+package com.kutoru.mikunotes.ui.settings
 
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewmodel.initializer

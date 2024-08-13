@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.NoteActivity
+package com.kutoru.mikunotes.ui.note
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData

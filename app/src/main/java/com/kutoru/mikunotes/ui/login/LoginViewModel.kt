@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.LoginActivity
+package com.kutoru.mikunotes.ui.login
 
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer

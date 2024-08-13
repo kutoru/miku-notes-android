@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.ShelfFragment
+package com.kutoru.mikunotes.ui.shelf
 
 import android.animation.ValueAnimator
 import android.app.ProgressDialog
@@ -27,8 +27,8 @@ import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
 import com.kutoru.mikunotes.ui.ApiReadyFragment
 import com.kutoru.mikunotes.ui.FileListAdapter
-import com.kutoru.mikunotes.ui.MainActivity.MainActivity
-import com.kutoru.mikunotes.ui.MainActivity.ShelfCallbacks
+import com.kutoru.mikunotes.ui.main.MainActivity
+import com.kutoru.mikunotes.ui.main.ShelfCallbacks
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.ZoneOffset
