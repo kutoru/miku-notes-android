@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.NotesFragment
+package com.kutoru.mikunotes.ui.NoteActivity
 
 import android.content.Context
 import android.view.View
@@ -16,10 +16,14 @@ class NoteTagDialog(
     context: Context,
     lifecycleOwner: LifecycleOwner,
     root: ConstraintLayout,
+
     private val scope: CoroutineScope,
     private val viewModel: TagViewModel,
     private val handleRequest: suspend (suspend () -> Any) -> Result<Any>,
     private val showToast: (String?) -> Unit,
+
+    private val onShow: () -> Unit,
+    private val onHide: () -> Unit,
     private val onTagAdd: (tag: Tag) -> Unit,
     private val onTagRemove: (tag: Tag) -> Unit,
     private val onTagChange: (tag: Tag) -> Unit,
@@ -77,10 +81,12 @@ class NoteTagDialog(
             hide()
         }
 
+        onShow()
         scope.launch {
             val result = handleRequest { viewModel.getTags() }
             if (result.isFailure) {
                 showToast("Could not get tags")
+                onHide()
                 return@launch
             }
 
@@ -97,6 +103,7 @@ class NoteTagDialog(
     fun hide() {
         dialogView.visibility = View.GONE
         inputManager?.hideSoftInputFromWindow(dialogView.windowToken, 0)
+        onHide()
     }
 
     private fun addTag(position: Int) {

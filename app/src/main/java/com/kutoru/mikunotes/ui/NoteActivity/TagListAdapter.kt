@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.NotesFragment
+package com.kutoru.mikunotes.ui.NoteActivity
 
 import android.content.Context
 import android.view.LayoutInflater

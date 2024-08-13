@@ -20,9 +20,6 @@ import com.kutoru.mikunotes.logic.RECYCLER_VIEW_ITEM_MARGIN
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.ApiReadyActivity
 import com.kutoru.mikunotes.ui.FileListAdapter
-import com.kutoru.mikunotes.ui.NotesFragment.NoteTagDialog
-import com.kutoru.mikunotes.ui.NotesFragment.TagListAdapter
-import com.kutoru.mikunotes.ui.NotesFragment.TagViewModel
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -108,10 +105,15 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
             this,
             this,
             binding.root,
+
             scope,
             tagViewModel,
             ::handleRequest,
             ::showToast,
+
+            // if i really want the button to be animated: https://stackoverflow.com/a/73798434
+            { binding.btnNoteAddTag.isEnabled = false },
+            { binding.btnNoteAddTag.isEnabled = true },
             ::onTagDialogAdd,
             ::onTagDialogRemove,
             ::onTagDialogChange,
