@@ -163,6 +163,14 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         return true
     }
 
+    override fun onBackPressed() {
+        if (tagDialog.isShown) {
+            tagDialog.hide()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
     private fun moveFileContainer(swapState: Boolean) {
         if (!swapState) {
             // if the container isn't expanded, then there is no

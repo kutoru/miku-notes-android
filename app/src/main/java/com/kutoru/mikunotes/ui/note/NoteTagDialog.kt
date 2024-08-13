@@ -34,6 +34,8 @@ class NoteTagDialog(
     private val dialogView: View
     private val inputManager: InputMethodManager?
 
+    val isShown get() = dialogView.visibility == View.VISIBLE
+
     init {
         adapter = TagDialogAdapter(
             context,
@@ -87,7 +89,7 @@ class NoteTagDialog(
 
     fun show(noteTags: List<Tag>) {
         adapter.noteTagIds = noteTags.map { it.id }
-        if (dialogView.visibility == View.VISIBLE) {
+        if (isShown) {
             hide()
         }
 
