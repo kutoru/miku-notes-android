@@ -2,6 +2,8 @@ package com.kutoru.mikunotes.viewmodels
 
 import android.content.ContentResolver
 import android.net.Uri
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -14,14 +16,26 @@ import com.kutoru.mikunotes.logic.requests.getShelf
 import com.kutoru.mikunotes.logic.requests.patchShelf
 import com.kutoru.mikunotes.logic.requests.postFileToShelf
 import com.kutoru.mikunotes.logic.requests.postShelfToNote
+import com.kutoru.mikunotes.models.File
 import com.kutoru.mikunotes.models.Shelf
 import com.kutoru.mikunotes.models.ShelfPatch
 import com.kutoru.mikunotes.models.ShelfToNote
 
 class ShelfViewModel(requestManager: RequestManager) : ApiViewModel(requestManager) {
 
-    lateinit var shelf: Shelf
-        private set
+    private val _text = MutableLiveData<String>()
+    val text: LiveData<String> = _text
+
+    private val _lastEdited = MutableLiveData<Long>()
+    val lastEdited: LiveData<Long> = _lastEdited
+
+    private val _timesEdited = MutableLiveData<Int>()
+    val timesEdited: LiveData<Int> = _timesEdited
+
+    private val _files = MutableLiveData<List<File>>()
+    val files: LiveData<List<File>> = _files
+
+    private lateinit var shelf: Shelf
     var initialized = false
         private set
 
@@ -29,6 +43,8 @@ class ShelfViewModel(requestManager: RequestManager) : ApiViewModel(requestManag
         val fileId = shelf.files[fileIndex].id
         requestManager.deleteFile(fileId)
         shelf.files.removeAt(fileIndex)
+
+        _files.value = shelf.files
     }
 
     suspend fun getFile(fileIndex: Int) {
@@ -39,23 +55,45 @@ class ShelfViewModel(requestManager: RequestManager) : ApiViewModel(requestManag
     suspend fun postFile(contentResolver: ContentResolver, fileUri: Uri) {
         val file = requestManager.postFileToShelf(contentResolver, fileUri, shelf.id)
         shelf.files.add(file)
+
+        _files.value = shelf.files
     }
 
     suspend fun getShelf() {
         shelf = requestManager.getShelf()
+
+        _text.value = shelf.text
+        _lastEdited.value = shelf.last_edited
+        _timesEdited.value = shelf.times_edited
+        _files.value = shelf.files
+
         initialized = true
     }
 
     suspend fun patchShelf(newText: String) {
         shelf = requestManager.patchShelf(ShelfPatch(newText))
+
+        _text.value = shelf.text
+        _lastEdited.value = shelf.last_edited
+        _timesEdited.value = shelf.times_edited
     }
 
     suspend fun deleteShelf() {
         shelf = requestManager.deleteShelf()
+
+        _text.value = shelf.text
+        _lastEdited.value = shelf.last_edited
+        _timesEdited.value = shelf.times_edited
+        _files.value = shelf.files
     }
 
     suspend fun postShelfToNote(noteTitle: String) {
         shelf = requestManager.postShelfToNote(ShelfToNote(noteTitle, shelf.text))
+
+        _text.value = shelf.text
+        _lastEdited.value = shelf.last_edited
+        _timesEdited.value = shelf.times_edited
+        _files.value = shelf.files
     }
 
     companion object {

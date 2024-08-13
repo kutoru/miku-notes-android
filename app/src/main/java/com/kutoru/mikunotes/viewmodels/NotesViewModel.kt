@@ -1,5 +1,7 @@
 package com.kutoru.mikunotes.viewmodels
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -11,17 +13,21 @@ import com.kutoru.mikunotes.models.NoteQueryParameters
 
 class NotesViewModel(requestManager: RequestManager) : ApiViewModel(requestManager) {
 
-    var notes = mutableListOf<Note>()
-        private set
-    var pageCount = 0u
-        private set
+    private val _notes = MutableLiveData<List<Note>>()
+    val notes: LiveData<List<Note>> = _notes
+
+    private val _pageCount = MutableLiveData<UInt>()
+    val pageCount: LiveData<UInt> = _pageCount
+
     var initialized = false
         private set
 
     suspend fun getNotes(parameters: NoteQueryParameters) {
         val (newNotes, newPageCount) = requestManager.getNotes(parameters)
-        notes = newNotes
-        pageCount = newPageCount
+
+        _notes.value = newNotes
+        _pageCount.value = newPageCount
+
         initialized = true
     }
 

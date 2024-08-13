@@ -45,6 +45,8 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         binding = ActivityNoteBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setupViewModelObservers()
+
         setSupportActionBar(binding.toolbarNote)
         supportActionBar?.title = "Note"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -69,7 +71,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         )
 
         binding.btnNoteAddTag.setOnClickListener {
-            tagDialog.show(viewModel.note.tags)
+            tagDialog.show(viewModel.tags.value!!)
         }
 
         binding.fabNoteMoveFiles.setOnClickListener {
@@ -104,6 +106,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         val tagViewModel: TagViewModel by viewModels { TagViewModel.Factory }
         tagDialog = NoteTagDialog(
             this,
+            this,
             binding.root,
             scope,
             tagViewModel,
@@ -128,10 +131,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
     }
 
     override fun onResume() {
-
         refreshNote()
-        updateCurrentNote(true, true)
-
         super.onResume()
     }
 
@@ -220,11 +220,11 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
     }
 
     private fun deleteFile(position: Int) {
-        println("deleteFile: ${viewModel.note.files.getOrNull(position)}")
+        println("deleteFile: ${viewModel.files.value!!.getOrNull(position)}")
     }
 
     private fun downloadFile(position: Int) {
-        println("downloadFile: ${viewModel.note.files.getOrNull(position)}")
+        println("downloadFile: ${viewModel.files.value!!.getOrNull(position)}")
     }
 
     private fun uploadFile() {
@@ -232,7 +232,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
     }
 
     private fun removeTag(position: Int) {
-        println("removeTag: ${viewModel.note.tags.getOrNull(position)}")
+        println("removeTag: ${viewModel.tags.value!!.getOrNull(position)}")
     }
 
     private fun refreshNote() {
@@ -259,37 +259,49 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         println("onTagDialogChange: $tag")
     }
 
-    private fun updateCurrentNote(updateTags: Boolean, updateFiles: Boolean) {
-        val created = LocalDateTime
-            .ofEpochSecond(viewModel.note.created, 0, ZoneOffset.UTC)
-            .format(DateTimeFormatter.ofPattern("yy/MM/dd HH:mm"))
-
-        val lastEdited = LocalDateTime
-            .ofEpochSecond(viewModel.note.last_edited, 0, ZoneOffset.UTC)
-            .format(DateTimeFormatter.ofPattern("yy/MM/dd HH:mm"))
-
-        binding.etNoteTitle.setText(viewModel.note.title)
-        binding.etNoteText.setText(viewModel.note.text)
-        binding.tvNoteCreated.text = created
-        binding.tvNoteEdited.text = lastEdited
-        binding.tvNoteCount.text = viewModel.note.times_edited.toString()
-
-        if (updateTags) {
-            updateCurrentTags()
+    private fun setupViewModelObservers() {
+        viewModel.title.observe(this) {
+            val view = binding.etNoteTitle
+            if (view.text.toString() != it) {
+                view.setText(it)
+            }
         }
 
-        if (updateFiles) {
-            updateCurrentFiles()
+        viewModel.text.observe(this) {
+            val view = binding.etNoteText
+            if (view.text.toString() != it) {
+                view.setText(it)
+            }
         }
-    }
 
-    private fun updateCurrentTags() {
-        tagAdapter.tags = viewModel.note.tags
-        tagAdapter.notifyDataSetChanged()
-    }
+        viewModel.created.observe(this) {
+            val created = LocalDateTime
+                .ofEpochSecond(it, 0, ZoneOffset.UTC)
+                .format(DateTimeFormatter.ofPattern("yy/MM/dd HH:mm"))
 
-    private fun updateCurrentFiles() {
-        fileAdapter.files = viewModel.note.files
-        fileAdapter.notifyDataSetChanged()
+           binding.tvNoteCreated.text = created
+        }
+
+        viewModel.lastEdited.observe(this) {
+            val lastEdited = LocalDateTime
+                .ofEpochSecond(it, 0, ZoneOffset.UTC)
+                .format(DateTimeFormatter.ofPattern("yy/MM/dd HH:mm"))
+
+            binding.tvNoteEdited.text = lastEdited
+        }
+
+        viewModel.timesEdited.observe(this) {
+            binding.tvNoteCount.text = it.toString()
+        }
+
+        viewModel.tags.observe(this) {
+            tagAdapter.tags = it
+            tagAdapter.notifyDataSetChanged()
+        }
+
+        viewModel.files.observe(this) {
+            fileAdapter.files = it
+            fileAdapter.notifyDataSetChanged()
+        }
     }
 }

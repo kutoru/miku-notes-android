@@ -61,6 +61,8 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
         super.onCreateView(inflater, container, savedInstanceState)
         binding = FragmentShelfBinding.inflate(inflater, container, false)
 
+        setupViewModelObservers()
+
         setInputOnFocusChange(
             binding.etShelfText,
             binding.dividerShelf1,
@@ -229,12 +231,9 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
         val result = handleRequest { viewModel.deleteFile(fileIndex) }
         if (result.isFailure) {
             showToast("Could not delete the file")
-            return
+        } else {
+            showToast("The file has been deleted")
         }
-
-        updateCurrentFiles()
-
-        showToast("The file has been deleted")
     }
 
     private suspend fun downloadFile(fileIndex: Int) {
@@ -256,10 +255,7 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
                 ) }
                 if (result.isFailure) {
                     showToast("Could not upload the file")
-                    return@launch
                 }
-
-                updateCurrentFiles()
             }
         }
     }
@@ -271,7 +267,6 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
             return
         }
 
-        updateCurrentShelf(true)
         loadDialog.dismiss()
 
         if (!silent) showToast("The shelf has been refreshed")
@@ -279,20 +274,19 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
 
     private suspend fun saveShelf(silent: Boolean) {
         val newText = binding.etShelfText.text.toString()
-        if (viewModel.shelf.text == newText) {
+        if (viewModel.text.value == newText) {
             if (!silent) showToast("The shelf hasn't changed since last save")
             return
         }
 
         val result = handleRequest { viewModel.patchShelf(newText) }
-        if (result.isFailure) {
-            if (!silent) showToast("Could not save the shelf")
-            return
+        if (!silent) {
+            if (result.isFailure) {
+                showToast("Could not save the shelf")
+            } else {
+                showToast("The shelf has been saved")
+            }
         }
-
-        updateCurrentShelf(false)
-
-        if (!silent) showToast("The shelf has been saved")
     }
 
     private fun clearShelf() {
@@ -305,10 +299,7 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
                     val result = handleRequest { viewModel.deleteShelf() }
                     if (result.isFailure) {
                         showToast("Could not clear the shelf")
-                        return@launch
                     }
-
-                    updateCurrentShelf(true)
                 }
             }
             .show()
@@ -333,37 +324,41 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
                     val result = handleRequest { viewModel.postShelfToNote(title) }
                     if (result.isFailure) {
                         showToast("Could not convert the shelf")
-                        return@launch
                     }
-
-                    updateCurrentShelf(true)
                 }
             }
             .show()
     }
 
-    private fun updateCurrentShelf(updateFiles: Boolean) {
-        val lastEdited = LocalDateTime
-            .ofEpochSecond(viewModel.shelf.last_edited, 0, ZoneOffset.UTC)
-            .format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
-
-        binding.tvShelfDate.text = lastEdited
-        binding.tvShelfCount.text = viewModel.shelf.times_edited.toString()
-        binding.etShelfText.setText(viewModel.shelf.text)
-
-        if (updateFiles) {
-            updateCurrentFiles()
+    private fun setupViewModelObservers() {
+        viewModel.text.observe(viewLifecycleOwner) {
+            val view = binding.etShelfText
+            if (view.text.toString() != it) {
+                view.setText(it)
+            }
         }
-    }
 
-    private fun updateCurrentFiles() {
-        adapter.files = viewModel.shelf.files
-        adapter.notifyDataSetChanged()
+        viewModel.lastEdited.observe(viewLifecycleOwner) {
+            val lastEdited = LocalDateTime
+                .ofEpochSecond(it, 0, ZoneOffset.UTC)
+                .format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"))
+
+            binding.tvShelfDate.text = lastEdited
+        }
+
+        viewModel.timesEdited.observe(viewLifecycleOwner) {
+            binding.tvShelfCount.text = it.toString()
+        }
+
+        viewModel.files.observe(viewLifecycleOwner) {
+            adapter.files = it
+            adapter.notifyDataSetChanged()
+        }
     }
 
     private fun copyShelfToClipboard() {
         val clipboard = requireContext().getSystemService(ClipboardManager::class.java)
-        val clipData = ClipData.newPlainText("shelf text", viewModel.shelf.text)
+        val clipData = ClipData.newPlainText("shelf text", viewModel.text.value)
         clipboard.setPrimaryClip(clipData)
         showToast("The text has been copied to clipboard")
     }

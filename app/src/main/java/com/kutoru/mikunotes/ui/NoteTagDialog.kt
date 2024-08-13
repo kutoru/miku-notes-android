@@ -5,6 +5,7 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.RecyclerView
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.models.Tag
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 
 class NoteTagDialog(
     context: Context,
+    lifecycleOwner: LifecycleOwner,
     root: ConstraintLayout,
     private val scope: CoroutineScope,
     private val viewModel: TagViewModel,
@@ -45,6 +47,11 @@ class NoteTagDialog(
         val rvDialogTags = dialogView.findViewById<RecyclerView>(R.id.rvDialogTagList)
         val btnDialogTagAdd = dialogView.findViewById<Button>(R.id.btnDialogTagAdd)
 
+        viewModel.tags.observe(lifecycleOwner) {
+            adapter.tags = it
+            adapter.notifyDataSetChanged()
+        }
+
         btnDialogTagBack.setOnClickListener {
             hide()
         }
@@ -67,6 +74,11 @@ class NoteTagDialog(
     }
 
     fun show(noteTags: List<Tag>) {
+        adapter.noteTagIds = noteTags.map { it.id }
+        if (dialogView.visibility == View.VISIBLE) {
+            hide()
+        }
+
         scope.launch {
             val result = handleRequest { viewModel.getTags() }
             if (result.isFailure) {
@@ -74,11 +86,7 @@ class NoteTagDialog(
                 return@launch
             }
 
-            adapter.noteTagIds = noteTags.map { it.id }
-            adapter.tags = viewModel.tags
-            adapter.notifyDataSetChanged()
-
-            if (viewModel.tags.isNotEmpty()) {
+            if (viewModel.tags.value!!.isNotEmpty()) {
                 dialogView
                     .findViewById<RecyclerView>(R.id.rvDialogTagList)
                     .scrollToPosition(0)
@@ -95,22 +103,22 @@ class NoteTagDialog(
 
     private fun addTag(position: Int) {
         println("dialogAddTag")
-        onTagAdd(viewModel.tags[position])
+        onTagAdd(viewModel.tags.value!![position])
     }
 
     private fun removeTag(position: Int) {
         println("dialogRemoveTag")
-        onTagRemove(viewModel.tags[position])
+        onTagRemove(viewModel.tags.value!![position])
     }
 
     private fun saveTag(position: Int) {
         println("dialogSaveTag")
-        onTagChange(viewModel.tags[position])
+        onTagChange(viewModel.tags.value!![position])
     }
 
     private fun deleteTag(position: Int) {
         println("dialogDeleteTag")
-        onTagRemove(viewModel.tags[position])
+        onTagRemove(viewModel.tags.value!![position])
     }
 
     private fun dialogCreateNewTag() {

@@ -31,9 +31,11 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         super.onCreateView(inflater, container, savedInstanceState)
         binding = FragmentNotesBinding.inflate(inflater, container, false)
 
+        setupViewModelObservers()
+
         binding.fabAddNote.setOnClickListener {
             val intent = Intent(requireActivity(), NoteActivity::class.java)
-            intent.putExtra(SELECTED_NOTE, viewModel.notes[0])
+            intent.putExtra(SELECTED_NOTE, viewModel.notes.value!![0])
             requireActivity().startActivity(intent)
         }
 
@@ -66,6 +68,15 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         }
     }
 
+    private fun setupViewModelObservers() {
+        viewModel.notes.observe(viewLifecycleOwner) {
+            binding.tvNotesTest.text = it.toString()
+        }
+
+        viewModel.pageCount.observe(viewLifecycleOwner) {
+        }
+    }
+
     private suspend fun refreshNotes(silent: Boolean) {
         // gather the params from inputs or something
         val parameters = NoteQueryParameters(null, null, null, null, null, null, null, null)
@@ -76,15 +87,8 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
             return
         }
 
-        updateCurrentNotes()
         loadDialog.dismiss()
 
         if (!silent) showToast("The notes have been refreshed")
-    }
-
-    private fun updateCurrentNotes() {
-        // update the ui stuff
-        binding.tvNotesTest.text =
-            "Notes: ${viewModel.notes.size}; Pages: ${viewModel.pageCount};\n${viewModel.notes}"
     }
 }
