@@ -16,7 +16,6 @@ import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityNoteBinding
 import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
-import com.kutoru.mikunotes.logic.RECYCLER_VIEW_ITEM_MARGIN
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.ApiReadyActivity
 import com.kutoru.mikunotes.ui.FileListAdapter
@@ -94,7 +93,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
         binding.rvNoteTags.adapter = tagAdapter
 
-        val bottomFilesPadding = (resources.getDimension(R.dimen.fab_size) + RECYCLER_VIEW_ITEM_MARGIN).toInt()
+        val bottomFilesPadding = (resources.getDimension(R.dimen.fab_size) + fileAdapter.itemMargin).toInt()
         binding.rvNoteFiles.setPadding(0, 0, 0, bottomFilesPadding)
 
         binding.rvNoteFiles.adapter = fileAdapter
@@ -165,8 +164,6 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
     }
 
     private fun moveFileContainer(swapState: Boolean) {
-        println("moveFileContainer")
-
         if (!swapState) {
             // if the container isn't expanded, then there is no
             // need to change the height, since it is static
@@ -181,7 +178,9 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
         val currHeight = binding.rvNoteFiles.height
         val maxHeight = (binding.etNoteText.height + currHeight) / 2
-        val minHeight = resources.getDimension(R.dimen.fab_size).toInt()
+        val minHeight = (
+                resources.getDimension(R.dimen.fab_size) + fileAdapter.itemMargin * 2
+            ).toInt()
 
         val desiredHeight = if (fileContainerExpanded) {
             fileContainerExpanded = false

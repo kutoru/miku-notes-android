@@ -214,7 +214,6 @@
         android:layout_height="1dp"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
         android:background="?android:attr/listDivider"
         app:layout_constraintBottom_toTopOf="@+id/rvNoteFiles"
         app:layout_constraintEnd_toEndOf="parent"
@@ -225,26 +224,28 @@
         android:id="@+id/rvNoteFiles"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginTop="@dimen/margin_neg"
         android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/fabNoteUpload"
-        app:layout_constraintVertical_bias="1.0">
-
-    </androidx.recyclerview.widget.RecyclerView>
+        app:layout_constraintVertical_bias="1.0" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabNoteMoveFiles"
         android:layout_width="@dimen/fab_size"
         android:layout_height="@dimen/fab_size"
+        android:layout_marginStart="@dimen/margin"
+        android:layout_marginTop="@dimen/margin"
+        android:layout_marginBottom="@dimen/margin"
         android:clickable="true"
+        app:elevation="0dp"
         app:fabCustomSize="@dimen/fab_size"
-        app:layout_constraintBottom_toBottomOf="@+id/rvNoteFiles"
-        app:layout_constraintStart_toStartOf="@+id/rvNoteFiles"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerNote4"
+        app:layout_constraintVertical_bias="1.0"
         app:maxImageSize="32dp"
         app:srcCompat="@drawable/ic_up" />
 
@@ -252,10 +253,16 @@
         android:id="@+id/fabNoteUpload"
         android:layout_width="@dimen/fab_size"
         android:layout_height="@dimen/fab_size"
+        android:layout_marginTop="@dimen/margin"
+        android:layout_marginEnd="@dimen/margin"
+        android:layout_marginBottom="@dimen/margin"
         android:clickable="true"
+        app:elevation="0dp"
         app:fabCustomSize="@dimen/fab_size"
-        app:layout_constraintBottom_toBottomOf="@+id/rvNoteFiles"
-        app:layout_constraintEnd_toEndOf="@+id/rvNoteFiles"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dividerNote4"
+        app:layout_constraintVertical_bias="1.0"
         app:srcCompat="@drawable/ic_upload" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

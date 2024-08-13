@@ -13,23 +13,25 @@ import androidx.core.view.setMargins
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.kutoru.mikunotes.R
-import com.kutoru.mikunotes.logic.RECYCLER_VIEW_ITEM_MARGIN
 import com.kutoru.mikunotes.models.Tag
 
 class TagDialogAdapter (
     private val context: Context,
     var noteTagIds: List<Int>,
     var tags: List<Tag>,
+
     private val onTagAdd: (position: Int) -> Unit,
     private val onTagRemove: (position: Int) -> Unit,
     private val onTagSave: (position: Int) -> Unit,
     private val onTagDelete: (position: Int) -> Unit,
 ) : RecyclerView.Adapter<TagDialogAdapter.ViewHolder>() {
 
+    private val itemMargin = context.resources.getDimension(R.dimen.margin).toInt()
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(context).inflate(R.layout.card_dialog_tag, parent, false)
         val layoutParams = view.findViewById<CardView>(R.id.cardView).layoutParams as ViewGroup.MarginLayoutParams
-        layoutParams.setMargins(RECYCLER_VIEW_ITEM_MARGIN)
+        layoutParams.setMargins(itemMargin)
         return ViewHolder(view)
     }
 

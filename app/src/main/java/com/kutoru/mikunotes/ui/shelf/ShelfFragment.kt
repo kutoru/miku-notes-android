@@ -206,7 +206,9 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
 
         val currHeight = binding.rvShelfFiles.height
         val maxHeight = (binding.etShelfText.height + currHeight) / 2
-        val minHeight = resources.getDimension(R.dimen.fab_size).toInt()
+        val minHeight = (
+                resources.getDimension(R.dimen.fab_size) + adapter.itemMargin * 2
+            ).toInt()
 
         val desiredHeight = if (fileContainerExpanded) {
             fileContainerExpanded = false

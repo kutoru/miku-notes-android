@@ -11,7 +11,6 @@ import androidx.core.view.setMargins
 import androidx.recyclerview.widget.RecyclerView
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
-import com.kutoru.mikunotes.logic.RECYCLER_VIEW_ITEM_MARGIN
 import com.kutoru.mikunotes.models.File
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -25,15 +24,17 @@ class FileListAdapter(
     private val downloadFile: (position: Int) -> Unit,
 ) : RecyclerView.Adapter<FileListAdapter.ViewHolder>() {
 
+    val itemMargin = context.resources.getDimension(R.dimen.margin).toInt()
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val cardWidth = parent.width / RECYCLER_VIEW_FILE_COLUMNS - (2 * RECYCLER_VIEW_ITEM_MARGIN)
+        val cardWidth = parent.width / RECYCLER_VIEW_FILE_COLUMNS - (2 * itemMargin)
         val cardHeight = (cardWidth / 1.5).toInt()
 
         val view = LayoutInflater.from(context).inflate(R.layout.card_file, parent, false)
         val layoutParams = view.findViewById<CardView>(R.id.cardView).layoutParams as ViewGroup.MarginLayoutParams
         layoutParams.width = cardWidth
         layoutParams.height = cardHeight
-        layoutParams.setMargins(RECYCLER_VIEW_ITEM_MARGIN)
+        layoutParams.setMargins(itemMargin)
 
         return ViewHolder(view)
     }
