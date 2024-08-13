@@ -25,4 +25,6 @@
     <color name="fg_sec">#57595b</color>
 
     <color name="fg_warning">#918000</color>
+
+    <color name="nav_bar_bg">#f2f2f2</color>
 </resources>

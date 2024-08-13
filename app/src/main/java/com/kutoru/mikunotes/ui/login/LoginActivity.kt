@@ -31,6 +31,8 @@ class LoginActivity : ApiReadyActivity<LoginViewModel>() {
         setSupportActionBar(binding.toolbarLogin)
         supportActionBar?.title = "Log In or Register"
 
+        setNavigationBarColor(binding.root)
+
         val fromError = intent.getBooleanExtra(LAUNCHED_LOGIN_FROM_ERROR, false)
         if (fromError) {
             showMessage("The login session is invalid. Log in with your credentials")

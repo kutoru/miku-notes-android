@@ -130,6 +130,8 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
                 moveFileContainer(false)
             }
         }
+
+        setNavigationBarColor(binding.root)
     }
 
     override fun onResume() {

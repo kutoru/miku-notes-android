@@ -1,8 +1,11 @@
 package com.kutoru.mikunotes.ui
 
 import android.content.Intent
+import android.graphics.Color
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.logic.InvalidUrl
 import com.kutoru.mikunotes.logic.LAUNCHED_LOGIN_FROM_ERROR
 import com.kutoru.mikunotes.logic.ServerError
@@ -35,6 +38,23 @@ abstract class ApiReadyActivity<T: ApiViewModel> : AppCompatActivity() {
     override fun onDestroy() {
         job.cancel()
         super.onDestroy()
+    }
+
+    protected fun setNavigationBarColor(root: View) {
+        val color = getColor(R.color.nav_bar_bg)
+        val darkness = 1 - (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255
+        val isLight = darkness < 0.5
+
+        window.navigationBarColor = color
+
+        var flags = root.systemUiVisibility
+        if (isLight) {
+            flags = flags or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        } else {
+            flags = flags and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
+        }
+
+        root.systemUiVisibility = flags
     }
 
     protected suspend fun <T>handleRequest(requestFunction: suspend () -> T): Result<T> {

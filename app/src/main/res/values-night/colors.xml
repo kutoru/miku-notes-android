@@ -7,4 +7,6 @@
     <color name="fg_sec">#c0c0c1</color>
 
     <color name="fg_warning">#C5B93E</color>
+
+    <color name="nav_bar_bg">@color/black</color>
 </resources>
