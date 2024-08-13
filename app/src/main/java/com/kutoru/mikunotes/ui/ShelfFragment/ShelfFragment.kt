@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.fragments
+package com.kutoru.mikunotes.ui.ShelfFragment
 
 import android.animation.ValueAnimator
 import android.app.ProgressDialog
@@ -25,10 +25,10 @@ import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.FragmentShelfBinding
 import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
-import com.kutoru.mikunotes.ui.ShelfCallbacks
-import com.kutoru.mikunotes.ui.activities.MainActivity
-import com.kutoru.mikunotes.ui.adapters.FileListAdapter
-import com.kutoru.mikunotes.viewmodels.ShelfViewModel
+import com.kutoru.mikunotes.ui.ApiReadyFragment
+import com.kutoru.mikunotes.ui.FileListAdapter
+import com.kutoru.mikunotes.ui.MainActivity.MainActivity
+import com.kutoru.mikunotes.ui.MainActivity.ShelfCallbacks
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -111,13 +111,15 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
         }
 
         (requireActivity() as MainActivity)
-            .setShelfOptionsMenu(ShelfCallbacks(
+            .setShelfOptionsMenu(
+                ShelfCallbacks(
                 refresh = { scope.launch { refreshShelf(false) } },
                 copy = ::copyShelfToClipboard,
                 save = { scope.launch { saveShelf(false) } },
                 clear = ::clearShelf,
                 convert = ::convertShelfToNote,
-            ))
+            )
+            )
 
         loadDialog = ProgressDialog(requireContext())
         loadDialog.setMessage("Loading the shelf...")

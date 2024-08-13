@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui
+package com.kutoru.mikunotes.ui.NotesFragment
 
 import android.content.Context
 import android.view.View
@@ -9,8 +9,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.RecyclerView
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.models.Tag
-import com.kutoru.mikunotes.ui.adapters.TagDialogAdapter
-import com.kutoru.mikunotes.viewmodels.TagViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 

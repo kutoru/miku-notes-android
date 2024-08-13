@@ -7,19 +7,19 @@
 
     <fragment
         android:id="@+id/navShelf"
-        android:name="com.kutoru.mikunotes.ui.fragments.ShelfFragment"
+        android:name="com.kutoru.mikunotes.ui.ShelfFragment.ShelfFragment"
         android:label="@string/menu_shelf"
         tools:layout="@layout/fragment_shelf" />
 
     <fragment
         android:id="@+id/navNotes"
-        android:name="com.kutoru.mikunotes.ui.fragments.NotesFragment"
+        android:name="com.kutoru.mikunotes.ui.NotesFragment.NotesFragment"
         android:label="@string/menu_notes"
         tools:layout="@layout/fragment_notes" />
 
     <fragment
         android:id="@+id/navSettings"
-        android:name="com.kutoru.mikunotes.ui.fragments.SettingsFragment"
+        android:name="com.kutoru.mikunotes.ui.SettingsFragment.SettingsFragment"
         android:label="@string/menu_settings"
         tools:layout="@layout/fragment_settings" />
 </navigation>

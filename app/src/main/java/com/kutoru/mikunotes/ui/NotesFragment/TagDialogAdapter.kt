@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.adapters
+package com.kutoru.mikunotes.ui.NotesFragment
 
 import android.content.Context
 import android.content.res.ColorStateList

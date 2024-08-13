@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.viewmodels
+package com.kutoru.mikunotes.ui.ShelfFragment
 
 import android.content.ContentResolver
 import android.net.Uri
@@ -20,6 +20,7 @@ import com.kutoru.mikunotes.models.File
 import com.kutoru.mikunotes.models.Shelf
 import com.kutoru.mikunotes.models.ShelfPatch
 import com.kutoru.mikunotes.models.ShelfToNote
+import com.kutoru.mikunotes.ui.ApiViewModel
 
 class ShelfViewModel(requestManager: RequestManager) : ApiViewModel(requestManager) {
 

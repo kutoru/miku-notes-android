@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.fragments
+package com.kutoru.mikunotes.ui.SettingsFragment
 
 import android.content.Intent
 import android.os.Bundle
@@ -8,9 +8,9 @@ import android.view.ViewGroup
 import androidx.fragment.app.viewModels
 import com.kutoru.mikunotes.databinding.FragmentSettingsBinding
 import com.kutoru.mikunotes.logic.PersistentStorage
-import com.kutoru.mikunotes.ui.activities.LoginActivity
-import com.kutoru.mikunotes.ui.activities.MainActivity
-import com.kutoru.mikunotes.viewmodels.SettingsViewModel
+import com.kutoru.mikunotes.ui.ApiReadyFragment
+import com.kutoru.mikunotes.ui.LoginActivity.LoginActivity
+import com.kutoru.mikunotes.ui.MainActivity.MainActivity
 import kotlinx.coroutines.launch
 
 class SettingsFragment : ApiReadyFragment<SettingsViewModel>() {

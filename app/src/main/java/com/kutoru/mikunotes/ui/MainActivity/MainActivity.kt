@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.activities
+package com.kutoru.mikunotes.ui.MainActivity
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -20,10 +20,7 @@ import com.google.android.material.navigation.NavigationView
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityMainBinding
 import com.kutoru.mikunotes.logic.DOWNLOAD_NOTIFICATION_CHANNEL_ID
-import com.kutoru.mikunotes.ui.MainActionBarManager
-import com.kutoru.mikunotes.ui.NotesCallbacks
-import com.kutoru.mikunotes.ui.ShelfCallbacks
-import com.kutoru.mikunotes.ui.fragments.ShelfFragment
+import com.kutoru.mikunotes.ui.ShelfFragment.ShelfFragment
 
 class MainActivity : AppCompatActivity() {
 

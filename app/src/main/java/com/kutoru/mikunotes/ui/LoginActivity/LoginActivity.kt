@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.activities
+package com.kutoru.mikunotes.ui.LoginActivity
 
 import android.os.Bundle
 import android.view.Menu
@@ -10,7 +10,7 @@ import com.kutoru.mikunotes.logic.BadRequest
 import com.kutoru.mikunotes.logic.InvalidUrl
 import com.kutoru.mikunotes.logic.LAUNCHED_LOGIN_FROM_ERROR
 import com.kutoru.mikunotes.logic.ServerError
-import com.kutoru.mikunotes.viewmodels.LoginViewModel
+import com.kutoru.mikunotes.ui.ApiReadyActivity
 import kotlinx.coroutines.launch
 
 class LoginActivity : ApiReadyActivity<LoginViewModel>() {

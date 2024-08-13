@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.fragments
+package com.kutoru.mikunotes.ui.NotesFragment
 
 import android.app.ProgressDialog
 import android.content.Intent
@@ -10,10 +10,10 @@ import androidx.fragment.app.viewModels
 import com.kutoru.mikunotes.databinding.FragmentNotesBinding
 import com.kutoru.mikunotes.logic.SELECTED_NOTE
 import com.kutoru.mikunotes.models.NoteQueryParameters
-import com.kutoru.mikunotes.ui.NotesCallbacks
-import com.kutoru.mikunotes.ui.activities.MainActivity
-import com.kutoru.mikunotes.ui.activities.NoteActivity
-import com.kutoru.mikunotes.viewmodels.NotesViewModel
+import com.kutoru.mikunotes.ui.ApiReadyFragment
+import com.kutoru.mikunotes.ui.MainActivity.MainActivity
+import com.kutoru.mikunotes.ui.MainActivity.NotesCallbacks
+import com.kutoru.mikunotes.ui.NoteActivity.NoteActivity
 import kotlinx.coroutines.launch
 
 class NotesFragment : ApiReadyFragment<NotesViewModel>() {
@@ -40,9 +40,11 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         }
 
         (requireActivity() as MainActivity)
-            .setNotesOptionsMenu(NotesCallbacks(
+            .setNotesOptionsMenu(
+                NotesCallbacks(
                 refresh = { scope.launch { refreshNotes(false) } },
-            ))
+            )
+            )
 
         loadDialog = ProgressDialog(requireContext())
         loadDialog.setMessage("Loading the notes...")

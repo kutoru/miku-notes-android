@@ -1,20 +1,22 @@
-package com.kutoru.mikunotes.ui.activities
+package com.kutoru.mikunotes.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import com.kutoru.mikunotes.logic.InvalidUrl
 import com.kutoru.mikunotes.logic.LAUNCHED_LOGIN_FROM_ERROR
 import com.kutoru.mikunotes.logic.ServerError
 import com.kutoru.mikunotes.logic.Unauthorized
-import com.kutoru.mikunotes.ui.UrlPropertyDialog
-import com.kutoru.mikunotes.viewmodels.ApiViewModel
+import com.kutoru.mikunotes.ui.LoginActivity.LoginActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 
-abstract class ApiReadyActivity<T: ApiViewModel> : AppCompatActivity() {
+abstract class ApiReadyFragment<T: ApiViewModel> : Fragment() {
 
     private val job = Job()
     protected val scope = CoroutineScope(Dispatchers.Main + job)
@@ -24,9 +26,13 @@ abstract class ApiReadyActivity<T: ApiViewModel> : AppCompatActivity() {
 
     protected abstract val viewModel: T
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        urlDialog = UrlPropertyDialog(this)
-        return super.onCreate(savedInstanceState)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View? {
+        urlDialog = UrlPropertyDialog(requireContext())
+        return super.onCreateView(inflater, container, savedInstanceState)
     }
 
     override fun onDestroy() {
@@ -34,7 +40,7 @@ abstract class ApiReadyActivity<T: ApiViewModel> : AppCompatActivity() {
         super.onDestroy()
     }
 
-    protected suspend fun <T>handleRequest(requestFunction: suspend () -> T): Result<T> {
+    protected suspend fun <T> handleRequest(requestFunction: suspend () -> T): Result<T> {
         return handleRequestErrors {
             try {
                 requestFunction()
@@ -45,7 +51,7 @@ abstract class ApiReadyActivity<T: ApiViewModel> : AppCompatActivity() {
         }
     }
 
-    private suspend fun <T>handleRequestErrors(requestFunction: suspend () -> T): Result<T> {
+    private suspend fun <T> handleRequestErrors(requestFunction: suspend () -> T): Result<T> {
         val result = runCatching {
             requestFunction()
         }
@@ -63,9 +69,9 @@ abstract class ApiReadyActivity<T: ApiViewModel> : AppCompatActivity() {
             }
 
             is Unauthorized -> {
-                val intent = Intent(this, LoginActivity::class.java)
+                val intent = Intent(requireContext(), LoginActivity::class.java)
                 intent.putExtra(LAUNCHED_LOGIN_FROM_ERROR, true)
-                this.startActivity(intent)
+                requireContext().startActivity(intent)
                 return result
             }
 
@@ -87,7 +93,7 @@ abstract class ApiReadyActivity<T: ApiViewModel> : AppCompatActivity() {
 
     protected fun showToast(message: String?) {
         if (message != null) {
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
         }
     }
 

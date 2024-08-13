@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.viewmodels
+package com.kutoru.mikunotes.ui.LoginActivity
 
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
@@ -8,6 +8,7 @@ import com.kutoru.mikunotes.logic.requests.RequestManager
 import com.kutoru.mikunotes.logic.requests.postLogin
 import com.kutoru.mikunotes.logic.requests.postRegister
 import com.kutoru.mikunotes.models.LoginBody
+import com.kutoru.mikunotes.ui.ApiViewModel
 
 class LoginViewModel (requestManager: RequestManager) : ApiViewModel(requestManager) {
 

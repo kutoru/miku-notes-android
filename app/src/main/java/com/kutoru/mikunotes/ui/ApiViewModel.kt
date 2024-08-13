@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.viewmodels
+package com.kutoru.mikunotes.ui
 
 import androidx.lifecycle.ViewModel
 import com.kutoru.mikunotes.logic.requests.RequestManager

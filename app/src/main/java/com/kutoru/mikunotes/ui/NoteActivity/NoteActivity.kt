@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.activities
+package com.kutoru.mikunotes.ui.NoteActivity
 
 import android.animation.ValueAnimator
 import android.graphics.Rect
@@ -18,11 +18,11 @@ import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_ITEM_MARGIN
 import com.kutoru.mikunotes.models.Tag
-import com.kutoru.mikunotes.ui.NoteTagDialog
-import com.kutoru.mikunotes.ui.adapters.FileListAdapter
-import com.kutoru.mikunotes.ui.adapters.TagListAdapter
-import com.kutoru.mikunotes.viewmodels.NoteViewModel
-import com.kutoru.mikunotes.viewmodels.TagViewModel
+import com.kutoru.mikunotes.ui.ApiReadyActivity
+import com.kutoru.mikunotes.ui.FileListAdapter
+import com.kutoru.mikunotes.ui.NotesFragment.NoteTagDialog
+import com.kutoru.mikunotes.ui.NotesFragment.TagListAdapter
+import com.kutoru.mikunotes.ui.NotesFragment.TagViewModel
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter

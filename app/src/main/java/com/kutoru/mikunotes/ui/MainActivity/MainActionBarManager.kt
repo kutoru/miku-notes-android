@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui
+package com.kutoru.mikunotes.ui.MainActivity
 
 import android.view.Menu
 import android.view.MenuItem

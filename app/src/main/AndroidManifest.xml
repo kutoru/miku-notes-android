@@ -20,7 +20,7 @@
         tools:targetApi="31">
 
         <activity
-            android:name=".ui.activities.MainActivity"
+            android:name=".ui.MainActivity.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.MikuNotes.NoActionBar"
             android:screenOrientation="portrait">
@@ -46,7 +46,7 @@
         </activity>
 
         <activity
-            android:name=".ui.activities.LoginActivity"
+            android:name=".ui.LoginActivity.LoginActivity"
             android:exported="false"
             android:theme="@style/Theme.MikuNotes.NoActionBar"
             android:screenOrientation="portrait"
@@ -54,7 +54,7 @@
         </activity>
 
         <activity
-            android:name=".ui.activities.NoteActivity"
+            android:name=".ui.NoteActivity.NoteActivity"
             android:exported="false"
             android:theme="@style/Theme.MikuNotes.NoActionBar"
             android:screenOrientation="portrait">
