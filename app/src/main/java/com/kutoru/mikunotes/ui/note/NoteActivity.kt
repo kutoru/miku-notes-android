@@ -298,11 +298,27 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         }
 
         viewModel.tags.observe(this) {
+            if (it.isEmpty()) {
+                binding.rvNoteTags.visibility = View.INVISIBLE
+                binding.tvNoteNoTags.visibility = View.VISIBLE
+            } else {
+                binding.tvNoteNoTags.visibility = View.INVISIBLE
+                binding.rvNoteTags.visibility = View.VISIBLE
+            }
+
             tagAdapter.tags = it
             tagAdapter.notifyDataSetChanged()
         }
 
         viewModel.files.observe(this) {
+            if (it.isEmpty()) {
+                binding.rvNoteFiles.visibility = View.INVISIBLE
+                binding.tvNoteNoFiles.visibility = View.VISIBLE
+            } else {
+                binding.tvNoteNoFiles.visibility = View.INVISIBLE
+                binding.rvNoteFiles.visibility = View.VISIBLE
+            }
+
             fileAdapter.files = it
             fileAdapter.notifyDataSetChanged()
         }

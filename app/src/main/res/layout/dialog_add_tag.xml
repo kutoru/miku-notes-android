@@ -54,6 +54,7 @@
             android:layout_marginBottom="8dp"
             android:layout_weight="9"
             android:scrollbars="vertical"
+            android:visibility="invisible"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             app:layout_constraintBottom_toTopOf="@+id/btnDialogTagAdd"
             app:layout_constraintEnd_toEndOf="parent"
@@ -62,6 +63,21 @@
 
         </androidx.recyclerview.widget.RecyclerView>
 
+        <TextView
+            android:id="@+id/tvDialogTagNoTags"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:text="No tags"
+            android:textSize="16sp"
+            android:textStyle="italic"
+            android:visibility="visible"
+            app:layout_constraintBottom_toTopOf="@+id/btnDialogTagAdd"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <Button
             android:id="@+id/btnDialogTagAdd"
             android:layout_width="0dp"
@@ -69,11 +85,11 @@
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginBottom="8dp"
-            android:layout_weight="1"
             android:text="Create new tag"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

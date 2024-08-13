@@ -18,8 +18,8 @@ class TagViewModel(requestManager: RequestManager) : ApiViewModel(requestManager
 
     suspend fun getTags() {
 //        _tags.value = requestManager.getTags()
-        val temp = requestManager.getTags()
 
+        val temp = requestManager.getTags()
         _tags.value = mutableListOf(
             Tag(1723018115, 1, "tag name 1", null, 1), Tag(1723018115, 2, "tag name 2", null, 1),
             Tag(1723018115, 3, "tag name 3", null, 1), Tag(1723018115, 4, "tag name 4", null, 1),
@@ -30,6 +30,7 @@ class TagViewModel(requestManager: RequestManager) : ApiViewModel(requestManager
             Tag(1723018115, 13, "tag name 13", null, 1), Tag(1723018115, 14, "tag name 14", null, 1),
             Tag(1723018115, 15, "tag name 15", null, 1), Tag(1723018115, 16, "tag name 16", null, 1),
         )
+
     }
 
     companion object {

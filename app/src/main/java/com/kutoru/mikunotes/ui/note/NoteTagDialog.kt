@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
+import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.RecyclerView
@@ -47,9 +48,18 @@ class NoteTagDialog(
         dialogView = View.inflate(context, R.layout.dialog_add_tag, null)
         val btnDialogTagBack = dialogView.findViewById<Button>(R.id.btnDialogTagBack)
         val rvDialogTags = dialogView.findViewById<RecyclerView>(R.id.rvDialogTagList)
+        val tvDialogTagNoTags = dialogView.findViewById<TextView>(R.id.tvDialogTagNoTags)
         val btnDialogTagAdd = dialogView.findViewById<Button>(R.id.btnDialogTagAdd)
 
         viewModel.tags.observe(lifecycleOwner) {
+            if (it.isEmpty()) {
+                rvDialogTags.visibility = View.INVISIBLE
+                tvDialogTagNoTags.visibility = View.VISIBLE
+            } else {
+                tvDialogTagNoTags.visibility = View.INVISIBLE
+                rvDialogTags.visibility = View.VISIBLE
+            }
+
             adapter.tags = it
             adapter.notifyDataSetChanged()
         }

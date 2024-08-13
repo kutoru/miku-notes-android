@@ -356,6 +356,14 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
         }
 
         viewModel.files.observe(viewLifecycleOwner) {
+            if (it.isEmpty()) {
+                binding.rvShelfFiles.visibility = View.INVISIBLE
+                binding.tvShelfNoFiles.visibility = View.VISIBLE
+            } else {
+                binding.tvShelfNoFiles.visibility = View.INVISIBLE
+                binding.rvShelfFiles.visibility = View.VISIBLE
+            }
+
             adapter.files = it
             adapter.notifyDataSetChanged()
         }
