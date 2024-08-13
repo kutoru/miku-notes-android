@@ -1,5 +1,6 @@
 package com.kutoru.mikunotes.ui.login
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -39,8 +40,8 @@ class LoginActivity : ApiReadyActivity<LoginViewModel>() {
         }
     }
 
+    @SuppressLint("MissingSuperCall")
     override fun onBackPressed() {
-        super.onBackPressed()
         moveTaskToBack(true)
     }
 
