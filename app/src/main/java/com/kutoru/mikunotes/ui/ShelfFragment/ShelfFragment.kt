@@ -155,6 +155,7 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
             if (viewModel.initialized && onShare != null) {
                 loadDialog.show()
                 onShare?.invoke()
+                onShare = null
                 loadDialog.dismiss()
             }
         }
@@ -378,19 +379,15 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
     fun handleSharedText(text: String) {
         println("handleSharedText $text")
         onShare = {
-            scope.launch {
-                binding.etShelfText.setText(text)
-                saveShelf(true)
-            }
+            binding.etShelfText.setText(text)
+            saveShelf(false)
         }
     }
 
     fun handleSharedFiles(fileUris: List<Uri>) {
         println("handleSharedFiles $fileUris")
         onShare = {
-            scope.launch {
-                uploadFiles(fileUris)
-            }
+            uploadFiles(fileUris)
         }
     }
 
