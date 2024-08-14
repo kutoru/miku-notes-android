@@ -19,21 +19,34 @@ class NotificationHelper(
     private val context: Context,
 ) {
 
-    private var maxNotificationIndex = 0
+    private var maxNotificationIndex = 1
     private val notificationManager = NotificationManagerCompat.from(context)
 
     @SuppressLint("MissingPermission")
     fun showDownloadInProgress(notificationIndex: Int?, fileName: String, progress: Int): Int {
+        val intent = Intent(FILE_NOTIFICATION_BROADCAST)
+        var requestCode = 0
+
+        if (notificationIndex != null) {
+            intent.putExtra(FILE_NOTIFICATION_IDENTIFIER, notificationIndex)
+            requestCode = 100 + notificationIndex
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, requestCode, intent, PendingIntent.FLAG_IMMUTABLE,
+        )
+
         val notification = NotificationCompat
             .Builder(context, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_download)
             .setContentTitle("Download")
             .setContentText(fileName)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setProgress(100, progress, false)
             .setAutoCancel(false)
+            .addAction(R.drawable.ic_cross, "Cancel", pendingIntent)
             .build()
 
         return showNotification(notificationIndex, notification)
@@ -54,7 +67,7 @@ class NotificationHelper(
             .setSmallIcon(R.drawable.ic_download)
             .setContentTitle("Download")
             .setContentText("${file.name} has been downloaded")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(false)
             .setOnlyAlertOnce(true)
             .setContentIntent(pendingIntent)
@@ -65,16 +78,29 @@ class NotificationHelper(
     }
 
     fun showUploadInProgress(notificationIndex: Int?, fileName: String, progress: Int): Int {
+        val intent = Intent(FILE_NOTIFICATION_BROADCAST)
+        var requestCode = 0
+
+        if (notificationIndex != null) {
+            intent.putExtra(FILE_NOTIFICATION_IDENTIFIER, notificationIndex)
+            requestCode = 100 + notificationIndex
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, requestCode, intent, PendingIntent.FLAG_IMMUTABLE,
+        )
+
         val notification = NotificationCompat
             .Builder(context, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_upload)
             .setContentTitle("Upload")
             .setContentText(fileName)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setProgress(100, progress, false)
             .setAutoCancel(false)
+            .addAction(R.drawable.ic_cross, "Cancel", pendingIntent)
             .build()
 
         return showNotification(notificationIndex, notification)
@@ -86,13 +112,19 @@ class NotificationHelper(
             .setSmallIcon(R.drawable.ic_upload)
             .setContentTitle("Upload")
             .setContentText("$fileName has been uploaded")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(false)
             .setOnlyAlertOnce(true)
             .setAutoCancel(true)
             .build()
 
         showNotification(notificationIndex, notification)
+    }
+
+    fun hide(notificationIndex: Int?) {
+        if (notificationIndex != null) {
+            notificationManager.cancel(notificationIndex)
+        }
     }
 
     @SuppressLint("MissingPermission")

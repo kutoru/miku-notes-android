@@ -113,7 +113,7 @@ class MainActivity : AppCompatActivity() {
         val channel = NotificationChannel(
             DOWNLOAD_NOTIFICATION_CHANNEL_ID,
             "Download Notification",
-            NotificationManager.IMPORTANCE_DEFAULT,
+            NotificationManager.IMPORTANCE_LOW,
         )
 
         val manager = getSystemService(NotificationManager::class.java)

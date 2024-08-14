@@ -1,6 +1,13 @@
 package com.kutoru.mikunotes.logic.requests
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import androidx.core.content.ContextCompat
 import com.kutoru.mikunotes.logic.BadRequest
+import com.kutoru.mikunotes.logic.FILE_NOTIFICATION_BROADCAST
+import com.kutoru.mikunotes.logic.FILE_NOTIFICATION_IDENTIFIER
 import com.kutoru.mikunotes.logic.InvalidUrl
 import com.kutoru.mikunotes.logic.NotificationHelper
 import com.kutoru.mikunotes.logic.PersistentStorage
@@ -24,9 +31,12 @@ import java.net.ConnectException
 import java.nio.channels.UnresolvedAddressException
 
 class RequestManager(
+    context: Context,
     val persistentStorage: PersistentStorage,
     val notificationHelper: NotificationHelper,
 ) {
+
+    val requestsToStop = mutableSetOf<Int>()
 
     lateinit var apiUrl: String
         private set
@@ -44,6 +54,13 @@ class RequestManager(
     init {
         updateUrl()
         updateCookies()
+
+        ContextCompat.registerReceiver(
+            context,
+            FileBroadcastReceiver(),
+            IntentFilter(FILE_NOTIFICATION_BROADCAST),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
     }
 
     fun updateUrl() {
@@ -120,5 +137,16 @@ class RequestManager(
         val response = executeRequestUntilResponse(request)
         val body: ResultBody<U> = response.body()
         return body.data ?: throw ServerError("The data field is invalid in the response body")
+    }
+
+    inner class FileBroadcastReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent == null || !intent.hasExtra(FILE_NOTIFICATION_IDENTIFIER)) {
+                return
+            }
+
+            val fileRequestId = intent.getIntExtra(FILE_NOTIFICATION_IDENTIFIER, -1)
+            requestsToStop.add(fileRequestId)
+        }
     }
 }

@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.kutoru.mikunotes.logic.InvalidUrl
 import com.kutoru.mikunotes.logic.LAUNCHED_LOGIN_FROM_ERROR
+import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.logic.ServerError
 import com.kutoru.mikunotes.logic.Unauthorized
 import com.kutoru.mikunotes.ui.login.LoginActivity
@@ -72,6 +73,10 @@ abstract class ApiReadyFragment<T: ApiViewModel> : Fragment() {
                 val intent = Intent(requireContext(), LoginActivity::class.java)
                 intent.putExtra(LAUNCHED_LOGIN_FROM_ERROR, true)
                 requireContext().startActivity(intent)
+                return result
+            }
+
+            is RequestCancel -> {
                 return result
             }
 

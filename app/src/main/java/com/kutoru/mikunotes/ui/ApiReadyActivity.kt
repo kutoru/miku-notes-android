@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.logic.InvalidUrl
 import com.kutoru.mikunotes.logic.LAUNCHED_LOGIN_FROM_ERROR
+import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.logic.ServerError
 import com.kutoru.mikunotes.logic.Unauthorized
 import com.kutoru.mikunotes.ui.login.LoginActivity
@@ -89,6 +90,10 @@ abstract class ApiReadyActivity<T: ApiViewModel> : AppCompatActivity() {
                 val intent = Intent(this, LoginActivity::class.java)
                 intent.putExtra(LAUNCHED_LOGIN_FROM_ERROR, true)
                 this.startActivity(intent)
+                return result
+            }
+
+            is RequestCancel -> {
                 return result
             }
 

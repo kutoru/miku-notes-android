@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.net.Uri
 import android.os.Environment
 import android.provider.OpenableColumns
+import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.models.File
 import io.ktor.client.call.body
 import io.ktor.client.plugins.onUpload
@@ -15,6 +16,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.contentLength
 import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.cancel
 import io.ktor.utils.io.core.isEmpty
 import io.ktor.utils.io.core.readBytes
 import io.ktor.utils.io.streams.asInput
@@ -38,12 +40,15 @@ suspend fun RequestManager.postFileToShelf(contentResolver: ContentResolver, fil
 }
 
 private suspend fun RequestManager.postFile(contentResolver: ContentResolver, fileUri: Uri, attachId: Int, attachKey: String): File {
+
+    // preparing request data
     val fileStream = contentResolver.openInputStream(fileUri)!!
     val fileName = getFileInfo(contentResolver, fileUri, OpenableColumns.DISPLAY_NAME)
     val fileSize = getFileInfo(contentResolver, fileUri, OpenableColumns.SIZE).toFloat()
 
     val form = formData {
         append(attachKey, "$attachId")
+        append("file_size", "${fileSize.toLong()}")
 
         val headersBuilder = HeadersBuilder()
         headersBuilder.append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
@@ -55,6 +60,7 @@ private suspend fun RequestManager.postFile(contentResolver: ContentResolver, fi
         )
     }
 
+    // uploading the file
     var lastUpdated = Calendar.getInstance().timeInMillis
     val currentNotificationIndex = notificationHelper.showUploadInProgress(null, fileName, 0)
 
@@ -62,6 +68,17 @@ private suspend fun RequestManager.postFile(contentResolver: ContentResolver, fi
         headers.append("Cookie", accessCookie)
 
         onUpload { bytesSentTotal, _ ->
+            // on upload cancel
+            if (requestsToStop.contains(currentNotificationIndex)) {
+                fileStream.close()
+
+                notificationHelper.hide(currentNotificationIndex)
+                requestsToStop.remove(currentNotificationIndex)
+
+                throw RequestCancel("Upload has been cancelled by the user")
+            }
+
+            // notification stuff
             val progress = ((bytesSentTotal / fileSize) * 100).toInt()
             val currentTime = Calendar.getInstance().timeInMillis
 
@@ -85,11 +102,14 @@ private suspend fun RequestManager.postFile(contentResolver: ContentResolver, fi
 
 suspend fun RequestManager.getFile(fileHash: String) {
     val res = executeRequestUntilResponse("$apiUrl/files/dl/$fileHash", HttpMethod.Get)
+    val contentLength = res.contentLength()?.toFloat()
 
+    // getting file path
     val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
     var fileName = res.headers["content-disposition"]?.split('=')?.get(1)?.trim('"') ?: "file.bin"
     var file = java.io.File("$downloadDir/$fileName")
 
+    // updating the file name if it already exists
     var fileIdx = 0
     val (filePrefix, fileExt) = fileName.split('.')
 
@@ -99,6 +119,7 @@ suspend fun RequestManager.getFile(fileHash: String) {
         file = java.io.File("$downloadDir/$fileName")
     }
 
+    // the download itself
     val currentNotificationIndex = notificationHelper.showDownloadInProgress(null, fileName, 0)
 
     val channel: ByteReadChannel = res.body()
@@ -108,11 +129,25 @@ suspend fun RequestManager.getFile(fileHash: String) {
         val packet = channel.readRemaining(DEFAULT_BUFFER_SIZE.toLong())
 
         while (!packet.isEmpty) {
+
+            // on download cancel
+            if (requestsToStop.contains(currentNotificationIndex)) {
+                channel.cancel()
+                file.delete()
+
+                notificationHelper.hide(currentNotificationIndex)
+                requestsToStop.remove(currentNotificationIndex)
+
+                throw RequestCancel("Download has been cancelled by the user")
+            }
+
+            // appending data
             val bytes = packet.readBytes()
             file.appendBytes(bytes)
 
-            val progress = if (res.contentLength() != null) {
-                ((file.length() / res.contentLength()!!.toFloat()) * 100).toInt()
+            // handling notification
+            val progress = if (contentLength != null) {
+                ((file.length() / contentLength) * 100).toInt()
             } else {
                 100
             }
@@ -126,7 +161,6 @@ suspend fun RequestManager.getFile(fileHash: String) {
     }
 
     notificationHelper.showDownloadFinished(currentNotificationIndex, file)
-    println("A file saved to ${file.path}")
 }
 
 suspend fun RequestManager.deleteFile(fileId: Int) {

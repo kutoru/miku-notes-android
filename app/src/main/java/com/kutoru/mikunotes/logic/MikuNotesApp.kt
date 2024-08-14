@@ -11,6 +11,7 @@ class MikuNotesApp : Application() {
     override fun onCreate() {
         super.onCreate()
         requestManager = RequestManager(
+            applicationContext,
             PersistentStorage(applicationContext),
             NotificationHelper(applicationContext),
         )

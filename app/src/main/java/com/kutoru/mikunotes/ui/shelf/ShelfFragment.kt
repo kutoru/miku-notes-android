@@ -25,6 +25,7 @@ import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.FragmentShelfBinding
 import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
+import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.ui.ApiReadyFragment
 import com.kutoru.mikunotes.ui.FileListAdapter
 import com.kutoru.mikunotes.ui.main.MainActivity
@@ -247,7 +248,10 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
         }
 
         val result = handleRequest { viewModel.getFile(fileIndex) }
-        if (result.isFailure) {
+
+        if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
+            showToast("Download cancelled")
+        } else if (result.isFailure) {
             showToast("Could not download the file")
         }
     }
@@ -258,7 +262,10 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
                 val result = handleRequest { viewModel.postFile(
                     requireContext().contentResolver, uri,
                 ) }
-                if (result.isFailure) {
+
+                if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
+                    showToast("Upload cancelled")
+                } else if (result.isFailure) {
                     showToast("Could not upload the file")
                 }
             }
