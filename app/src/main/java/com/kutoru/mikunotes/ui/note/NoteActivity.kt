@@ -19,6 +19,7 @@ import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.ApiReadyActivity
 import com.kutoru.mikunotes.ui.FileListAdapter
+import com.kutoru.mikunotes.ui.TagListAdapter
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -79,13 +80,14 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         }
 
         tagAdapter = TagListAdapter(
-            this,
+            resources.getDimension(R.dimen.margin).toInt(),
+            true,
             listOf(),
             ::removeTag,
         )
 
         fileAdapter = FileListAdapter(
-            this,
+            resources.getDimension(R.dimen.margin).toInt(),
             listOf(),
             ::deleteFile,
             ::downloadFile,

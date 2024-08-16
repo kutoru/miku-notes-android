@@ -38,7 +38,7 @@ class NoteTagDialog(
 
     init {
         adapter = TagDialogAdapter(
-            context,
+            context.resources.getDimension(R.dimen.margin).toInt(),
             listOf(),
             listOf(),
             ::addTag,

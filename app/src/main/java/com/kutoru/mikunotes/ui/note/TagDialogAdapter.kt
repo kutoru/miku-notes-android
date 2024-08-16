@@ -1,6 +1,5 @@
 package com.kutoru.mikunotes.ui.note
 
-import android.content.Context
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
@@ -16,7 +15,7 @@ import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.models.Tag
 
 class TagDialogAdapter (
-    private val context: Context,
+    private val itemMargin: Int,
     var noteTagIds: List<Int>,
     var tags: List<Tag>,
 
@@ -26,10 +25,8 @@ class TagDialogAdapter (
     private val onTagDelete: (position: Int) -> Unit,
 ) : RecyclerView.Adapter<TagDialogAdapter.ViewHolder>() {
 
-    private val itemMargin = context.resources.getDimension(R.dimen.margin).toInt()
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(context).inflate(R.layout.card_dialog_tag, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.card_dialog_tag, parent, false)
         val layoutParams = view.findViewById<CardView>(R.id.cardView).layoutParams as ViewGroup.MarginLayoutParams
         layoutParams.setMargins(itemMargin)
         return ViewHolder(view)
@@ -53,12 +50,12 @@ class TagDialogAdapter (
             val btnDeleteTag = cardView.findViewById<Button>(R.id.btnDelete)
 
             if (tagPresentInNote(position)) {
-                btnMoveTag.icon = AppCompatResources.getDrawable(context, R.drawable.ic_cross)!!
-                btnMoveTag.backgroundTintList = ColorStateList.valueOf(context.getColor(R.color.secondary))
+                btnMoveTag.icon = AppCompatResources.getDrawable(cardView.context, R.drawable.ic_cross)!!
+                btnMoveTag.backgroundTintList = ColorStateList.valueOf(cardView.context.getColor(R.color.secondary))
                 btnMoveTag.setOnClickListener { onTagRemove(position) }
             } else {
-                btnMoveTag.icon = AppCompatResources.getDrawable(context, R.drawable.ic_add)!!
-                btnMoveTag.backgroundTintList = ColorStateList.valueOf(context.getColor(R.color.primary))
+                btnMoveTag.icon = AppCompatResources.getDrawable(cardView.context, R.drawable.ic_add)!!
+                btnMoveTag.backgroundTintList = ColorStateList.valueOf(cardView.context.getColor(R.color.primary))
                 btnMoveTag.setOnClickListener { onTagAdd(position) }
             }
 

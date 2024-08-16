@@ -71,7 +71,7 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
         )
 
         adapter = FileListAdapter(
-            requireContext(),
+            resources.getDimension(R.dimen.margin).toInt(),
             listOf(),
             { pos -> scope.launch { deleteFile(pos) } },
             { pos -> scope.launch { downloadFile(pos) } },

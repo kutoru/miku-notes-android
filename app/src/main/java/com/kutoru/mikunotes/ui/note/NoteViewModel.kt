@@ -43,6 +43,11 @@ class NoteViewModel(requestManager: RequestManager) : ApiViewModel(requestManage
 
     fun parseFromIntent(intent: Intent) {
         note = intent.getSerializableExtra(SELECTED_NOTE) as Note
+        note.tags.addAll(listOf(
+            Tag(1723018115, 1, "tag name 1", null, 1), Tag(1723018115, 2, "tag name 2", null, 1),
+//            Tag(1723018115, 3, "tag name 3", null, 1), Tag(1723018115, 4, "tag name 4", null, 1),
+//            Tag(1723018115, 5, "tag name 5", null, 1), Tag(1723018115, 6, "tag name 6", null, 1),
+        ))
 
         _text.value = note.text
         _title.value = note.title

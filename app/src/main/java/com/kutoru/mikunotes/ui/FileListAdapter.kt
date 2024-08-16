@@ -1,6 +1,5 @@
 package com.kutoru.mikunotes.ui
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,19 +17,17 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.round
 
 class FileListAdapter(
-    private val context: Context,
+    val itemMargin: Int,
     var files: List<File>,
     private val deleteFile: (position: Int) -> Unit,
     private val downloadFile: (position: Int) -> Unit,
 ) : RecyclerView.Adapter<FileListAdapter.ViewHolder>() {
 
-    val itemMargin = context.resources.getDimension(R.dimen.margin).toInt()
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val cardWidth = parent.width / RECYCLER_VIEW_FILE_COLUMNS - (2 * itemMargin)
         val cardHeight = (cardWidth / 1.5).toInt()
 
-        val view = LayoutInflater.from(context).inflate(R.layout.card_file, parent, false)
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.card_file, parent, false)
         val layoutParams = view.findViewById<CardView>(R.id.cardView).layoutParams as ViewGroup.MarginLayoutParams
         layoutParams.width = cardWidth
         layoutParams.height = cardHeight
