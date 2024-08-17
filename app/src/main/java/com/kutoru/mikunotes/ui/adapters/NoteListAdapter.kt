@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.notes
+package com.kutoru.mikunotes.ui.adapters
 
 import android.view.LayoutInflater
 import android.view.View
@@ -37,7 +37,7 @@ class NoteListAdapter (
 
             cardView.setOnClickListener { noteOnClick(position) }
             tvTitle.text = note.title.trim()
-            tvDate.text = AppUtil.formatDate(note.last_edited)
+            tvDate.text = AppUtil.formatDateTime(note.last_edited)
             tvText.text = note.text.trim()
         }
     }

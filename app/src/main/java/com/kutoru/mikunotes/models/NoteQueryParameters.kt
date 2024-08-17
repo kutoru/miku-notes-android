@@ -5,9 +5,9 @@ data class NoteQueryParameters(
     val per_page: UByte?,
     val sort_by: QuerySortBy?,
     val sort_type: QuerySortType?,
-    val tags: List<UInt>?,
-    val date: Pair<ULong, ULong>?,
-    val date_modif: Pair<ULong, ULong>?,
+    val tags: Set<Int>?,
+    val date: Pair<Long, Long>?,
+    val date_modif: Pair<Long, Long>?,
     val title: String?,
 )
 

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.MikuNotes.Chip.Choice" parent="Widget.MaterialComponents.Chip.Choice">
+        <item name="android:padding">@dimen/card_inner_margin</item>
+        <item name="android:textSize">16sp</item>
+
+        <item name="chipMinHeight">0dp</item>
+        <item name="chipMinTouchTargetSize">0dp</item>
+        <item name="chipStartPadding">@dimen/card_inner_margin</item>
+        <item name="chipEndPadding">@dimen/card_inner_margin</item>
+        <item name="textStartPadding">@dimen/card_inner_margin</item>
+        <item name="textEndPadding">@dimen/card_inner_margin</item>
+    </style>
+
+    <style name="Theme.MikuNotes.Chip.Entry" parent="Widget.MaterialComponents.Chip.Entry">
+        <item name="android:padding">@dimen/card_inner_margin</item>
+        <item name="android:textSize">16sp</item>
+
+        <item name="chipMinHeight">0dp</item>
+        <item name="chipMinTouchTargetSize">0dp</item>
+        <item name="chipStartPadding">@dimen/card_inner_margin</item>
+        <item name="chipEndPadding">@dimen/card_inner_margin</item>
+        <item name="textStartPadding">@dimen/card_inner_margin</item>
+        <item name="textEndPadding">@dimen/card_inner_margin</item>
+    </style>
+</resources>

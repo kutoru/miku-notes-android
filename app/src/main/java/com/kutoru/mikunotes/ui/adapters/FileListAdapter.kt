@@ -67,7 +67,7 @@ class FileListAdapter(
             btnDelete.setOnClickListener { deleteFile(position) }
             btnDownload.setOnClickListener { downloadFile(position) }
             tvTitle.text = file.name
-            tvDate.text = AppUtil.formatDate(file.created)
+            tvDate.text = AppUtil.formatDateTime(file.created)
         }
     }
 }
