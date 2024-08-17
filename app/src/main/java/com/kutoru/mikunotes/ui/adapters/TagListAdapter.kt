@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui
+package com.kutoru.mikunotes.ui.adapters
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,13 +6,11 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
-import androidx.core.view.setMargins
 import androidx.recyclerview.widget.RecyclerView
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.models.Tag
 
 class TagListAdapter (
-    private var itemMargin: Int,
     private val withCross: Boolean,
     var tags: List<Tag>,
     private val tagOnClick: (position: Int) -> Unit,
@@ -20,8 +18,6 @@ class TagListAdapter (
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.card_tag, parent, false)
-        val layoutParams = view.findViewById<CardView>(R.id.cardView).layoutParams as ViewGroup.MarginLayoutParams
-        layoutParams.setMargins(itemMargin)
         return ViewHolder(view)
     }
 

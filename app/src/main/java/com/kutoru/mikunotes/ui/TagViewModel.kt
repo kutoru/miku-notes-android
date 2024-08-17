@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.note
+package com.kutoru.mikunotes.ui
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -9,7 +9,6 @@ import com.kutoru.mikunotes.logic.MikuNotesApp
 import com.kutoru.mikunotes.logic.requests.RequestManager
 import com.kutoru.mikunotes.logic.requests.getTags
 import com.kutoru.mikunotes.models.Tag
-import com.kutoru.mikunotes.ui.ApiViewModel
 
 class TagViewModel(requestManager: RequestManager) : ApiViewModel(requestManager) {
 

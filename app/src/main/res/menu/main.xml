@@ -2,11 +2,16 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!--shelf-->
+
     <item
         android:id="@+id/actionShelfRefresh"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:icon="@drawable/ic_refresh"
         android:orderInCategory="100"
         android:title="Refresh"
+        android:visible="false"
         app:showAsAction="always" />
 
     <item
@@ -14,6 +19,7 @@
         android:icon="@drawable/ic_copy"
         android:orderInCategory="100"
         android:title="Copy the text"
+        android:visible="false"
         app:showAsAction="always" />
 
     <item
@@ -21,6 +27,7 @@
         android:icon="@drawable/ic_save"
         android:orderInCategory="100"
         android:title="Save"
+        android:visible="false"
         app:showAsAction="never" />
 
     <item
@@ -28,12 +35,37 @@
         android:icon="@drawable/ic_delete"
         android:orderInCategory="100"
         android:title="Clear"
+        android:visible="false"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/actionShelfConvert"
         android:orderInCategory="100"
         android:title="Convert to note"
+        android:visible="false"
         app:showAsAction="never" />
+
+    <!--notes-->
+
+    <item
+        android:id="@+id/actionNotesRefresh"
+        android:icon="@drawable/ic_refresh"
+        android:orderInCategory="100"
+        android:title="Refresh"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/actionNotesFilter"
+        android:icon="@drawable/ic_filter"
+        android:orderInCategory="100"
+        android:title="Filter"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/actionNotesSort"
+        android:icon="@drawable/ic_sort"
+        android:orderInCategory="100"
+        android:title="Sort"
+        app:showAsAction="always" />
 
 </menu>

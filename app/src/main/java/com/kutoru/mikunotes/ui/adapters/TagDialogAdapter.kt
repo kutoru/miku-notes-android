@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui.note
+package com.kutoru.mikunotes.ui.adapters
 
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
@@ -8,14 +8,12 @@ import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.cardview.widget.CardView
-import androidx.core.view.setMargins
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.models.Tag
 
 class TagDialogAdapter (
-    private val itemMargin: Int,
     var noteTagIds: List<Int>,
     var tags: List<Tag>,
 
@@ -27,8 +25,6 @@ class TagDialogAdapter (
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.card_dialog_tag, parent, false)
-        val layoutParams = view.findViewById<CardView>(R.id.cardView).layoutParams as ViewGroup.MarginLayoutParams
-        layoutParams.setMargins(itemMargin)
         return ViewHolder(view)
     }
 

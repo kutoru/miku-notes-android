@@ -2,4 +2,5 @@
     <dimen name="margin">8dp</dimen>
     <dimen name="margin_neg">-8dp</dimen>
     <dimen name="fab_size">48dp</dimen>
+    <dimen name="card_inner_margin">4dp</dimen>
 </resources>

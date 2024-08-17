@@ -11,6 +11,7 @@ import android.view.View.OnFocusChangeListener
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.GridLayoutManager
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityNoteBinding
@@ -18,8 +19,10 @@ import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.ApiReadyActivity
-import com.kutoru.mikunotes.ui.FileListAdapter
-import com.kutoru.mikunotes.ui.TagListAdapter
+import com.kutoru.mikunotes.ui.TagViewModel
+import com.kutoru.mikunotes.ui.adapters.FileListAdapter
+import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
+import com.kutoru.mikunotes.ui.adapters.TagListAdapter
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -79,27 +82,30 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
             uploadFile()
         }
 
+        val rvItemMargin = resources.getDimension(R.dimen.margin).toInt()
+
         tagAdapter = TagListAdapter(
-            resources.getDimension(R.dimen.margin).toInt(),
             true,
             listOf(),
             ::removeTag,
         )
 
         fileAdapter = FileListAdapter(
-            resources.getDimension(R.dimen.margin).toInt(),
+            rvItemMargin,
             listOf(),
             ::deleteFile,
             ::downloadFile,
         )
 
         binding.rvNoteTags.adapter = tagAdapter
+        binding.rvNoteTags.addItemDecoration(ItemMarginDecorator.Tags(rvItemMargin))
 
-        val bottomFilesPadding = (resources.getDimension(R.dimen.fab_size) + fileAdapter.itemMargin).toInt()
-        binding.rvNoteFiles.setPadding(0, 0, 0, bottomFilesPadding)
+        val bottomFilesPadding = resources.getDimension(R.dimen.fab_size).toInt() + fileAdapter.itemMargin * 2
+        binding.rvNoteFiles.updatePadding(bottom = bottomFilesPadding)
 
         binding.rvNoteFiles.adapter = fileAdapter
         binding.rvNoteFiles.layoutManager = GridLayoutManager(this, RECYCLER_VIEW_FILE_COLUMNS)
+        binding.rvNoteFiles.addItemDecoration(ItemMarginDecorator.Files(rvItemMargin))
 
         val tagViewModel: TagViewModel by viewModels { TagViewModel.Factory }
         tagDialog = NoteTagDialog(

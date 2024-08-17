@@ -10,6 +10,9 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.RecyclerView
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.models.Tag
+import com.kutoru.mikunotes.ui.TagViewModel
+import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
+import com.kutoru.mikunotes.ui.adapters.TagDialogAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -38,7 +41,6 @@ class NoteTagDialog(
 
     init {
         adapter = TagDialogAdapter(
-            context.resources.getDimension(R.dimen.margin).toInt(),
             listOf(),
             listOf(),
             ::addTag,
@@ -71,6 +73,9 @@ class NoteTagDialog(
         }
 
         rvDialogTags.adapter = adapter
+        rvDialogTags.addItemDecoration(ItemMarginDecorator.Notes(
+            context.resources.getDimension(R.dimen.margin).toInt(),
+        ))
 
         btnDialogTagAdd.setOnClickListener {
             dialogCreateNewTag()

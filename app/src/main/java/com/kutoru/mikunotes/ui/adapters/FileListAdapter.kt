@@ -1,4 +1,4 @@
-package com.kutoru.mikunotes.ui
+package com.kutoru.mikunotes.ui.adapters
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,14 +6,12 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import androidx.cardview.widget.CardView
-import androidx.core.view.setMargins
 import androidx.recyclerview.widget.RecyclerView
 import com.kutoru.mikunotes.R
+import com.kutoru.mikunotes.logic.AppUtil
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
 import com.kutoru.mikunotes.models.File
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
+import kotlin.math.ceil
 import kotlin.math.round
 
 class FileListAdapter(
@@ -24,14 +22,16 @@ class FileListAdapter(
 ) : RecyclerView.Adapter<FileListAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val cardWidth = parent.width / RECYCLER_VIEW_FILE_COLUMNS - (2 * itemMargin)
+        val cardWidth = ceil(
+            parent.width.toFloat() / RECYCLER_VIEW_FILE_COLUMNS -
+            itemMargin * (1f + 100f / RECYCLER_VIEW_FILE_COLUMNS / 100f)
+        ).toInt()
         val cardHeight = (cardWidth / 1.5).toInt()
 
         val view = LayoutInflater.from(parent.context).inflate(R.layout.card_file, parent, false)
         val layoutParams = view.findViewById<CardView>(R.id.cardView).layoutParams as ViewGroup.MarginLayoutParams
         layoutParams.width = cardWidth
         layoutParams.height = cardHeight
-        layoutParams.setMargins(itemMargin)
 
         return ViewHolder(view)
     }
@@ -54,10 +54,6 @@ class FileListAdapter(
             val tvTitle = cardView.findViewById<TextView>(R.id.tvConvertTitle)
             val tvDate = cardView.findViewById<TextView>(R.id.tvDate)
 
-            val created = LocalDateTime
-                .ofEpochSecond(file.created, 0, ZoneOffset.UTC)
-                .format(DateTimeFormatter.ofPattern("yy/MM/dd HH:mm"))
-
             val mul = 1000f
 
             val (fileSize, postFix) = when {
@@ -71,7 +67,7 @@ class FileListAdapter(
             btnDelete.setOnClickListener { deleteFile(position) }
             btnDownload.setOnClickListener { downloadFile(position) }
             tvTitle.text = file.name
-            tvDate.text = created
+            tvDate.text = AppUtil.formatDate(file.created)
         }
     }
 }

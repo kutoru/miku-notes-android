@@ -7,21 +7,30 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
+import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.FragmentNotesBinding
 import com.kutoru.mikunotes.logic.SELECTED_NOTE
 import com.kutoru.mikunotes.models.NoteQueryParameters
 import com.kutoru.mikunotes.ui.ApiReadyFragment
+import com.kutoru.mikunotes.ui.TagViewModel
+import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
+import com.kutoru.mikunotes.ui.adapters.TagListAdapter
 import com.kutoru.mikunotes.ui.main.MainActivity
 import com.kutoru.mikunotes.ui.main.NotesCallbacks
 import com.kutoru.mikunotes.ui.note.NoteActivity
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 
 class NotesFragment : ApiReadyFragment<NotesViewModel>() {
 
     private lateinit var binding: FragmentNotesBinding
     private lateinit var loadDialog: ProgressDialog
+    private lateinit var tagAdapter: TagListAdapter
+    private lateinit var noteAdapter: NoteListAdapter
 
     override val viewModel: NotesViewModel by viewModels { NotesViewModel.Factory }
+    private val tagViewModel: TagViewModel by viewModels { TagViewModel.Factory }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -39,12 +48,35 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
             requireActivity().startActivity(intent)
         }
 
+        tagAdapter = TagListAdapter(
+            false,
+            listOf(),
+            { pos -> println("notes on tag press $pos") },
+        )
+
+        noteAdapter = NoteListAdapter(
+            listOf(),
+            { pos -> println("notes on note press $pos") },
+        )
+
+        binding.rvNotesTags.adapter = tagAdapter
+        binding.rvNotesTags.addItemDecoration(
+            ItemMarginDecorator.Tags(
+            resources.getDimension(R.dimen.margin).toInt(),
+        ))
+
+        binding.rvNotesNotes.adapter = noteAdapter
+        binding.rvNotesNotes.addItemDecoration(
+            ItemMarginDecorator.Notes(
+            resources.getDimension(R.dimen.margin).toInt(),
+        ))
+
         (requireActivity() as MainActivity)
-            .setNotesOptionsMenu(
-                NotesCallbacks(
+            .setNotesOptionsMenu(NotesCallbacks(
                 refresh = { scope.launch { refreshNotes(false) } },
-            )
-            )
+                filter = { println("open filter menu") },
+                sort = { println("open sort menu") },
+            ))
 
         loadDialog = ProgressDialog(requireContext())
         loadDialog.setMessage("Loading the notes...")
@@ -59,29 +91,45 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         loadDialog.show()
 
         scope.launch {
-            refreshNotes(true)
+            listOf(
+                async { refreshNotes(true) },
+                async { refreshTags(true) },
+            ).awaitAll()
         }
     }
 
     override fun afterUrlDialogSave() {
         scope.launch {
             viewModel.updateUrl()
-            refreshNotes(true)
+            listOf(
+                async { refreshNotes(true) },
+                async { refreshTags(true) },
+            ).awaitAll()
         }
     }
 
     private fun setupViewModelObservers() {
-        viewModel.notes.observe(viewLifecycleOwner) {
-            binding.tvNotesTest.text = it.toString()
+        tagViewModel.tags.observe(viewLifecycleOwner) {
+            tagAdapter.tags = it
+            tagAdapter.notifyDataSetChanged()
         }
 
-        viewModel.pageCount.observe(viewLifecycleOwner) {
+        viewModel.notes.observe(viewLifecycleOwner) {
+            noteAdapter.notes = it
+            noteAdapter.notifyDataSetChanged()
+        }
+    }
+
+    private suspend fun refreshTags(silent: Boolean) {
+        val result = handleRequest { tagViewModel.getTags() }
+        if (!silent && result.isFailure) {
+            showToast("Could not refresh the tags")
         }
     }
 
     private suspend fun refreshNotes(silent: Boolean) {
         // gather the params from inputs or something
-        val parameters = NoteQueryParameters(null, null, null, null, null, null, null, null)
+        val parameters = NoteQueryParameters(null, 100u, null, null, null, null, null, null)
 
         val result = handleRequest { viewModel.getNotes(parameters) }
         if (result.isFailure) {

@@ -28,7 +28,9 @@ class MainActionBarManager(
     fun setNotesFragment(notesCallbacks: NotesCallbacks?) {
         resetOptionsMenu()
 
-//        setOptionVisibility(R.id.actionNotesRefresh, true)
+        setOptionVisibility(R.id.actionNotesRefresh, true)
+        setOptionVisibility(R.id.actionNotesFilter, true)
+        setOptionVisibility(R.id.actionNotesSort, true)
 
         this.notesCallbacks = notesCallbacks
         currentFragment = FragmentType.Notes
@@ -37,6 +39,17 @@ class MainActionBarManager(
     fun setSettingsFragment() {
         resetOptionsMenu()
         currentFragment = FragmentType.Settings
+    }
+
+    private fun resetOptionsMenu() {
+        setOptionVisibility(R.id.actionShelfRefresh, false)
+        setOptionVisibility(R.id.actionShelfCopy, false)
+        setOptionVisibility(R.id.actionShelfSave, false)
+        setOptionVisibility(R.id.actionShelfClear, false)
+        setOptionVisibility(R.id.actionShelfConvert, false)
+        setOptionVisibility(R.id.actionNotesRefresh, false)
+        setOptionVisibility(R.id.actionNotesFilter, false)
+        setOptionVisibility(R.id.actionNotesSort, false)
     }
 
     fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -51,14 +64,6 @@ class MainActionBarManager(
 
     private fun setOptionVisibility(optionId: Int, visible: Boolean) {
         menu.findItem(optionId).isVisible = visible
-    }
-
-    private fun resetOptionsMenu() {
-        setOptionVisibility(R.id.actionShelfRefresh, false)
-        setOptionVisibility(R.id.actionShelfCopy, false)
-        setOptionVisibility(R.id.actionShelfSave, false)
-        setOptionVisibility(R.id.actionShelfClear, false)
-        setOptionVisibility(R.id.actionShelfConvert, false)
     }
 
     private fun handleShelfCallbacks(itemId: Int): Boolean {
@@ -76,14 +81,15 @@ class MainActionBarManager(
 
     private fun handleNotesCallbacks(itemId: Int): Boolean {
         when (itemId) {
-//            R.id.actionNotesRefresh -> notesCallbacks?.refresh?.invoke()
+            R.id.actionNotesRefresh -> notesCallbacks?.refresh?.invoke()
+            R.id.actionNotesFilter -> notesCallbacks?.filter?.invoke()
+            R.id.actionNotesSort -> notesCallbacks?.sort?.invoke()
             else -> return false
         }
 
         return true
     }
 }
-
 
 data class ShelfCallbacks(
     val refresh: () -> Unit,
@@ -95,6 +101,8 @@ data class ShelfCallbacks(
 
 data class NotesCallbacks(
     val refresh: () -> Unit,
+    val filter: () -> Unit,
+    val sort: () -> Unit,
 )
 
 enum class FragmentType {
