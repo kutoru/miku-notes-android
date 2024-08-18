@@ -59,38 +59,32 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <HorizontalScrollView
-        android:id="@+id/hsvNPMTags"
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvNPMTags"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:clipToPadding="false"
-        android:padding="@dimen/margin"
+        android:orientation="horizontal"
+        android:paddingTop="@dimen/margin_half"
+        android:paddingEnd="56dp"
+        android:paddingBottom="@dimen/margin_half"
         android:scrollbarStyle="outsideOverlay"
+        android:scrollbars="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/clNPMTags">
+        app:layout_constraintTop_toBottomOf="@id/clNPMTags" />
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/cgNPMTags"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:chipSpacingHorizontal="@dimen/margin"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:singleLine="true">
-
-            <com.google.android.material.chip.Chip
-                style="@style/Theme.MikuNotes.Chip.Choice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="no tags"
-                android:textStyle="bold|italic" />
-
-        </com.google.android.material.chip.ChipGroup>
-
-    </HorizontalScrollView>
+    <Button
+        android:id="@+id/btnNPMEditTags"
+        style="@style/Theme.MikuNotes.Button"
+        android:layout_width="@dimen/icon_button_side_len"
+        android:layout_height="@dimen/icon_button_side_len"
+        android:layout_marginEnd="@dimen/margin"
+        app:icon="@drawable/ic_edit"
+        app:layout_constraintBottom_toBottomOf="@+id/rvNPMTags"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/rvNPMTags" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/clNPMDate"
@@ -100,7 +94,7 @@
         android:layout_marginEnd="@dimen/margin"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/hsvNPMTags">
+        app:layout_constraintTop_toBottomOf="@+id/rvNPMTags">
 
         <View
             android:id="@+id/dNPMDate1"

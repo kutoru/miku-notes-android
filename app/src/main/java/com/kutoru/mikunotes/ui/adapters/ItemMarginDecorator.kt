@@ -57,4 +57,19 @@ interface ItemMarginDecorator {
             }
         }
     }
+
+    class TagsInParamMenu(
+        private val itemSpacing: Int,
+    ) : RecyclerView.ItemDecoration() {
+        override fun getItemOffsets(
+            outRect: Rect,
+            view: View,
+            parent: RecyclerView,
+            state: RecyclerView.State,
+        ) {
+            outRect.top = itemSpacing / 2
+            outRect.bottom = itemSpacing / 2
+            outRect.left = itemSpacing
+        }
+    }
 }

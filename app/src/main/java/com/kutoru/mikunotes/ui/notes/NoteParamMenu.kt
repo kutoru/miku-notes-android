@@ -1,20 +1,18 @@
 package com.kutoru.mikunotes.ui.notes
 
 import android.content.Context
-import android.graphics.Typeface
-import android.text.SpannableString
-import android.text.style.StyleSpan
 import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Button
 import android.widget.EditText
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.allViews
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.LifecycleOwner
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.logic.AppUtil
@@ -22,6 +20,9 @@ import com.kutoru.mikunotes.models.QuerySortBy
 import com.kutoru.mikunotes.models.QuerySortType
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.TagViewModel
+import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
+import com.kutoru.mikunotes.ui.adapters.NoteParamTagAdapter
+
 
 class NoteParamMenu(
     context: Context,
@@ -36,8 +37,10 @@ class NoteParamMenu(
     private val view: View
     private val datePicker: MaterialDatePicker.Builder<Long>
     private val dayInSecs = 86400L
+    private val tagAdapter: NoteParamTagAdapter
+    private var lastTagListRowCount = 3
 
-    private val cgTags: ChipGroup
+    private val rvTags: RecyclerView
     private val etDateStart: EditText
     private val etDateEnd: EditText
     private val etModifStart: EditText
@@ -48,7 +51,7 @@ class NoteParamMenu(
     init {
         view = View.inflate(context, R.layout.content_notes_param_menu, null)
 
-        cgTags = view.findViewById(R.id.cgNPMTags)
+        rvTags = view.findViewById(R.id.rvNPMTags)
         val btnDateStart: Button = view.findViewById(R.id.btnNPMDateStart)
         etDateStart = view.findViewById(R.id.etNPMDateStart)
         etDateEnd = view.findViewById(R.id.etNPMDateEnd)
@@ -61,6 +64,21 @@ class NoteParamMenu(
         btgSortType = view.findViewById(R.id.btgNPMSortType)
         val btnReset: Button = view.findViewById(R.id.btnNPMReset)
         val btnSubmit: Button = view.findViewById(R.id.btnNPMSubmit)
+
+        tagAdapter = NoteParamTagAdapter(
+            listOf(Tag(0, 0, "no tags", null, 0)),
+            ::onTagClick,
+            ::getTagCheckedState,
+        )
+
+        rvTags.addItemDecoration(ItemMarginDecorator.TagsInParamMenu(
+            context.resources.getDimension(R.dimen.margin).toInt(),
+        ))
+        rvTags.adapter = tagAdapter
+        rvTags.layoutManager = StaggeredGridLayoutManager(
+            lastTagListRowCount,
+            LinearLayoutManager.HORIZONTAL,
+        )
 
         datePicker = MaterialDatePicker.Builder.datePicker()
 
@@ -100,7 +118,7 @@ class NoteParamMenu(
         btnReset.setOnClickListener { queryViewModel.clearQuery() }
         btnSubmit.setOnClickListener { onSubmit() }
 
-        setupViewModelObservers(context, viewLifecycleOwner)
+        setupViewModelObservers(viewLifecycleOwner)
 
         parent.addView(view)
 
@@ -111,37 +129,20 @@ class NoteParamMenu(
         view.layoutParams = viewParams
     }
 
-    private fun setupViewModelObservers(context: Context, viewLifecycleOwner: LifecycleOwner) {
+    private fun setupViewModelObservers(viewLifecycleOwner: LifecycleOwner) {
         tagViewModel.tags.observe(viewLifecycleOwner) { tags ->
-            cgTags.removeAllViews()
-
-            (tags + listOf(Tag(0, 0, "no tags", null, 0))).forEach { tag ->
-                val chip = View.inflate(context, R.layout.chip_tag_choice, null) as Chip
-                chip.id = tag.id
-
-                if (tag.id == 0) {
-                    val span = SpannableString(tag.name)
-                    span.setSpan(StyleSpan(Typeface.ITALIC), 0, span.length, 0)
-                    chip.text = span
-                } else {
-                    chip.text = tag.name
-                }
-
-                chip.setOnClickListener {
-                    if ((it as Chip).isChecked) {
-                        queryViewModel.addTag(tag.id)
-                    } else {
-                        queryViewModel.removeTag(tag.id)
-                    }
-                }
-
-                cgTags.addView(chip)
-            }
+            setTagListRows(tags.size)
+            tagAdapter.tags = tags + Tag(0, 0, "no tags", null, 0)
+            tagAdapter.notifyDataSetChanged()
         }
 
         queryViewModel.tags.observe(viewLifecycleOwner) { tagIds ->
-            cgTags.allViews.forEach {
-                val chip = it as? Chip ?: return@forEach
+            for (pos in 0..<tagAdapter.itemCount) {
+                val chip = rvTags
+                    .findViewHolderForAdapterPosition(pos)
+                    ?.itemView as? Chip
+                    ?: continue
+
                 val chipState = tagIds != null && tagIds.contains(chip.id)
                 if (chip.isChecked != chipState) {
                     chip.isChecked = chipState
@@ -191,6 +192,47 @@ class NoteParamMenu(
                 QuerySortType.Descending -> btgSortType.check(R.id.btnNPMSortTypeDesc)
             }
         }
+    }
+
+    private fun setTagListRows(tagCount: Int) {
+        val rowCount = if (tagCount < 5) {
+            1
+        } else if (tagCount < 10) {
+            2
+        } else {
+            3
+        }
+
+        if (rowCount != lastTagListRowCount) {
+            lastTagListRowCount = rowCount
+            rvTags.layoutManager = StaggeredGridLayoutManager(
+                rowCount,
+                LinearLayoutManager.HORIZONTAL,
+            )
+        }
+    }
+
+    private fun onTagClick(position: Int, isChecked: Boolean) {
+        val tags = tagViewModel.tags.value
+
+        val tagId = if (
+            (tags.isNullOrEmpty() && position == 0) ||
+            (position == tags?.size)
+        ) {
+            0
+        } else {
+            tags!![position].id
+        }
+
+        if (isChecked) {
+            queryViewModel.addTag(tagId)
+        } else {
+            queryViewModel.removeTag(tagId)
+        }
+    }
+
+    private fun getTagCheckedState(tagId: Int): Boolean {
+        return queryViewModel.tags.value?.contains(tagId) ?: false
     }
 
     private fun openDateStartPicker() {

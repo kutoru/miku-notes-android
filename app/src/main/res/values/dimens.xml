@@ -4,4 +4,6 @@
     <dimen name="fab_size">48dp</dimen>
     <dimen name="backdrop_header_height">32dp</dimen>
     <dimen name="card_inner_margin">4dp</dimen>
+    <dimen name="margin_half">4dp</dimen>
+    <dimen name="icon_button_side_len">40dp</dimen>
 </resources>
