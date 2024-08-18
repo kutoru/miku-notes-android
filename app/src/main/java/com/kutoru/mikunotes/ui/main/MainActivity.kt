@@ -2,6 +2,7 @@ package com.kutoru.mikunotes.ui.main
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
@@ -10,22 +11,20 @@ import android.os.Parcelable
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
-import com.google.android.material.navigation.NavigationView
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityMainBinding
 import com.kutoru.mikunotes.logic.DOWNLOAD_NOTIFICATION_CHANNEL_ID
 import com.kutoru.mikunotes.ui.notes.NotesFragment
 import com.kutoru.mikunotes.ui.shelf.ShelfFragment
-
 
 class MainActivity : AppCompatActivity() {
 
@@ -43,15 +42,13 @@ class MainActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.appBarMain.toolbarMain)
 
-        val drawerLayout: DrawerLayout = binding.drawerLayout
-        val navView: NavigationView = binding.navView
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         appBarConfiguration = AppBarConfiguration(
             setOf(R.id.navShelf, R.id.navNotes, R.id.navSettings),
-            drawerLayout,
+            binding.drawerLayout,
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
-        navView.setupWithNavController(navController)
+        binding.navView.setupWithNavController(navController)
 
         setNavigationBarColor()
 
@@ -61,7 +58,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main, menu)
-        actionBarManager = MainActionBarManager(menu)
+        actionBarManager = MainActionBarManager(
+            menu,
+            binding.appBarMain.actionNotesSearch,
+            binding.appBarMain.actionNotesSearchReset,
+            getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager,
+        )
+
         initializeOptionsMenu?.invoke()
         return true
     }

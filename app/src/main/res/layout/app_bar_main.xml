@@ -16,7 +16,42 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
-            app:popupTheme="@style/Theme.MikuNotes.PopupOverlay" />
+            app:popupTheme="@style/Theme.MikuNotes.PopupOverlay" >
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:translationX="-9dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <EditText
+                    android:id="@+id/actionNotesSearch"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:autofillHints="none"
+                    android:hint="Note title..."
+                    android:inputType="text"
+                    android:textColor="@color/white"
+                    android:textColorHint="#A9FFFFFF"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageButton
+                    android:id="@+id/actionNotesSearchReset"
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
+                    android:background="@null"
+                    android:src="@drawable/ic_cross"
+                    android:visibility="gone"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </androidx.appcompat.widget.Toolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 

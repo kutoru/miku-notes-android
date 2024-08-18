@@ -10,7 +10,6 @@ import android.widget.Button
 import android.widget.EditText
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.allViews
-import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -38,7 +37,6 @@ class NoteParamMenu(
     private val datePicker: MaterialDatePicker.Builder<Long>
     private val dayInSecs = 86400L
 
-    private val etTitle: EditText
     private val cgTags: ChipGroup
     private val etDateStart: EditText
     private val etDateEnd: EditText
@@ -50,7 +48,6 @@ class NoteParamMenu(
     init {
         view = View.inflate(context, R.layout.content_notes_param_menu, null)
 
-        etTitle = view.findViewById(R.id.etNPMTitle)
         cgTags = view.findViewById(R.id.cgNPMTags)
         val btnDateStart: Button = view.findViewById(R.id.btnNPMDateStart)
         etDateStart = view.findViewById(R.id.etNPMDateStart)
@@ -66,10 +63,6 @@ class NoteParamMenu(
         val btnSubmit: Button = view.findViewById(R.id.btnNPMSubmit)
 
         datePicker = MaterialDatePicker.Builder.datePicker()
-
-        etTitle.addTextChangedListener {
-            queryViewModel.setTitle(it?.toString() ?: "")
-        }
 
         btnDateStart.setOnClickListener { removeDateStartLimit() }
         etDateStart.setOnClickListener { openDateStartPicker() }
@@ -119,12 +112,6 @@ class NoteParamMenu(
     }
 
     private fun setupViewModelObservers(context: Context, viewLifecycleOwner: LifecycleOwner) {
-        queryViewModel.title.observe(viewLifecycleOwner) {
-            if (it != etTitle.text.toString()) {
-                etTitle.setText(it)
-            }
-        }
-
         tagViewModel.tags.observe(viewLifecycleOwner) { tags ->
             cgTags.removeAllViews()
 

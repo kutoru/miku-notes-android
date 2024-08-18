@@ -43,6 +43,7 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
     private var paramMenuLastOffset = 0f
     private var paramMenuIsExpanded = false
     private var inputManager: InputMethodManager? = null
+    private var setSearchBarText: ((text: String) -> Unit)? = null
 
     override val viewModel: NotesViewModel by viewModels { NotesViewModel.Factory }
     private val tagViewModel: TagViewModel by viewModels { TagViewModel.Factory }
@@ -87,7 +88,6 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
 
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
                 if (slideOffset - paramMenuLastOffset < 0) {
-                    inputManager?.hideSoftInputFromWindow(binding.root.windowToken, 0)
                     hideParamMenu()
                 }
 
@@ -113,8 +113,9 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         (requireActivity() as MainActivity)
             .setNotesOptionsMenu(NotesCallbacks(
                 refresh = { refreshFragment(false) },
-                filter = { println("open filter menu") },
-                sort = { println("open sort menu") },
+                onInputChange = ::onSearchInputChange,
+                onInputSubmit = ::onSearchInputSubmit,
+                getSetText = { setSearchBarText = it },
             ))
 
         noteParamMenu = NoteParamMenu(
@@ -155,6 +156,19 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
             return false
         } else {
             return true
+        }
+    }
+
+    private fun onSearchInputChange(text: String, fromClear: Boolean) {
+        queryViewModel.setTitle(text)
+        if (fromClear) {
+            onSearchInputSubmit()
+        }
+    }
+
+    private fun onSearchInputSubmit() {
+        scope.launch {
+            refreshNotes(true)
         }
     }
 
@@ -214,6 +228,10 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
             }
         }
 
+        queryViewModel.title.observe(viewLifecycleOwner) {
+            setSearchBarText?.invoke(it)
+        }
+
         queryViewModel.tags.observe(viewLifecycleOwner) { tagIds ->
             binding.cgNotesTags.allViews.forEach {
                 val chip = it as? Chip ?: return@forEach
@@ -239,9 +257,7 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
     }
 
     private suspend fun refreshNotes(silent: Boolean) {
-        println("refreshNotes ${queryViewModel.title}")
-        paramMenuSheet.state = BottomSheetBehavior.STATE_COLLAPSED
-
+        hideParamMenu()
         val parameters = queryViewModel.queryParameters
 
         val result = handleRequest { viewModel.getNotes(parameters) }

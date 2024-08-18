@@ -54,18 +54,4 @@
         android:title="Refresh"
         app:showAsAction="always" />
 
-    <item
-        android:id="@+id/actionNotesFilter"
-        android:icon="@drawable/ic_filter"
-        android:orderInCategory="100"
-        android:title="Filter"
-        app:showAsAction="always" />
-
-    <item
-        android:id="@+id/actionNotesSort"
-        android:icon="@drawable/ic_sort"
-        android:orderInCategory="100"
-        android:title="Sort"
-        app:showAsAction="always" />
-
 </menu>

@@ -2,15 +2,62 @@ package com.kutoru.mikunotes.ui.main
 
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
+import android.widget.ImageButton
+import androidx.core.widget.addTextChangedListener
 import com.kutoru.mikunotes.R
 
 class MainActionBarManager(
     private val menu: Menu,
+    private val actionNotesSearch: EditText,
+    private val actionNotesSearchReset: ImageButton,
+    private val inputManager: InputMethodManager,
 ) {
 
     private var shelfCallbacks: ShelfCallbacks? = null
     private var notesCallbacks: NotesCallbacks? = null
     private var currentFragment: FragmentType? = null
+
+    private var actionNotesSearchIsClear = false
+
+    init {
+        actionNotesSearch.addTextChangedListener {
+            if (it.isNullOrEmpty()) {
+                actionNotesSearchReset.visibility = View.GONE
+            } else {
+                actionNotesSearchReset.visibility = View.VISIBLE
+            }
+
+            notesCallbacks?.onInputChange?.invoke(
+                it?.toString() ?: "",
+                actionNotesSearchIsClear,
+            )
+
+            actionNotesSearchIsClear = false
+        }
+
+        actionNotesSearchReset.setOnClickListener {
+            actionNotesSearchIsClear = true
+
+            actionNotesSearch.setText("")
+            inputManager.hideSoftInputFromWindow(actionNotesSearch.windowToken, 0)
+            actionNotesSearch.clearFocus()
+        }
+
+        actionNotesSearch.setOnEditorActionListener { _, actionId, _ ->
+            val submitAction = 6
+            if (actionId != submitAction) {
+                return@setOnEditorActionListener false
+            }
+
+            inputManager.hideSoftInputFromWindow(actionNotesSearch.windowToken, 0)
+            actionNotesSearch.clearFocus()
+            notesCallbacks?.onInputSubmit?.invoke()
+            return@setOnEditorActionListener true
+        }
+    }
 
     fun setShelfFragment(shelfCallbacks: ShelfCallbacks?) {
         resetOptionsMenu()
@@ -29,8 +76,18 @@ class MainActionBarManager(
         resetOptionsMenu()
 
         setOptionVisibility(R.id.actionNotesRefresh, true)
-        setOptionVisibility(R.id.actionNotesFilter, true)
-        setOptionVisibility(R.id.actionNotesSort, true)
+        actionNotesSearch.visibility = View.VISIBLE
+        if (!actionNotesSearch.text.isNullOrEmpty()) {
+            actionNotesSearchReset.visibility = View.VISIBLE
+        } else {
+            actionNotesSearchReset.visibility = View.GONE
+        }
+
+        notesCallbacks?.getSetText?.invoke {
+            if (it != actionNotesSearch.text.toString()) {
+                actionNotesSearch.setText(it)
+            }
+        }
 
         this.notesCallbacks = notesCallbacks
         currentFragment = FragmentType.Notes
@@ -48,8 +105,8 @@ class MainActionBarManager(
         setOptionVisibility(R.id.actionShelfClear, false)
         setOptionVisibility(R.id.actionShelfConvert, false)
         setOptionVisibility(R.id.actionNotesRefresh, false)
-        setOptionVisibility(R.id.actionNotesFilter, false)
-        setOptionVisibility(R.id.actionNotesSort, false)
+        actionNotesSearch.visibility = View.GONE
+        actionNotesSearchReset.visibility = View.GONE
     }
 
     fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -82,8 +139,6 @@ class MainActionBarManager(
     private fun handleNotesCallbacks(itemId: Int): Boolean {
         when (itemId) {
             R.id.actionNotesRefresh -> notesCallbacks?.refresh?.invoke()
-            R.id.actionNotesFilter -> notesCallbacks?.filter?.invoke()
-            R.id.actionNotesSort -> notesCallbacks?.sort?.invoke()
             else -> return false
         }
 
@@ -101,8 +156,9 @@ data class ShelfCallbacks(
 
 data class NotesCallbacks(
     val refresh: () -> Unit,
-    val filter: () -> Unit,
-    val sort: () -> Unit,
+    val onInputChange: (newInput: String, fromClear: Boolean) -> Unit,
+    val onInputSubmit: () -> Unit,
+    val getSetText: ((text: String) -> Unit) -> Unit,
 )
 
 enum class FragmentType {
