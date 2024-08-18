@@ -3,6 +3,8 @@
     <color name="bg">#121212</color>
     <color name="bg_sec">#424242</color>
 
+    <color name="bg_dyn">@color/bg_sec</color>
+
     <color name="fg">@color/white</color>
     <color name="fg_sec">#c0c0c1</color>
 
