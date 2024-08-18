@@ -88,7 +88,7 @@ class QueryViewModel : ViewModel() {
     }
 
     fun setTitle(title: String?) {
-        _title.value = if (title.isNullOrEmpty()) null else title
+        _title.value = title
     }
 
     fun clearQuery() {
