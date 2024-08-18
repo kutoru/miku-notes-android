@@ -26,11 +26,11 @@ class QueryViewModel : ViewModel() {
     private val _tags = MutableLiveData<MutableSet<Int>?>(null)
     val tags: LiveData<MutableSet<Int>?> = _tags
 
-    private val _date = MutableLiveData<Pair<Long, Long>?>(null)
-    val date: LiveData<Pair<Long, Long>?> = _date
+    private val _date = MutableLiveData<Pair<Long, Long>>(Pair(0, 0))
+    val date: LiveData<Pair<Long, Long>> = _date
 
-    private val _dateModified = MutableLiveData<Pair<Long, Long>?>(null)
-    val dateModified: LiveData<Pair<Long, Long>?> = _dateModified
+    private val _dateModified = MutableLiveData<Pair<Long, Long>>(Pair(0, 0))
+    val dateModified: LiveData<Pair<Long, Long>> = _dateModified
 
     private val _title = MutableLiveData<String?>(null)
     val title: LiveData<String?> = _title
@@ -71,16 +71,24 @@ class QueryViewModel : ViewModel() {
         }
     }
 
-    fun setDate(startDate: Long, endDate: Long) {
-        _date.value = Pair(startDate, endDate)
+    fun setDateStart(timestampInSeconds: Long) {
+        _date.value = Pair(timestampInSeconds, _date.value!!.second)
     }
 
-    fun setDateModified(startDate: Long, endDate: Long) {
-        _dateModified.value = Pair(startDate, endDate)
+    fun setDateEnd(timestampInSeconds: Long) {
+        _date.value = Pair(_date.value!!.first, timestampInSeconds)
+    }
+
+    fun setDateModifiedStart(timestampInSeconds: Long) {
+        _dateModified.value = Pair(timestampInSeconds, _dateModified.value!!.second)
+    }
+
+    fun setDateModifiedEnd(timestampInSeconds: Long) {
+        _dateModified.value = Pair(_dateModified.value!!.first, timestampInSeconds)
     }
 
     fun setTitle(title: String?) {
-        _title.value = title
+        _title.value = if (title.isNullOrEmpty()) null else title
     }
 
     fun clearQuery() {
@@ -89,8 +97,8 @@ class QueryViewModel : ViewModel() {
         _sortBy.value = null
         _sortType.value = null
         _tags.value = null
-        _date.value = null
-        _dateModified.value = null
+        _date.value = Pair(0, 0)
+        _dateModified.value = Pair(0, 0)
         _title.value = null
     }
 

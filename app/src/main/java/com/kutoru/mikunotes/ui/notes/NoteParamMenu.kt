@@ -9,7 +9,6 @@ import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Button
 import android.widget.EditText
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.util.Pair
 import androidx.core.view.allViews
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.FragmentManager
@@ -33,8 +32,8 @@ class NoteParamMenu(
 ) {
 
     private val view: View
-    private val dateRangePicker: MaterialDatePicker.Builder<Pair<Long, Long>>
-    private val dayInMs = 86_400_000L
+    private val datePicker: MaterialDatePicker.Builder<Long>
+    private val dayInSecs = 86400L
 
     private val etTitle: EditText
     private val cgTags: ChipGroup
@@ -61,21 +60,20 @@ class NoteParamMenu(
         btgSortBy = view.findViewById(R.id.btgNPMSortBy)
         btgSortType = view.findViewById(R.id.btgNPMSortType)
 
-        dateRangePicker = MaterialDatePicker.Builder.dateRangePicker()
+        datePicker = MaterialDatePicker.Builder.datePicker()
 
         etTitle.addTextChangedListener {
-            println("addTextChangedListener $it")
             queryViewModel.setTitle(it.toString())
         }
 
         btnDateStart.setOnClickListener { removeDateStartLimit() }
-        etDateStart.setOnClickListener { openDateCreatedPicker() }
-        etDateEnd.setOnClickListener { openDateCreatedPicker() }
+        etDateStart.setOnClickListener { openDateStartPicker() }
+        etDateEnd.setOnClickListener { openDateEndPicker() }
         btnDateEnd.setOnClickListener { removeDateEndLimit() }
 
         btnModifStart.setOnClickListener { removeModifStartLimit() }
-        etModifStart.setOnClickListener { openDateModifiedPicker() }
-        etModifEnd.setOnClickListener { openDateModifiedPicker() }
+        etModifStart.setOnClickListener { openModifStartPicker() }
+        etModifEnd.setOnClickListener { openModifEndPicker() }
         btnModifEnd.setOnClickListener { removeModifEndLimit() }
 
         setupViewModelObservers(context, viewLifecycleOwner)
@@ -143,7 +141,7 @@ class NoteParamMenu(
             if (it == null || it.second == 0L) {
                 etDateEnd.setText("Not specified")
             } else {
-                etDateEnd.setText(AppUtil.formatDate(it.second - dayInMs / 1000))
+                etDateEnd.setText(AppUtil.formatDate(it.second - dayInSecs))
             }
         }
 
@@ -157,81 +155,70 @@ class NoteParamMenu(
             if (it == null || it.second == 0L) {
                 etModifEnd.setText("Not specified")
             } else {
-                etModifEnd.setText(AppUtil.formatDate(it.second - dayInMs / 1000))
+                etModifEnd.setText(AppUtil.formatDate(it.second - dayInSecs))
             }
         }
     }
 
+    private fun openDateStartPicker() {
+        openDatePickerNew(
+            "Date created start",
+            queryViewModel.date.value!!.first,
+        ) { queryViewModel.setDateStart(it) }
+    }
+
+    private fun openDateEndPicker() {
+        openDatePickerNew(
+            "Date created end",
+            queryViewModel.date.value!!.second - dayInSecs,
+        ) { queryViewModel.setDateEnd(it + dayInSecs) }  // adding a day to make the end inclusive
+    }
+
+    private fun openModifStartPicker() {
+        openDatePickerNew(
+            "Date modified start",
+            queryViewModel.dateModified.value!!.first,
+        ) { queryViewModel.setDateModifiedStart(it) }
+    }
+
+    private fun openModifEndPicker() {
+        openDatePickerNew(
+            "Date modified end",
+            queryViewModel.dateModified.value!!.second - dayInSecs,
+        ) { queryViewModel.setDateModifiedEnd(it + dayInSecs) }  // same thing as above
+    }
+
     private fun removeDateStartLimit() {
-        val second = queryViewModel.date.value?.second
-        queryViewModel.setDate(0, second ?: 0)
+        queryViewModel.setDateStart(0)
     }
 
     private fun removeDateEndLimit() {
-        val first = queryViewModel.date.value?.first
-        queryViewModel.setDate(first ?: 0, 0)
+        queryViewModel.setDateEnd(0)
     }
 
     private fun removeModifStartLimit() {
-        val second = queryViewModel.dateModified.value?.second
-        queryViewModel.setDateModified(0, second ?: 0)
+        queryViewModel.setDateModifiedStart(0)
     }
 
     private fun removeModifEndLimit() {
-        val first = queryViewModel.dateModified.value?.first
-        queryViewModel.setDateModified(first ?: 0, 0)
+        queryViewModel.setDateModifiedEnd(0)
     }
 
-    private fun openDateCreatedPicker() {
-        openDatePicker(
-            "Date created",
-            queryViewModel.date.value,
-        ) {
-            queryViewModel.setDate(it.first / 1000, (it.second + dayInMs) / 1000)
-        }
-    }
-
-    private fun openDateModifiedPicker() {
-        openDatePicker(
-            "Date modified",
-            queryViewModel.dateModified.value,
-        ) {
-            queryViewModel.setDateModified(it.first / 1000, (it.second + dayInMs) / 1000)
-        }
-    }
-
-    private fun openDatePicker(
+    private fun openDatePickerNew(
         title: String,
-        dates: kotlin.Pair<Long, Long>?,
-        onPositiveButton: (Pair<Long, Long>) -> Unit,
+        selection: Long,
+        onPositiveButton: (timestampInSeconds: Long) -> Unit,
     ) {
-        dateRangePicker.setTitleText(title)
-        val now = AppUtil.getNowInMillis()
+        datePicker.setTitleText(title)
+        datePicker.setSelection(
+            if (selection > 0L) selection * 1000 else AppUtil.getNowInMillis(),
+        )
 
-        var firstDate = if (dates != null && dates.first != 0L) {
-            dates.first * 1000
-        } else {
-            now
+        val picker = datePicker.build()
+        picker.addOnPositiveButtonClickListener {
+            onPositiveButton(it / 1000)
         }
 
-        val secondDate = if (dates != null && dates.second != 0L) {
-            val res = dates.second * 1000 - dayInMs
-            if (firstDate > res) firstDate = res
-            res
-        } else {
-            if (firstDate < now) firstDate else now
-        }
-
-        dateRangePicker.setSelection(Pair(
-            firstDate,
-            secondDate,
-        ))
-
-        val datePicker = dateRangePicker.build()
-        datePicker.addOnPositiveButtonClickListener {
-            onPositiveButton(it)
-        }
-
-        datePicker.show(fragmentManager, null)
+        picker.show(fragmentManager, null)
     }
 }
