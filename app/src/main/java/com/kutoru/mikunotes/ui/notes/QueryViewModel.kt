@@ -9,30 +9,43 @@ import com.kutoru.mikunotes.models.NoteQueryParameters
 import com.kutoru.mikunotes.models.QuerySortBy
 import com.kutoru.mikunotes.models.QuerySortType
 
+private interface DefaultValues {
+    companion object {
+        val page: UShort? = null
+        val perPage: UByte? = 100u
+        val sortBy: QuerySortBy = QuerySortBy.DateModified
+        val sortType: QuerySortType = QuerySortType.Descending
+        val tags: MutableSet<Int>? = null
+        val date: Pair<Long, Long> = Pair(0L, 0L)
+        val dateModified: Pair<Long, Long> = Pair(0L, 0L)
+        val title: String = ""
+    }
+}
+
 class QueryViewModel : ViewModel() {
 
-    private val _page = MutableLiveData<UShort?>(null)
+    private val _page = MutableLiveData(DefaultValues.page)
     val page: LiveData<UShort?> = _page
 
-    private val _perPage = MutableLiveData<UByte?>(100u)
+    private val _perPage = MutableLiveData(DefaultValues.perPage)
     val perPage: LiveData<UByte?> = _perPage
 
-    private val _sortBy = MutableLiveData<QuerySortBy?>(null)
-    val sortBy: LiveData<QuerySortBy?> = _sortBy
+    private val _sortBy = MutableLiveData(DefaultValues.sortBy)
+    val sortBy: LiveData<QuerySortBy> = _sortBy
 
-    private val _sortType = MutableLiveData<QuerySortType?>(null)
-    val sortType: LiveData<QuerySortType?> = _sortType
+    private val _sortType = MutableLiveData(DefaultValues.sortType)
+    val sortType: LiveData<QuerySortType> = _sortType
 
-    private val _tags = MutableLiveData<MutableSet<Int>?>(null)
+    private val _tags = MutableLiveData(DefaultValues.tags)
     val tags: LiveData<MutableSet<Int>?> = _tags
 
-    private val _date = MutableLiveData(Pair(0L, 0L))
+    private val _date = MutableLiveData(DefaultValues.date)
     val date: LiveData<Pair<Long, Long>> = _date
 
-    private val _dateModified = MutableLiveData(Pair(0L, 0L))
+    private val _dateModified = MutableLiveData(DefaultValues.dateModified)
     val dateModified: LiveData<Pair<Long, Long>> = _dateModified
 
-    private val _title = MutableLiveData("")
+    private val _title = MutableLiveData(DefaultValues.title)
     val title: LiveData<String> = _title
 
     val queryParameters get() = NoteQueryParameters(
@@ -88,18 +101,28 @@ class QueryViewModel : ViewModel() {
     }
 
     fun setTitle(title: String) {
-        _title.value = title
+        if (_title.value != title) {
+            _title.value = title
+        }
+    }
+
+    fun setSortBy(sortBy: QuerySortBy) {
+        _sortBy.value = sortBy
+    }
+
+    fun setSortType(sortType: QuerySortType) {
+        _sortType.value = sortType
     }
 
     fun clearQuery() {
-//        _page.value = null
-//        _perPage.value = null
-        _sortBy.value = null
-        _sortType.value = null
-        _tags.value = null
-        _date.value = Pair(0, 0)
-        _dateModified.value = Pair(0, 0)
-        _title.value = ""
+        _page.value = DefaultValues.page
+        _perPage.value = DefaultValues.perPage
+        _sortBy.value = DefaultValues.sortBy
+        _sortType.value = DefaultValues.sortType
+        _tags.value = DefaultValues.tags
+        _date.value = DefaultValues.date
+        _dateModified.value = DefaultValues.dateModified
+        _title.value = DefaultValues.title
     }
 
     private fun prepareTags(): Set<Int>? {

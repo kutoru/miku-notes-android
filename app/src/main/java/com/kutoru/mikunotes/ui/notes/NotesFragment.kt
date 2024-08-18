@@ -121,6 +121,7 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
             requireContext(),
             viewLifecycleOwner,
             binding.clNotesParamMenu,
+            ::hideParamMenu,
             parentFragmentManager,
             tagViewModel,
             queryViewModel,
@@ -146,6 +147,15 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
     override fun afterUrlDialogSave() {
         viewModel.updateUrl()
         refreshFragment(true)
+    }
+
+    fun onBackPressed(): Boolean {
+        if (paramMenuIsExpanded) {
+            hideParamMenu()
+            return false
+        } else {
+            return true
+        }
     }
 
     private fun refreshFragment(silentNotes: Boolean) {

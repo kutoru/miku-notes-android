@@ -19,6 +19,8 @@ import com.google.android.material.chip.ChipGroup
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.logic.AppUtil
+import com.kutoru.mikunotes.models.QuerySortBy
+import com.kutoru.mikunotes.models.QuerySortType
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.TagViewModel
 
@@ -26,6 +28,7 @@ class NoteParamMenu(
     context: Context,
     viewLifecycleOwner: LifecycleOwner,
     parent: ConstraintLayout,
+    onSubmit: () -> Unit,
     private val fragmentManager: FragmentManager,
     private val tagViewModel: TagViewModel,
     private val queryViewModel: QueryViewModel,
@@ -59,6 +62,8 @@ class NoteParamMenu(
         val btnModifEnd: Button = view.findViewById(R.id.btnNPMModifEnd)
         btgSortBy = view.findViewById(R.id.btgNPMSortBy)
         btgSortType = view.findViewById(R.id.btgNPMSortType)
+        val btnReset: Button = view.findViewById(R.id.btnNPMReset)
+        val btnSubmit: Button = view.findViewById(R.id.btnNPMSubmit)
 
         datePicker = MaterialDatePicker.Builder.datePicker()
 
@@ -75,6 +80,32 @@ class NoteParamMenu(
         etModifStart.setOnClickListener { openModifStartPicker() }
         etModifEnd.setOnClickListener { openModifEndPicker() }
         btnModifEnd.setOnClickListener { removeModifEndLimit() }
+
+        btgSortBy.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) {
+                return@addOnButtonCheckedListener
+            }
+
+            when (checkedId) {
+                R.id.btnNPMSortByTitle -> queryViewModel.setSortBy(QuerySortBy.Title)
+                R.id.btnNPMSortByDate -> queryViewModel.setSortBy(QuerySortBy.Date)
+                R.id.btnNPMSortByModif -> queryViewModel.setSortBy(QuerySortBy.DateModified)
+            }
+        }
+
+        btgSortType.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) {
+                return@addOnButtonCheckedListener
+            }
+
+            when (checkedId) {
+                R.id.btnNPMSortTypeAsc -> queryViewModel.setSortType(QuerySortType.Ascending)
+                R.id.btnNPMSortTypeDesc -> queryViewModel.setSortType(QuerySortType.Descending)
+            }
+        }
+
+        btnReset.setOnClickListener { queryViewModel.clearQuery() }
+        btnSubmit.setOnClickListener { onSubmit() }
 
         setupViewModelObservers(context, viewLifecycleOwner)
 
@@ -156,6 +187,21 @@ class NoteParamMenu(
                 etModifEnd.setText("Not specified")
             } else {
                 etModifEnd.setText(AppUtil.formatDate(it.second - dayInSecs))
+            }
+        }
+
+        queryViewModel.sortBy.observe(viewLifecycleOwner) {
+            when (it) {
+                QuerySortBy.Title -> btgSortBy.check(R.id.btnNPMSortByTitle)
+                QuerySortBy.Date -> btgSortBy.check(R.id.btnNPMSortByDate)
+                QuerySortBy.DateModified -> btgSortBy.check(R.id.btnNPMSortByModif)
+            }
+        }
+
+        queryViewModel.sortType.observe(viewLifecycleOwner) {
+            when (it) {
+                QuerySortType.Ascending -> btgSortType.check(R.id.btnNPMSortTypeAsc)
+                QuerySortType.Descending -> btgSortType.check(R.id.btnNPMSortTypeDesc)
             }
         }
     }
