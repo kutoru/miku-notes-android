@@ -63,7 +63,7 @@ class NoteParamMenu(
         datePicker = MaterialDatePicker.Builder.datePicker()
 
         etTitle.addTextChangedListener {
-            queryViewModel.setTitle(it.toString())
+            queryViewModel.setTitle(it?.toString() ?: "")
         }
 
         btnDateStart.setOnClickListener { removeDateStartLimit() }
@@ -80,17 +80,17 @@ class NoteParamMenu(
 
         parent.addView(view)
 
-        val vp = view.layoutParams as MarginLayoutParams
-        vp.width = -1
-        vp.height = -1
-        vp.topMargin = context.resources.getDimension(R.dimen.backdrop_header_height).toInt()
-        view.layoutParams = vp
+        val viewParams = view.layoutParams as MarginLayoutParams
+        viewParams.width = -1
+        viewParams.height = -1
+        viewParams.topMargin = context.resources.getDimension(R.dimen.backdrop_header_height).toInt()
+        view.layoutParams = viewParams
     }
 
     private fun setupViewModelObservers(context: Context, viewLifecycleOwner: LifecycleOwner) {
         queryViewModel.title.observe(viewLifecycleOwner) {
             if (it != etTitle.text.toString()) {
-                etTitle.setText(it ?: "")
+                etTitle.setText(it)
             }
         }
 

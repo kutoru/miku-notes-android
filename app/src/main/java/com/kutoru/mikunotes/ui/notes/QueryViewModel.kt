@@ -26,14 +26,14 @@ class QueryViewModel : ViewModel() {
     private val _tags = MutableLiveData<MutableSet<Int>?>(null)
     val tags: LiveData<MutableSet<Int>?> = _tags
 
-    private val _date = MutableLiveData<Pair<Long, Long>>(Pair(0, 0))
+    private val _date = MutableLiveData(Pair(0L, 0L))
     val date: LiveData<Pair<Long, Long>> = _date
 
-    private val _dateModified = MutableLiveData<Pair<Long, Long>>(Pair(0, 0))
+    private val _dateModified = MutableLiveData(Pair(0L, 0L))
     val dateModified: LiveData<Pair<Long, Long>> = _dateModified
 
-    private val _title = MutableLiveData<String?>(null)
-    val title: LiveData<String?> = _title
+    private val _title = MutableLiveData("")
+    val title: LiveData<String> = _title
 
     val queryParameters get() = NoteQueryParameters(
         page.value,
@@ -87,7 +87,7 @@ class QueryViewModel : ViewModel() {
         _dateModified.value = Pair(_dateModified.value!!.first, timestampInSeconds)
     }
 
-    fun setTitle(title: String?) {
+    fun setTitle(title: String) {
         _title.value = title
     }
 
@@ -99,7 +99,7 @@ class QueryViewModel : ViewModel() {
         _tags.value = null
         _date.value = Pair(0, 0)
         _dateModified.value = Pair(0, 0)
-        _title.value = null
+        _title.value = ""
     }
 
     private fun prepareTags(): Set<Int>? {
