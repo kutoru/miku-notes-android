@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class Tag(
     val created: Long,
     val id: Int,
-    val name: String,
+    var name: String,
     val note_id: Int?,
     val user_id: Int,
 ) : java.io.Serializable

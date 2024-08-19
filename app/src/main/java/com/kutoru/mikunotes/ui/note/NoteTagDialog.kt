@@ -29,9 +29,8 @@ class NoteTagDialog(
 
     var onShow: (() -> Unit)? = null,
     var onHide: (() -> Unit)? = null,
-    private val onTagAdd: ((tag: Tag) -> Unit)? = null,
-    private val onTagRemove: ((tag: Tag) -> Unit)? = null,
-    private val onTagChange: ((tag: Tag) -> Unit)? = null,
+    private val onTagAdd: ((tag: Tag, updateMoveButton: () -> Unit) -> Unit)? = null,
+    private val onTagRemove: ((tag: Tag, updateMoveButton: () -> Unit) -> Unit)? = null,
 ) {
 
     private val adapter: TagDialogAdapter
@@ -134,14 +133,18 @@ class NoteTagDialog(
         onHide?.invoke()
     }
 
-    private fun addTag(position: Int) {
-        println("dialogAddTag")
-        onTagAdd?.invoke(viewModel.tags.value!![position])
+    private fun addTag(position: Int, updateMoveButton: () -> Unit) {
+        onTagAdd?.invoke(
+            viewModel.tags.value!![position],
+            updateMoveButton,
+        )
     }
 
-    private fun removeTag(position: Int) {
-        println("dialogRemoveTag")
-        onTagRemove?.invoke(viewModel.tags.value!![position])
+    private fun removeTag(position: Int, updateMoveButton: () -> Unit) {
+        onTagRemove?.invoke(
+            viewModel.tags.value!![position],
+            updateMoveButton,
+        )
     }
 
     private fun saveTag(position: Int, tagName: String) {

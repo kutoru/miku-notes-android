@@ -19,7 +19,11 @@ class TagViewModel(requestManager: RequestManager) : ApiViewModel(requestManager
     private val _tags = MutableLiveData<MutableList<Tag>>(mutableListOf())
     val tags: LiveData<MutableList<Tag>> = _tags
 
+    var initialized = false
+        private set
+
     suspend fun getTags() {
+        initialized = false
         _tags.value = requestManager.getTags()
 
 //        val temp = requestManager.getTags()
@@ -40,6 +44,7 @@ class TagViewModel(requestManager: RequestManager) : ApiViewModel(requestManager
 //            Tag(1723018115, 21, "tag name 5", null, 1), Tag(1723018115, 22, "tag name 6", null, 1),
 //        )
 
+        initialized = true
     }
 
     suspend fun postTags(tagName: String) {

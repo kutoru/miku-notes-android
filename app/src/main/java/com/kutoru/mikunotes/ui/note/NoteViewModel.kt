@@ -13,16 +13,19 @@ import com.kutoru.mikunotes.logic.MikuNotesApp
 import com.kutoru.mikunotes.logic.SELECTED_NOTE
 import com.kutoru.mikunotes.logic.requests.RequestManager
 import com.kutoru.mikunotes.logic.requests.deleteFile
+import com.kutoru.mikunotes.logic.requests.deleteNotesTag
 import com.kutoru.mikunotes.logic.requests.getFile
 import com.kutoru.mikunotes.logic.requests.postFileToNote
+import com.kutoru.mikunotes.logic.requests.postNotesTag
 import com.kutoru.mikunotes.models.File
 import com.kutoru.mikunotes.models.Note
+import com.kutoru.mikunotes.models.NoteTagPost
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.ApiViewModel
 
 class NoteViewModel(requestManager: RequestManager) : ApiViewModel(requestManager) {
 
-    private var id = 0
+    private var noteId = 0
 
     private val _text = MutableLiveData("")
     val text: LiveData<String> = _text
@@ -39,8 +42,8 @@ class NoteViewModel(requestManager: RequestManager) : ApiViewModel(requestManage
     private val _timesEdited = MutableLiveData<Int?>(null)
     val timesEdited: LiveData<Int?> = _timesEdited
 
-    private val _tags = MutableLiveData<List<Tag>>(listOf())
-    val tags: LiveData<List<Tag>> = _tags
+    private val _tags = MutableLiveData<MutableList<Tag>>(mutableListOf())
+    val tags: LiveData<MutableList<Tag>> = _tags
 
     private val _files = MutableLiveData<MutableList<File>>(mutableListOf())
     val files: LiveData<MutableList<File>> = _files
@@ -60,7 +63,7 @@ class NoteViewModel(requestManager: RequestManager) : ApiViewModel(requestManage
 
         val note = intent.getSerializableExtra(SELECTED_NOTE) as Note
 
-        id = note.id
+        noteId = note.id
         _text.value = note.text
         _title.value = note.title
         _created.value = note.created
@@ -86,10 +89,35 @@ class NoteViewModel(requestManager: RequestManager) : ApiViewModel(requestManage
     }
 
     suspend fun postFile(contentResolver: ContentResolver, fileUri: Uri) {
-        val file = requestManager.postFileToNote(contentResolver, fileUri, id)
+        val file = requestManager.postFileToNote(contentResolver, fileUri, noteId)
 
         _files.value!!.add(file)
         _files.value = _files.value
+    }
+
+    suspend fun postNotesTag(tag: Tag) {
+        requestManager.postNotesTag(noteId, NoteTagPost(tag.id))
+
+        _tags.value!!.add(tag)
+        _tags.value = _tags.value
+    }
+
+    suspend fun deleteNotesTag(tagIndex: Int) {
+        val tagId = _tags.value!![tagIndex].id
+        requestManager.deleteNotesTag(noteId, tagId)
+
+        _tags.value!!.removeAt(tagIndex)
+        _tags.value = _tags.value
+    }
+
+    fun tagRemoved(tagIndex: Int) {
+        _tags.value!!.removeAt(tagIndex)
+        _tags.value = _tags.value
+    }
+
+    fun tagUpdated(tagIndex: Int, newName: String) {
+        _tags.value!![tagIndex].name = newName
+        _tags.value = _tags.value
     }
 
     companion object {

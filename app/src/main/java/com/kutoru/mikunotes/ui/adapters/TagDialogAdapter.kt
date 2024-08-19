@@ -21,8 +21,8 @@ class TagDialogAdapter (
     private val withAdd: Boolean,
     private val inputManager: InputMethodManager?,
 
-    private val onTagAdd: ((position: Int) -> Unit)?,
-    private val onTagRemove: ((position: Int) -> Unit)?,
+    private val onTagAdd: ((position: Int, updateMoveButton: () -> Unit) -> Unit)?,
+    private val onTagRemove: ((position: Int, updateMoveButton: () -> Unit) -> Unit)?,
     private val onTagSave: (position: Int, tagName: String) -> Unit,
     private val onTagDelete: (position: Int) -> Unit,
 ) : RecyclerView.Adapter<TagDialogAdapter.ViewHolder>() {
@@ -66,13 +66,9 @@ class TagDialogAdapter (
 
             btnMoveTag.isEnabled = true
             if (withAdd && tagPresentInNote(position)) {
-                btnMoveTag.icon = AppCompatResources.getDrawable(cardView.context, R.drawable.ic_cross)
-                btnMoveTag.backgroundTintList = ColorStateList.valueOf(cardView.context.getColor(R.color.secondary))
-                btnMoveTag.setOnClickListener { onTagRemove?.invoke(position) }
+                setMoveToRemove(position)
             } else if (withAdd) {
-                btnMoveTag.icon = AppCompatResources.getDrawable(cardView.context, R.drawable.ic_add)
-                btnMoveTag.backgroundTintList = ColorStateList.valueOf(cardView.context.getColor(R.color.primary))
-                btnMoveTag.setOnClickListener { onTagAdd?.invoke(position) }
+                setMoveToAdd(position)
             } else {
                 btnMoveTag.visibility = View.GONE
             }
@@ -110,6 +106,22 @@ class TagDialogAdapter (
             if (shouldFocusNewTag) {
                 newTagInput = etName
                 focusNewTag()
+            }
+        }
+
+        private fun setMoveToAdd(position: Int) {
+            btnMoveTag.icon = AppCompatResources.getDrawable(cardView.context, R.drawable.ic_add)
+            btnMoveTag.backgroundTintList = ColorStateList.valueOf(cardView.context.getColor(R.color.primary))
+            btnMoveTag.setOnClickListener {
+                onTagAdd?.invoke(position) { setMoveToRemove(position) }
+            }
+        }
+
+        private fun setMoveToRemove(position: Int) {
+            btnMoveTag.icon = AppCompatResources.getDrawable(cardView.context, R.drawable.ic_cross)
+            btnMoveTag.backgroundTintList = ColorStateList.valueOf(cardView.context.getColor(R.color.secondary))
+            btnMoveTag.setOnClickListener {
+                onTagRemove?.invoke(position) { setMoveToAdd(position) }
             }
         }
 

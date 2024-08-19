@@ -51,6 +51,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
     private var lastRootHeight = 0
 
     override val viewModel: NoteViewModel by viewModels { NoteViewModel.Factory }
+    private val tagViewModel: TagViewModel by viewModels { TagViewModel.Factory }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -133,7 +134,6 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         binding.rvNoteFiles.layoutManager = GridLayoutManager(this, RECYCLER_VIEW_FILE_COLUMNS)
         binding.rvNoteFiles.addItemDecoration(ItemMarginDecorator.Files(rvItemMargin))
 
-        val tagViewModel: TagViewModel by viewModels { TagViewModel.Factory }
         tagDialog = NoteTagDialog(
             this,
             this,
@@ -149,7 +149,6 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
             { binding.btnNoteAddTag.isEnabled = true },
             ::onTagDialogAdd,
             ::onTagDialogRemove,
-            ::onTagDialogChange,
         )
 
         binding.root.viewTreeObserver.addOnGlobalLayoutListener {
@@ -242,6 +241,24 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
         viewModel.isNewNote.observe(this) {
             initializeActionMenu(it)
+        }
+
+        tagViewModel.tags.observe(this) { allTags ->
+            if (!tagViewModel.initialized) {
+                return@observe
+            }
+
+            var i = -1
+            while (++i < viewModel.tags.value!!.size) {
+                val attachedTag = viewModel.tags.value!![i]
+                val matchingTag = allTags.find { it.id == attachedTag.id }
+
+                if (matchingTag == null) {
+                    viewModel.tagRemoved(i--)
+                } else if (matchingTag.name != attachedTag.name) {
+                    viewModel.tagUpdated(i, matchingTag.name)
+                }
+            }
         }
     }
 
@@ -404,8 +421,31 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         }
     }
 
-    private fun removeTag(position: Int) {
-        println("removeTag: ${viewModel.tags.value!!.getOrNull(position)}")
+    private fun onTagDialogAdd(tag: Tag, updateMoveButton: () -> Unit) {
+        scope.launch {
+            val result = handleRequest { viewModel.postNotesTag(tag) }
+            if (result.isFailure) {
+                showToast("Could not add the tag")
+            } else {
+                updateMoveButton()
+            }
+        }
+    }
+
+    private fun onTagDialogRemove(tag: Tag, updateMoveButton: () -> Unit) {
+        val position = viewModel.tags.value!!.indexOfFirst { it.id == tag.id }
+        removeTag(position, updateMoveButton)
+    }
+
+    private fun removeTag(position: Int, updateMoveButton: (() -> Unit)? = null) {
+        scope.launch {
+            val result = handleRequest { viewModel.deleteNotesTag(position) }
+            if (result.isFailure) {
+                showToast("Could not remove the tag")
+            } else {
+                updateMoveButton?.invoke()
+            }
+        }
     }
 
     private fun refreshNote() {
@@ -418,18 +458,6 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
     private fun deleteNote() {
         println("deleteNote")
-    }
-
-    private fun onTagDialogAdd(tag: Tag) {
-        println("onTagDialogAdd: $tag")
-    }
-
-    private fun onTagDialogRemove(tag: Tag) {
-        println("onTagDialogRemove: $tag")
-    }
-
-    private fun onTagDialogChange(tag: Tag) {
-        println("onTagDialogChange: $tag")
     }
 
     private fun readFilePermissionGranted(): Boolean {

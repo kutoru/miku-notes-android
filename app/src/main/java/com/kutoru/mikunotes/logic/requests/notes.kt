@@ -57,10 +57,10 @@ suspend fun RequestManager.patchNotes(noteId: Int, body: NotePost): Note {
     return executeRequestUntilBody("$apiUrl/notes/$noteId", HttpMethod.Patch, body)
 }
 
-suspend fun RequestManager.postNotesTag(noteId: Int, body: NoteTagPost): Note {
-    return executeRequestUntilBody("$apiUrl/notes/$noteId/tag", HttpMethod.Patch, body)
+suspend fun RequestManager.postNotesTag(noteId: Int, body: NoteTagPost) {
+    return executeRequestUntilBody("$apiUrl/notes/$noteId/tag", HttpMethod.Post, body)
 }
 
-suspend fun RequestManager.deleteNotesTag(noteId: Int, tagId: Int): Note {
-    return executeRequestUntilBody("$apiUrl/notes/$noteId/tag/$tagId", HttpMethod.Patch)
+suspend fun RequestManager.deleteNotesTag(noteId: Int, tagId: Int) {
+    return executeRequestUntilBody("$apiUrl/notes/$noteId/tag/$tagId", HttpMethod.Delete)
 }
