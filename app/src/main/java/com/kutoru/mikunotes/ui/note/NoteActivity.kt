@@ -1,8 +1,12 @@
 package com.kutoru.mikunotes.ui.note
 
+import android.Manifest
 import android.animation.ValueAnimator
+import android.content.pm.PackageManager
 import android.graphics.Rect
 import android.graphics.drawable.TransitionDrawable
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -10,7 +14,11 @@ import android.view.View
 import android.view.View.OnFocusChangeListener
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.GridLayoutManager
 import com.kutoru.mikunotes.R
@@ -18,12 +26,14 @@ import com.kutoru.mikunotes.databinding.ActivityNoteBinding
 import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.AppUtil
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
+import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.ApiReadyActivity
 import com.kutoru.mikunotes.ui.TagViewModel
 import com.kutoru.mikunotes.ui.adapters.FileListAdapter
 import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
 import com.kutoru.mikunotes.ui.adapters.TagListAdapter
+import kotlinx.coroutines.launch
 
 class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
@@ -32,6 +42,10 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
     private lateinit var fileAdapter: FileListAdapter
     private lateinit var tagDialog: NoteTagDialog
     private var actionMenu: Menu? = null
+
+    private lateinit var filePickActivityLauncher: ActivityResultLauncher<String>
+    private lateinit var storagePermissionActivityLauncher: ActivityResultLauncher<String>
+    private lateinit var notificationPermissionActivityLauncher: ActivityResultLauncher<String>
 
     private var fileContainerExpanded = false
     private var lastRootHeight = 0
@@ -78,7 +92,20 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         }
 
         binding.fabNoteUpload.setOnClickListener {
-            uploadFile()
+            if (viewModel.isNewNote.value!!) {
+                showToast("Save the new note before uploading any files")
+                return@setOnClickListener
+            }
+
+            if (!canSendNotifications()) {
+                notificationPermissionActivityLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+
+            if (!readFilePermissionGranted()) {
+                storagePermissionActivityLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            } else {
+                filePickActivityLauncher.launch("*/*")
+            }
         }
 
         val rvItemMargin = resources.getDimension(R.dimen.margin).toInt()
@@ -138,6 +165,24 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         }
 
         setNavigationBarColor(binding.root)
+
+        val contentsContract = ActivityResultContracts.GetMultipleContents()
+        val permissionContract = ActivityResultContracts.RequestPermission()
+
+        filePickActivityLauncher = registerForActivityResult(contentsContract, ::uploadFiles)
+        storagePermissionActivityLauncher = registerForActivityResult(permissionContract) {
+            if (it) {
+                filePickActivityLauncher.launch("*/*")
+            } else {
+                showToast("You need to provide access to your files to upload them")
+            }
+        }
+
+        notificationPermissionActivityLauncher = registerForActivityResult(permissionContract) {
+            if (!it) {
+                showToast("You won't see download or upload notifications without the notification permission")
+            }
+        }
     }
 
     private fun setupViewModelObservers() {
@@ -316,21 +361,47 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         }
     }
 
-    private fun deleteFile(position: Int) {
-        println("deleteFile: ${viewModel.files.value!!.getOrNull(position)}")
+    private fun deleteFile(fileIndex: Int) {
+        scope.launch {
+            val result = handleRequest { viewModel.deleteFile(fileIndex) }
+            if (result.isFailure) {
+                showToast("Could not delete the file")
+            } else {
+                showToast("The file has been deleted")
+            }
+        }
     }
 
-    private fun downloadFile(position: Int) {
-        println("downloadFile: ${viewModel.files.value!!.getOrNull(position)}")
-    }
-
-    private fun uploadFile() {
-        if (viewModel.isNewNote.value!!) {
-            showToast("Save the new note before uploading any files")
-            return
+    private fun downloadFile(fileIndex: Int) {
+        if (!canSendNotifications()) {
+            notificationPermissionActivityLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
-        println("uploadFile")
+        scope.launch {
+            val result = handleRequest { viewModel.getFile(fileIndex) }
+
+            if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
+                showToast("Download cancelled")
+            } else if (result.isFailure) {
+                showToast("Could not download the file")
+            }
+        }
+    }
+
+    private fun uploadFiles(fileUris: List<Uri>) {
+        fileUris.forEach { uri ->
+            scope.launch {
+                val result = handleRequest { viewModel.postFile(
+                    contentResolver, uri,
+                ) }
+
+                if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
+                    showToast("Upload cancelled")
+                } else if (result.isFailure) {
+                    showToast("Could not upload the file")
+                }
+            }
+        }
     }
 
     private fun removeTag(position: Int) {
@@ -359,5 +430,25 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
     private fun onTagDialogChange(tag: Tag) {
         println("onTagDialogChange: $tag")
+    }
+
+    private fun readFilePermissionGranted(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return true
+        }
+
+        return ContextCompat.checkSelfPermission(
+            this, Manifest.permission.READ_EXTERNAL_STORAGE,
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun canSendNotifications(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return true
+        }
+
+        return ActivityCompat.checkSelfPermission(
+            this, Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
     }
 }
