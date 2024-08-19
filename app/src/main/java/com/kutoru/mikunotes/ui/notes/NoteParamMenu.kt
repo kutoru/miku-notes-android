@@ -207,8 +207,8 @@ class NoteParamMenu(
 
     private fun setTagListRows(tagCount: Int) {
         val rowCount = when {
-            tagCount < 5 -> 1
-            tagCount < 10 -> 2
+            tagCount < 4 -> 1
+            tagCount < 8 -> 2
             else -> 3
         }
 

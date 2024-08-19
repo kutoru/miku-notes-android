@@ -20,6 +20,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.chip.Chip
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.FragmentNotesBinding
+import com.kutoru.mikunotes.logic.CREATE_NEW_NOTE
 import com.kutoru.mikunotes.logic.SELECTED_NOTE
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.ApiReadyFragment
@@ -69,7 +70,7 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
 
         binding.fabAddNote.setOnClickListener {
             val intent = Intent(requireActivity(), NoteActivity::class.java)
-            intent.putExtra(SELECTED_NOTE, viewModel.notes.value!![0])
+            intent.putExtra(CREATE_NEW_NOTE, true)
             requireActivity().startActivity(intent)
         }
 
@@ -104,8 +105,11 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
 
         noteAdapter = NoteListAdapter(
             listOf(),
-            { pos -> println("notes on note press $pos") },
-        )
+        ) {
+            val intent = Intent(requireActivity(), NoteActivity::class.java)
+            intent.putExtra(SELECTED_NOTE, viewModel.notes.value!![it])
+            requireActivity().startActivity(intent)
+        }
 
         binding.rvNotesNotes.adapter = noteAdapter
         binding.rvNotesNotes.addItemDecoration(

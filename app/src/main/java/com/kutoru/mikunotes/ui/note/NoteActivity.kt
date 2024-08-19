@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityNoteBinding
 import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
+import com.kutoru.mikunotes.logic.AppUtil
 import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.ApiReadyActivity
@@ -23,9 +24,6 @@ import com.kutoru.mikunotes.ui.TagViewModel
 import com.kutoru.mikunotes.ui.adapters.FileListAdapter
 import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
 import com.kutoru.mikunotes.ui.adapters.TagListAdapter
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
@@ -33,6 +31,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
     private lateinit var tagAdapter: TagListAdapter
     private lateinit var fileAdapter: FileListAdapter
     private lateinit var tagDialog: NoteTagDialog
+    private var actionMenu: Menu? = null
 
     private var fileContainerExpanded = false
     private var lastRootHeight = 0
@@ -141,13 +140,76 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         setNavigationBarColor(binding.root)
     }
 
+    private fun setupViewModelObservers() {
+        viewModel.title.observe(this) {
+            val view = binding.etNoteTitle
+            if (view.text.toString() != it) {
+                view.setText(it)
+            }
+        }
+
+        viewModel.text.observe(this) {
+            val view = binding.etNoteText
+            if (view.text.toString() != it) {
+                view.setText(it)
+            }
+        }
+
+        viewModel.created.observe(this) {
+            val created = if (it != null) AppUtil.formatDateTime(it) else "-"
+            binding.tvNoteCreated.text = created
+        }
+
+        viewModel.lastEdited.observe(this) {
+            val lastEdited = if (it != null) AppUtil.formatDateTime(it) else "-"
+            binding.tvNoteEdited.text = lastEdited
+        }
+
+        viewModel.timesEdited.observe(this) {
+            binding.tvNoteCount.text = it?.toString() ?: "-"
+        }
+
+        viewModel.tags.observe(this) {
+            if (it.isEmpty()) {
+                binding.rvNoteTags.visibility = View.INVISIBLE
+                binding.tvNoteNoTags.visibility = View.VISIBLE
+            } else {
+                binding.tvNoteNoTags.visibility = View.INVISIBLE
+                binding.rvNoteTags.visibility = View.VISIBLE
+            }
+
+            tagAdapter.tags = it
+            tagAdapter.notifyDataSetChanged()
+        }
+
+        viewModel.files.observe(this) {
+            if (it.isEmpty()) {
+                binding.rvNoteFiles.visibility = View.INVISIBLE
+                binding.tvNoteNoFiles.visibility = View.VISIBLE
+            } else {
+                binding.tvNoteNoFiles.visibility = View.INVISIBLE
+                binding.rvNoteFiles.visibility = View.VISIBLE
+            }
+
+            fileAdapter.files = it
+            fileAdapter.notifyDataSetChanged()
+        }
+
+        viewModel.isNewNote.observe(this) {
+            initializeActionMenu(it)
+        }
+    }
+
     override fun onResume() {
-        refreshNote()
+        if (!viewModel.isNewNote.value!!) {
+            refreshNote()
+        }
+
         super.onResume()
     }
 
     override fun onPause() {
-        if (viewModel.initialized) {
+        if (viewModel.initialized && !viewModel.isNewNote.value!!) {
             saveNote()
         }
 
@@ -156,7 +218,23 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.note, menu)
+        actionMenu = menu
+        initializeActionMenu(viewModel.isNewNote.value!!)
         return true
+    }
+
+    private fun initializeActionMenu(isNewNote: Boolean) {
+        if (isNewNote) {
+            supportActionBar?.title = "New note"
+            actionMenu?.findItem(R.id.actionNoteRefresh)?.isVisible = false
+            actionMenu?.findItem(R.id.actionNoteDelete)?.isVisible = false
+            actionMenu?.findItem(R.id.actionNoteSave)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+        } else {
+            supportActionBar?.title = "Note"
+            actionMenu?.findItem(R.id.actionNoteRefresh)?.isVisible = true
+            actionMenu?.findItem(R.id.actionNoteDelete)?.isVisible = true
+            actionMenu?.findItem(R.id.actionNoteSave)?.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -247,6 +325,11 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
     }
 
     private fun uploadFile() {
+        if (viewModel.isNewNote.value!!) {
+            showToast("Save the new note before uploading any files")
+            return
+        }
+
         println("uploadFile")
     }
 
@@ -276,67 +359,5 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
     private fun onTagDialogChange(tag: Tag) {
         println("onTagDialogChange: $tag")
-    }
-
-    private fun setupViewModelObservers() {
-        viewModel.title.observe(this) {
-            val view = binding.etNoteTitle
-            if (view.text.toString() != it) {
-                view.setText(it)
-            }
-        }
-
-        viewModel.text.observe(this) {
-            val view = binding.etNoteText
-            if (view.text.toString() != it) {
-                view.setText(it)
-            }
-        }
-
-        viewModel.created.observe(this) {
-            val created = LocalDateTime
-                .ofEpochSecond(it, 0, ZoneOffset.UTC)
-                .format(DateTimeFormatter.ofPattern("yy/MM/dd HH:mm"))
-
-           binding.tvNoteCreated.text = created
-        }
-
-        viewModel.lastEdited.observe(this) {
-            val lastEdited = LocalDateTime
-                .ofEpochSecond(it, 0, ZoneOffset.UTC)
-                .format(DateTimeFormatter.ofPattern("yy/MM/dd HH:mm"))
-
-            binding.tvNoteEdited.text = lastEdited
-        }
-
-        viewModel.timesEdited.observe(this) {
-            binding.tvNoteCount.text = it.toString()
-        }
-
-        viewModel.tags.observe(this) {
-            if (it.isEmpty()) {
-                binding.rvNoteTags.visibility = View.INVISIBLE
-                binding.tvNoteNoTags.visibility = View.VISIBLE
-            } else {
-                binding.tvNoteNoTags.visibility = View.INVISIBLE
-                binding.rvNoteTags.visibility = View.VISIBLE
-            }
-
-            tagAdapter.tags = it
-            tagAdapter.notifyDataSetChanged()
-        }
-
-        viewModel.files.observe(this) {
-            if (it.isEmpty()) {
-                binding.rvNoteFiles.visibility = View.INVISIBLE
-                binding.tvNoteNoFiles.visibility = View.VISIBLE
-            } else {
-                binding.tvNoteNoFiles.visibility = View.INVISIBLE
-                binding.rvNoteFiles.visibility = View.VISIBLE
-            }
-
-            fileAdapter.files = it
-            fileAdapter.notifyDataSetChanged()
-        }
     }
 }

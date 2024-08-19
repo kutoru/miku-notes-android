@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.kutoru.mikunotes.logic.CREATE_NEW_NOTE
 import com.kutoru.mikunotes.logic.MikuNotesApp
 import com.kutoru.mikunotes.logic.SELECTED_NOTE
 import com.kutoru.mikunotes.logic.requests.RequestManager
@@ -16,39 +17,45 @@ import com.kutoru.mikunotes.ui.ApiViewModel
 
 class NoteViewModel(requestManager: RequestManager) : ApiViewModel(requestManager) {
 
-    private val _text = MutableLiveData<String>()
+    private var id = 0
+
+    private val _text = MutableLiveData("")
     val text: LiveData<String> = _text
 
-    private val _title = MutableLiveData<String>()
+    private val _title = MutableLiveData("")
     val title: LiveData<String> = _title
 
-    private val _created = MutableLiveData<Long>()
-    val created: LiveData<Long> = _created
+    private val _created = MutableLiveData<Long?>(null)
+    val created: LiveData<Long?> = _created
 
-    private val _lastEdited = MutableLiveData<Long>()
-    val lastEdited: LiveData<Long> = _lastEdited
+    private val _lastEdited = MutableLiveData<Long?>(null)
+    val lastEdited: LiveData<Long?> = _lastEdited
 
-    private val _timesEdited = MutableLiveData<Int>()
-    val timesEdited: LiveData<Int> = _timesEdited
+    private val _timesEdited = MutableLiveData<Int?>(null)
+    val timesEdited: LiveData<Int?> = _timesEdited
 
-    private val _tags = MutableLiveData<List<Tag>>()
+    private val _tags = MutableLiveData<List<Tag>>(listOf())
     val tags: LiveData<List<Tag>> = _tags
 
-    private val _files = MutableLiveData<List<File>>()
+    private val _files = MutableLiveData<List<File>>(listOf())
     val files: LiveData<List<File>> = _files
 
-    private lateinit var note: Note
+    private val _isNewNote = MutableLiveData(false)
+    val isNewNote: LiveData<Boolean> = _isNewNote
+
     var initialized = false
         private set
 
     fun parseFromIntent(intent: Intent) {
-        note = intent.getSerializableExtra(SELECTED_NOTE) as Note
-        note.tags.addAll(listOf(
-            Tag(1723018115, 1, "tag name 1", null, 1), Tag(1723018115, 2, "tag name 2", null, 1),
-            Tag(1723018115, 3, "tag name 3", null, 1), Tag(1723018115, 4, "tag name 4", null, 1),
-            Tag(1723018115, 5, "tag name 5", null, 1), Tag(1723018115, 6, "tag name 6", null, 1),
-        ))
+        if (intent.getBooleanExtra(CREATE_NEW_NOTE, false)) {
+            _isNewNote.value = true
+            initialized = true
+            return
+        }
 
+        val note = intent.getSerializableExtra(SELECTED_NOTE) as Note
+
+        id = note.id
         _text.value = note.text
         _title.value = note.title
         _created.value = note.created
