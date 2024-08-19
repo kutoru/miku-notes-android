@@ -2,73 +2,87 @@ package com.kutoru.mikunotes.ui.note
 
 import android.content.Context
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.RecyclerView
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.TagViewModel
 import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
 import com.kutoru.mikunotes.ui.adapters.TagDialogAdapter
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 class NoteTagDialog(
     context: Context,
     lifecycleOwner: LifecycleOwner,
-    root: ConstraintLayout,
+    root: ViewGroup,
+    showAddButtons: Boolean,
 
-    private val scope: CoroutineScope,
     private val viewModel: TagViewModel,
     private val handleRequest: suspend (suspend () -> Any) -> Result<Any>,
     private val showToast: (String?) -> Unit,
 
-    private val onShow: () -> Unit,
-    private val onHide: () -> Unit,
-    private val onTagAdd: (tag: Tag) -> Unit,
-    private val onTagRemove: (tag: Tag) -> Unit,
-    private val onTagChange: (tag: Tag) -> Unit,
+    var onShow: (() -> Unit)? = null,
+    var onHide: (() -> Unit)? = null,
+    private val onTagAdd: ((tag: Tag) -> Unit)? = null,
+    private val onTagRemove: ((tag: Tag) -> Unit)? = null,
+    private val onTagChange: ((tag: Tag) -> Unit)? = null,
 ) {
 
     private val adapter: TagDialogAdapter
     private val dialogView: View
     private val inputManager: InputMethodManager?
+    private val rvDialogTags: RecyclerView
+    private val tvDialogTagNoTags: TextView
 
     val isShown get() = dialogView.visibility == View.VISIBLE
 
     init {
+        inputManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+
         adapter = TagDialogAdapter(
             listOf(),
             listOf(),
-            ::addTag,
-            ::removeTag,
+            showAddButtons,
+            inputManager,
+            if (showAddButtons) ::addTag else null,
+            if (showAddButtons) ::removeTag else null,
             ::saveTag,
             ::deleteTag,
         )
 
         dialogView = View.inflate(context, R.layout.dialog_add_tag, null)
-        val btnDialogTagBack = dialogView.findViewById<Button>(R.id.btnDialogTagBack)
-        val rvDialogTags = dialogView.findViewById<RecyclerView>(R.id.rvDialogTagList)
-        val tvDialogTagNoTags = dialogView.findViewById<TextView>(R.id.tvDialogTagNoTags)
-        val btnDialogTagAdd = dialogView.findViewById<Button>(R.id.btnDialogTagAdd)
+        val ibDialogTagBack: ImageButton = dialogView.findViewById(R.id.ibDialogTagBack)
+        rvDialogTags = dialogView.findViewById(R.id.rvDialogTagList)
+        tvDialogTagNoTags = dialogView.findViewById(R.id.tvDialogTagNoTags)
+        val btnDialogTagAdd: Button = dialogView.findViewById(R.id.btnDialogTagAdd)
 
         viewModel.tags.observe(lifecycleOwner) {
-            if (it.isEmpty()) {
-                rvDialogTags.visibility = View.INVISIBLE
-                tvDialogTagNoTags.visibility = View.VISIBLE
-            } else {
-                tvDialogTagNoTags.visibility = View.INVISIBLE
-                rvDialogTags.visibility = View.VISIBLE
-            }
-
             adapter.tags = it
             adapter.notifyDataSetChanged()
         }
 
-        btnDialogTagBack.setOnClickListener {
+        adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+            override fun onChanged() {
+                if (adapter.tags.isEmpty()) {
+                    rvDialogTags.visibility = View.INVISIBLE
+                    tvDialogTagNoTags.visibility = View.VISIBLE
+                } else {
+                    tvDialogTagNoTags.visibility = View.INVISIBLE
+                    rvDialogTags.visibility = View.VISIBLE
+                }
+
+                super.onChanged()
+            }
+        })
+
+
+        ibDialogTagBack.setOnClickListener {
             hide()
         }
 
@@ -78,7 +92,7 @@ class NoteTagDialog(
         ))
 
         btnDialogTagAdd.setOnClickListener {
-            dialogCreateNewTag()
+            createNewTag()
         }
 
         dialogView.visibility = View.GONE
@@ -88,29 +102,26 @@ class NoteTagDialog(
         viewParams.height = -1
         viewParams.width = -1
         dialogView.layoutParams = viewParams
-
-        inputManager = context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
     }
 
-    fun show(noteTags: List<Tag>) {
-        adapter.noteTagIds = noteTags.map { it.id }
+    fun show(noteTags: List<Tag>? = null) {
+        adapter.noteTagIds = noteTags?.map { it.id } ?: listOf()
         if (isShown) {
             hide()
         }
 
-        onShow()
-        scope.launch {
+        onShow?.invoke()
+
+        viewModel.viewModelScope.launch {
             val result = handleRequest { viewModel.getTags() }
             if (result.isFailure) {
                 showToast("Could not get tags")
-                onHide()
+                onHide?.invoke()
                 return@launch
             }
 
             if (viewModel.tags.value!!.isNotEmpty()) {
-                dialogView
-                    .findViewById<RecyclerView>(R.id.rvDialogTagList)
-                    .scrollToPosition(0)
+                rvDialogTags.scrollToPosition(0)
             }
 
             dialogView.visibility = View.VISIBLE
@@ -120,30 +131,69 @@ class NoteTagDialog(
     fun hide() {
         dialogView.visibility = View.GONE
         inputManager?.hideSoftInputFromWindow(dialogView.windowToken, 0)
-        onHide()
+        onHide?.invoke()
     }
 
     private fun addTag(position: Int) {
         println("dialogAddTag")
-        onTagAdd(viewModel.tags.value!![position])
+        onTagAdd?.invoke(viewModel.tags.value!![position])
     }
 
     private fun removeTag(position: Int) {
         println("dialogRemoveTag")
-        onTagRemove(viewModel.tags.value!![position])
+        onTagRemove?.invoke(viewModel.tags.value!![position])
     }
 
-    private fun saveTag(position: Int) {
-        println("dialogSaveTag")
-        onTagChange(viewModel.tags.value!![position])
+    private fun saveTag(position: Int, tagName: String) {
+        if (tagName.isBlank()) {
+            showToast("Cannot save empty tags")
+            return
+        }
+
+        viewModel.viewModelScope.launch {
+            val tag = adapter.tags[position]
+            val result = if (tag.id == -1) {
+                handleRequest { viewModel.postTags(tagName) }
+            } else {
+                handleRequest { viewModel.patchTags(tag.id, tagName) }
+            }
+
+            if (result.isFailure) {
+                showToast("Could not save the tag")
+            } else {
+                showToast("Tag saved")
+            }
+        }
     }
 
     private fun deleteTag(position: Int) {
-        println("dialogDeleteTag")
-        onTagRemove(viewModel.tags.value!![position])
+        val tag = adapter.tags[position]
+        if (tag.id == -1) {
+            val newList = adapter.tags.toMutableList()
+            newList.removeLast()
+            adapter.tags = newList
+            adapter.notifyDataSetChanged()
+            return
+        }
+
+        viewModel.viewModelScope.launch {
+            val result = handleRequest { viewModel.deleteTags(tag.id) }
+            if (result.isFailure) {
+                showToast("Could not delete the tag")
+                return@launch
+            }
+        }
     }
 
-    private fun dialogCreateNewTag() {
-        println("createNewTag")
+    private fun createNewTag() {
+        if (adapter.tags.isEmpty() || adapter.tags.last().id != -1) {
+            adapter.tags = (viewModel.tags.value ?: listOf()) + Tag(0, -1, "", null, 0)
+            adapter.notifyDataSetChanged()
+            adapter.focusNewTag()
+        } else {
+            adapter.focusExistingNewTag()
+        }
+
+        rvDialogTags.smoothScrollToPosition(adapter.itemCount - 1)
     }
 }

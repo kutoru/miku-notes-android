@@ -8,7 +8,8 @@
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/clNotesParamMenuHeader">
+    app:layout_constraintTop_toBottomOf="@id/clNotesParamMenuHeader"
+    android:animateLayoutChanges="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/clNPMTags"

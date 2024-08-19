@@ -45,7 +45,7 @@
                 android:layout_marginStart="4dp"
                 android:layout_marginEnd="4dp"
                 android:ems="10"
-                android:inputType="text"
+                android:inputType="text|textNoSuggestions"
                 android:text="tag name"
                 android:textColor="@color/fg"
                 android:textSize="16sp"

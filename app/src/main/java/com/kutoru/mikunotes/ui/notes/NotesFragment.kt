@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.allViews
 import androidx.core.view.get
 import androidx.fragment.app.viewModels
@@ -28,6 +29,7 @@ import com.kutoru.mikunotes.ui.adapters.NoteListAdapter
 import com.kutoru.mikunotes.ui.main.MainActivity
 import com.kutoru.mikunotes.ui.main.NotesCallbacks
 import com.kutoru.mikunotes.ui.note.NoteActivity
+import com.kutoru.mikunotes.ui.note.NoteTagDialog
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
@@ -39,6 +41,7 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
     private lateinit var noteAdapter: NoteListAdapter
     private lateinit var paramMenuSheet: BottomSheetBehavior<ConstraintLayout>
     private lateinit var noteParamMenu: NoteParamMenu
+    private lateinit var noteTagDialog: NoteTagDialog
 
     private var paramMenuLastOffset = 0f
     private var paramMenuIsExpanded = false
@@ -118,6 +121,16 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
                 getSetText = { setSearchBarText = it },
             ))
 
+        noteTagDialog = NoteTagDialog(
+            requireContext(),
+            viewLifecycleOwner,
+            requireActivity().findViewById<CoordinatorLayout>(R.id.app_bar_main),
+            false,
+            tagViewModel,
+            ::handleRequest,
+            ::showToast,
+        )
+
         noteParamMenu = NoteParamMenu(
             requireContext(),
             viewLifecycleOwner,
@@ -126,6 +139,7 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
             parentFragmentManager,
             tagViewModel,
             queryViewModel,
+            noteTagDialog,
         )
 
         loadDialog = ProgressDialog(requireContext())
@@ -146,12 +160,16 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
     }
 
     override fun afterUrlDialogSave() {
+        noteTagDialog.hide()
         viewModel.updateUrl()
         refreshFragment(true)
     }
 
     fun onBackPressed(): Boolean {
-        if (paramMenuIsExpanded) {
+        if (noteTagDialog.isShown) {
+            noteTagDialog.hide()
+            return false
+        } else if (paramMenuIsExpanded) {
             hideParamMenu()
             return false
         } else {

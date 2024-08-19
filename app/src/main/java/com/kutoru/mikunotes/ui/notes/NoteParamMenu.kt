@@ -22,6 +22,7 @@ import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.TagViewModel
 import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
 import com.kutoru.mikunotes.ui.adapters.NoteParamTagAdapter
+import com.kutoru.mikunotes.ui.note.NoteTagDialog
 
 
 class NoteParamMenu(
@@ -29,9 +30,11 @@ class NoteParamMenu(
     viewLifecycleOwner: LifecycleOwner,
     parent: ConstraintLayout,
     onSubmit: () -> Unit,
+
     private val fragmentManager: FragmentManager,
     private val tagViewModel: TagViewModel,
     private val queryViewModel: QueryViewModel,
+    private val tagDialog: NoteTagDialog,
 ) {
 
     private val view: View
@@ -52,6 +55,7 @@ class NoteParamMenu(
         view = View.inflate(context, R.layout.content_notes_param_menu, null)
 
         rvTags = view.findViewById(R.id.rvNPMTags)
+        val btnEditTags: Button = view.findViewById(R.id.btnNPMEditTags)
         val btnDateStart: Button = view.findViewById(R.id.btnNPMDateStart)
         etDateStart = view.findViewById(R.id.etNPMDateStart)
         etDateEnd = view.findViewById(R.id.etNPMDateEnd)
@@ -117,6 +121,13 @@ class NoteParamMenu(
 
         btnReset.setOnClickListener { queryViewModel.clearQuery() }
         btnSubmit.setOnClickListener { onSubmit() }
+
+        tagDialog.onShow = { btnEditTags.isEnabled = false }
+        tagDialog.onHide = { btnEditTags.isEnabled = true }
+
+        btnEditTags.setOnClickListener {
+            tagDialog.show()
+        }
 
         setupViewModelObservers(viewLifecycleOwner)
 
@@ -195,12 +206,10 @@ class NoteParamMenu(
     }
 
     private fun setTagListRows(tagCount: Int) {
-        val rowCount = if (tagCount < 5) {
-            1
-        } else if (tagCount < 10) {
-            2
-        } else {
-            3
+        val rowCount = when {
+            tagCount < 5 -> 1
+            tagCount < 10 -> 2
+            else -> 3
         }
 
         if (rowCount != lastTagListRowCount) {

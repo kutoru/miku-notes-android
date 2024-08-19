@@ -112,8 +112,8 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
             this,
             this,
             binding.root,
+            true,
 
-            scope,
             tagViewModel,
             ::handleRequest,
             ::showToast,
