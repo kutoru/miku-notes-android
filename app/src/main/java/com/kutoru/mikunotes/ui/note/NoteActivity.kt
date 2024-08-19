@@ -2,6 +2,7 @@ package com.kutoru.mikunotes.ui.note
 
 import android.Manifest
 import android.animation.ValueAnimator
+import android.app.AlertDialog
 import android.content.pm.PackageManager
 import android.graphics.Rect
 import android.graphics.drawable.TransitionDrawable
@@ -93,11 +94,6 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         }
 
         binding.fabNoteUpload.setOnClickListener {
-            if (viewModel.isNewNote.value!!) {
-                showToast("Save the new note before uploading any files")
-                return@setOnClickListener
-            }
-
             if (!canSendNotifications()) {
                 notificationPermissionActivityLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
@@ -241,6 +237,8 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
         viewModel.isNewNote.observe(this) {
             initializeActionMenu(it)
+            binding.fabNoteUpload.isEnabled = !it
+            binding.btnNoteAddTag.isEnabled = !it
         }
 
         tagViewModel.tags.observe(this) { allTags ->
@@ -264,7 +262,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
     override fun onResume() {
         if (!viewModel.isNewNote.value!!) {
-            refreshNote()
+            refreshNote(true)
         }
 
         super.onResume()
@@ -272,7 +270,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
     override fun onPause() {
         if (viewModel.initialized && !viewModel.isNewNote.value!!) {
-            saveNote()
+            saveNote(true)
         }
 
         super.onPause()
@@ -302,8 +300,8 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> finish()
-            R.id.actionNoteRefresh -> refreshNote()
-            R.id.actionNoteSave -> saveNote()
+            R.id.actionNoteRefresh -> refreshNote(false)
+            R.id.actionNoteSave -> saveNote(false)
             R.id.actionNoteDelete -> deleteNote()
             else -> return super.onOptionsItemSelected(item)
         }
@@ -448,16 +446,65 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         }
     }
 
-    private fun refreshNote() {
-        println("refreshNote")
+    private fun refreshNote(silent: Boolean) {
+        scope.launch {
+            val result = handleRequest { viewModel.getNote() }
+            if (!silent) {
+                if (result.isFailure) {
+                    showToast("Could not refresh the note")
+                } else {
+                    showToast("Note has been refreshed")
+                }
+            }
+        }
     }
 
-    private fun saveNote() {
-        println("saveNote")
+    private fun saveNote(silent: Boolean) {
+        val text = binding.etNoteText.text?.toString() ?: ""
+        val title = binding.etNoteTitle.text?.toString()
+
+        if (title.isNullOrBlank()) {
+            if (!silent) showToast("Can't save the note with an empty title")
+            return
+        }
+
+        if (viewModel.text.value == text && viewModel.title.value == title) {
+            if (!silent) showToast("Note's text or title haven't changed since last save")
+            return
+        }
+
+        scope.launch {
+            val result = if (viewModel.isNewNote.value!!) {
+                handleRequest { viewModel.postNote(text, title) }
+            } else {
+                handleRequest { viewModel.patchNote(text, title) }
+            }
+
+            if (result.isFailure) {
+                showToast("Could not save the note")
+            } else if (!silent) {
+                showToast("Note has been saved")
+            }
+        }
     }
 
     private fun deleteNote() {
-        println("deleteNote")
+        AlertDialog
+            .Builder(this)
+            .setTitle("Delete this note?")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Delete") { _, _ ->
+                scope.launch {
+                    val result = handleRequest { viewModel.deleteNote() }
+
+                    if (result.isFailure) {
+                        showToast("Could not delete the note")
+                    } else {
+                        this@NoteActivity.finish()
+                    }
+                }
+            }
+            .show()
     }
 
     private fun readFilePermissionGranted(): Boolean {

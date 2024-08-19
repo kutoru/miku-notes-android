@@ -13,12 +13,18 @@ import com.kutoru.mikunotes.logic.MikuNotesApp
 import com.kutoru.mikunotes.logic.SELECTED_NOTE
 import com.kutoru.mikunotes.logic.requests.RequestManager
 import com.kutoru.mikunotes.logic.requests.deleteFile
+import com.kutoru.mikunotes.logic.requests.deleteNotes
 import com.kutoru.mikunotes.logic.requests.deleteNotesTag
 import com.kutoru.mikunotes.logic.requests.getFile
+import com.kutoru.mikunotes.logic.requests.getNotes
+import com.kutoru.mikunotes.logic.requests.patchNotes
 import com.kutoru.mikunotes.logic.requests.postFileToNote
+import com.kutoru.mikunotes.logic.requests.postNotes
 import com.kutoru.mikunotes.logic.requests.postNotesTag
 import com.kutoru.mikunotes.models.File
 import com.kutoru.mikunotes.models.Note
+import com.kutoru.mikunotes.models.NotePost
+import com.kutoru.mikunotes.models.NoteQueryParameters
 import com.kutoru.mikunotes.models.NoteTagPost
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.ApiViewModel
@@ -57,7 +63,6 @@ class NoteViewModel(requestManager: RequestManager) : ApiViewModel(requestManage
     fun parseFromIntent(intent: Intent) {
         if (intent.getBooleanExtra(CREATE_NEW_NOTE, false)) {
             _isNewNote.value = true
-            initialized = true
             return
         }
 
@@ -118,6 +123,54 @@ class NoteViewModel(requestManager: RequestManager) : ApiViewModel(requestManage
     fun tagUpdated(tagIndex: Int, newName: String) {
         _tags.value!![tagIndex].name = newName
         _tags.value = _tags.value
+    }
+
+    suspend fun getNote() {
+        // todo: implement a "get note by id" route in the backend lmao
+        val note = requestManager.getNotes(NoteQueryParameters(
+            null, 1u, null, null, null, Pair(_created.value!!, _created.value!!), null, null,
+        )).first.first()
+
+        noteId = note.id
+        _text.value = note.text
+        _title.value = note.title
+        _created.value = note.created
+        _lastEdited.value = note.last_edited
+        _timesEdited.value = note.times_edited
+        _tags.value = note.tags
+        _files.value = note.files
+    }
+
+    suspend fun postNote(text: String, title: String) {
+        val note = requestManager.postNotes(NotePost(text, title))
+
+        noteId = note.id
+        _text.value = note.text
+        _title.value = note.title
+        _created.value = note.created
+        _lastEdited.value = note.last_edited
+        _timesEdited.value = note.times_edited
+        _tags.value = note.tags
+        _files.value = note.files
+
+        initialized = true
+        _isNewNote.value = false
+    }
+
+    suspend fun deleteNote() {
+        requestManager.deleteNotes(noteId)
+        initialized = false
+    }
+
+    suspend fun patchNote(text: String, title: String) {
+        val note = requestManager.patchNotes(noteId, NotePost(text, title))
+
+        // todo: make backend return attached tags and files on patchNotes
+        _text.value = note.text
+        _title.value = note.title
+        _created.value = note.created
+        _lastEdited.value = note.last_edited
+        _timesEdited.value = note.times_edited
     }
 
     companion object {
