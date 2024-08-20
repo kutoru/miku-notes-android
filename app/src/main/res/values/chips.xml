@@ -12,9 +12,11 @@
         <item name="textEndPadding">@dimen/card_inner_margin</item>
     </style>
 
-    <style name="Theme.MikuNotes.Chip.Entry" parent="Widget.MaterialComponents.Chip.Entry">
+    <style name="Theme.MikuNotes.Chip.Entry" parent="Widget.MaterialComponents.Chip.Action">
         <item name="android:padding">@dimen/card_inner_margin</item>
         <item name="android:textSize">16sp</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
 
         <item name="chipMinHeight">0dp</item>
         <item name="chipMinTouchTargetSize">0dp</item>
@@ -22,5 +24,6 @@
         <item name="chipEndPadding">@dimen/card_inner_margin</item>
         <item name="textStartPadding">@dimen/card_inner_margin</item>
         <item name="textEndPadding">@dimen/card_inner_margin</item>
+        <item name="closeIconVisible">true</item>
     </style>
 </resources>

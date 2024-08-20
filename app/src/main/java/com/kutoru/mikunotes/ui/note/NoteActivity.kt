@@ -108,7 +108,6 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         val rvItemMargin = resources.getDimension(R.dimen.margin).toInt()
 
         tagAdapter = TagListAdapter(
-            true,
             listOf(),
             ::removeTag,
         )
