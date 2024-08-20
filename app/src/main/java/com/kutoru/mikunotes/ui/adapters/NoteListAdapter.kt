@@ -33,6 +33,7 @@ class NoteListAdapter (
         private val tvModified = cardView.findViewById<TextView>(R.id.tvCardNoteModified)
         private val tvFileCount = cardView.findViewById<TextView>(R.id.tvCardNoteFileCount)
         private val tvTagCount = cardView.findViewById<TextView>(R.id.tvCardNoteTagCount)
+        private val divider = cardView.findViewById<View>(R.id.divider3)
         private val tvText = cardView.findViewById<TextView>(R.id.tvCardNoteText)
 
         fun bind(position: Int) {
@@ -45,7 +46,16 @@ class NoteListAdapter (
             tvModified.text = AppUtil.formatDateTime(note.last_edited)
             tvFileCount.text = note.files.size.toString()
             tvTagCount.text = note.tags.size.toString()
-            tvText.text = note.text.trim()
+
+            val text = note.text.trim()
+            if (text.isBlank()) {
+                tvText.visibility = View.GONE
+                divider.visibility = View.GONE
+            } else {
+                tvText.text = text
+                tvText.visibility = View.VISIBLE
+                divider.visibility = View.VISIBLE
+            }
         }
     }
 }

@@ -19,7 +19,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="0dp">
+            android:paddingBottom="@dimen/card_inner_margin">
 
             <ImageView
                 android:id="@+id/ivCardNoteFileCount"
@@ -141,7 +141,6 @@
                 android:layout_marginStart="@dimen/card_inner_margin"
                 android:layout_marginTop="@dimen/card_inner_margin"
                 android:layout_marginEnd="@dimen/card_inner_margin"
-                android:layout_marginBottom="@dimen/card_inner_margin"
                 android:ellipsize="end"
                 android:maxLines="3"
                 android:text="Osu! is a free-to-play rhythm game originally created and self-published by Australian developer Dean Herbert. Inspired by gameplay of the Osu! Tatakae! Ouendan series, it was released for Microsoft Windows on 16 September 2007, with later ports to macOS, Linux, Android and iOS. Osu!'s gameplay, based on the Osu!"
