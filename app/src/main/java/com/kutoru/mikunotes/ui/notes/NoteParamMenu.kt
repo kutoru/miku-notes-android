@@ -29,7 +29,6 @@ class NoteParamMenu(
     context: Context,
     viewLifecycleOwner: LifecycleOwner,
     parent: ConstraintLayout,
-    onSubmit: () -> Unit,
 
     private val fragmentManager: FragmentManager,
     private val tagViewModel: TagViewModel,
@@ -67,7 +66,6 @@ class NoteParamMenu(
         btgSortBy = view.findViewById(R.id.btgNPMSortBy)
         btgSortType = view.findViewById(R.id.btgNPMSortType)
         val btnReset: Button = view.findViewById(R.id.btnNPMReset)
-        val btnSubmit: Button = view.findViewById(R.id.btnNPMSubmit)
 
         tagAdapter = NoteParamTagAdapter(
             listOf(Tag(0, 0, "no tags", null, 0)),
@@ -120,7 +118,6 @@ class NoteParamMenu(
         }
 
         btnReset.setOnClickListener { queryViewModel.clearQuery() }
-        btnSubmit.setOnClickListener { onSubmit() }
 
         tagDialog.onShow = { btnEditTags.isEnabled = false }
         tagDialog.onHide = { btnEditTags.isEnabled = true }

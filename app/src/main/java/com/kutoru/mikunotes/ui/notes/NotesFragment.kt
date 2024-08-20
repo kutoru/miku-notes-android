@@ -170,7 +170,6 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
             requireContext(),
             viewLifecycleOwner,
             binding.clNotesParamMenu,
-            ::hideParamMenu,
             parentFragmentManager,
             tagViewModel,
             queryViewModel,
