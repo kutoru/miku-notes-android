@@ -51,12 +51,9 @@ class FileDrawer(
     private lateinit var showMessage: (message: String?) -> Unit
     private var getExtraSpace: () -> Int
 
-    var uploadEnabled = true
+    var uploadEnabled
         get() = fabUpload.isEnabled
-        set(value) {
-            field = value
-            fabUpload.isEnabled = value
-        }
+        set(value) = fabUpload.setEnabled(value)
 
     private var lastRootHeight = 0
     private val minHeight: Int
@@ -127,7 +124,7 @@ class FileDrawer(
 
     // other setup
 
-    // this ain't pretty, but i don't want to write this code outside of the view
+    // this ain't pretty, but its prettier than writing this code outside of the view
     fun <O>setup(
         root: ViewGroup,
 

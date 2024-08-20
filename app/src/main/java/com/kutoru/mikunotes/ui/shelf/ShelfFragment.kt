@@ -3,7 +3,6 @@ package com.kutoru.mikunotes.ui.shelf
 import android.app.ProgressDialog
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.graphics.drawable.TransitionDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -14,7 +13,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.viewModels
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.FragmentShelfBinding
-import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.ui.ApiReadyFragment
 import com.kutoru.mikunotes.ui.main.MainActivity
@@ -43,16 +41,10 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
 
         setupViewModelObservers()
 
-        setInputOnFocusChange(
-            binding.etShelfText,
-            binding.dividerShelf1,
-            binding.dividerShelf2,
-        )
-
         binding.fdShelfFiles.setup<Any>(
             binding.root,
             ::showToast,
-            { binding.etShelfText.height },
+            { binding.etlShelfText.height },
             ::uploadFile,
             ::downloadFile,
             ::deleteFile,
@@ -76,7 +68,7 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
     }
 
     override fun onStart() {
-        binding.etShelfText.setText("")
+        binding.etlShelfText.text = ""
         super.onStart()
     }
 
@@ -112,29 +104,10 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
         super.onPause()
     }
 
-    private fun setInputOnFocusChange(inputView: EditText, dividerTop: View, dividerBottom: View) {
-        dividerTop.background = requireContext().getDrawable(R.drawable.input_transition)
-        dividerBottom.background = requireContext().getDrawable(R.drawable.input_transition)
-
-        inputView.onFocusChangeListener = View.OnFocusChangeListener { _, hasFocus ->
-            val transTop = dividerTop.background as TransitionDrawable
-            val transBottom = dividerBottom.background as TransitionDrawable
-
-            if (hasFocus) {
-                transTop.startTransition(ANIMATION_TRANSITION_TIME)
-                transBottom.startTransition(ANIMATION_TRANSITION_TIME)
-            } else {
-                transTop.reverseTransition(ANIMATION_TRANSITION_TIME)
-                transBottom.reverseTransition(ANIMATION_TRANSITION_TIME)
-            }
-        }
-    }
-
     private fun setupViewModelObservers() {
         viewModel.text.observe(viewLifecycleOwner) {
-            val view = binding.etShelfText
-            if (view.text.toString() != it) {
-                view.setText(it)
+            if (binding.etlShelfText.text != it) {
+                binding.etlShelfText.text = it
             }
         }
 
@@ -207,7 +180,7 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
     }
 
     private fun saveShelf(silent: Boolean) {
-        val newText = binding.etShelfText.text.toString()
+        val newText = binding.etlShelfText.text
         if (viewModel.text.value == newText) {
             if (!silent) showToast("The shelf hasn't changed since last save")
             return
@@ -275,7 +248,7 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
 
     fun handleSharedText(text: String) {
         onShare = {
-            binding.etShelfText.setText(text)
+            binding.etlShelfText.text = text
             saveShelf(false)
         }
     }

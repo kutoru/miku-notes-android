@@ -3,4 +3,10 @@
     <declare-styleable name="FileDrawer">
         <attr name="initExpanded" format="boolean" />
     </declare-styleable>
+    <declare-styleable name="EditTextLarge">
+        <attr name="hint" format="string" />
+        <attr name="multiline" format="boolean" />
+        <attr name="textSize" format="dimension" />
+        <attr name="paddingVertical" format="dimension" />
+    </declare-styleable>
 </resources>

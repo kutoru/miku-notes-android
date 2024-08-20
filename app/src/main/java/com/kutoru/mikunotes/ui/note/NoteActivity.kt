@@ -1,19 +1,15 @@
 package com.kutoru.mikunotes.ui.note
 
 import android.app.AlertDialog
-import android.graphics.drawable.TransitionDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.View.OnFocusChangeListener
-import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.viewModels
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityNoteBinding
-import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.AppUtil
 import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.models.Tag
@@ -55,23 +51,11 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         binding.fdNoteFiles.setup<Any>(
             binding.root,
             ::showToast,
-            { binding.etNoteText.height },
+            { binding.etlNoteText.height },
             ::uploadFile,
             ::downloadFile,
             ::deleteFile,
             ::registerForActivityResult,
-        )
-
-        setInputOnFocusChange(
-            binding.etNoteTitle,
-            binding.dividerNote1,
-            binding.dividerNote2,
-        )
-
-        setInputOnFocusChange(
-            binding.etNoteText,
-            binding.dividerNote3,
-            binding.dividerNote4,
         )
 
         binding.btnNoteAddTag.setOnClickListener {
@@ -110,16 +94,14 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
     private fun setupViewModelObservers() {
         viewModel.title.observe(this) {
-            val view = binding.etNoteTitle
-            if (view.text.toString() != it) {
-                view.setText(it)
+            if (binding.etlNoteTitle.text != it) {
+                binding.etlNoteTitle.text = it
             }
         }
 
         viewModel.text.observe(this) {
-            val view = binding.etNoteText
-            if (view.text.toString() != it) {
-                view.setText(it)
+            if (binding.etlNoteText.text != it) {
+                binding.etlNoteText.text = it
             }
         }
 
@@ -236,24 +218,6 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         }
     }
 
-    private fun setInputOnFocusChange(inputView: EditText, dividerTop: View, dividerBottom: View) {
-        dividerTop.background = getDrawable(R.drawable.input_transition)
-        dividerBottom.background = getDrawable(R.drawable.input_transition)
-
-        inputView.onFocusChangeListener = OnFocusChangeListener { _, hasFocus ->
-            val transTop = dividerTop.background as TransitionDrawable
-            val transBottom = dividerBottom.background as TransitionDrawable
-
-            if (hasFocus) {
-                transTop.startTransition(ANIMATION_TRANSITION_TIME)
-                transBottom.startTransition(ANIMATION_TRANSITION_TIME)
-            } else {
-                transTop.reverseTransition(ANIMATION_TRANSITION_TIME)
-                transBottom.reverseTransition(ANIMATION_TRANSITION_TIME)
-            }
-        }
-    }
-
     private fun deleteFile(fileIndex: Int) {
         scope.launch {
             val result = handleRequest { viewModel.deleteFile(fileIndex) }
@@ -332,10 +296,10 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
     }
 
     private fun saveNote(silent: Boolean) {
-        val text = binding.etNoteText.text?.toString() ?: ""
-        val title = binding.etNoteTitle.text?.toString()
+        val text = binding.etlNoteText.text
+        val title = binding.etlNoteTitle.text
 
-        if (title.isNullOrBlank()) {
+        if (title.isBlank()) {
             if (!silent) showToast("Can't save the note with an empty title")
             return
         }

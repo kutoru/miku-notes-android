@@ -113,44 +113,19 @@
 
     </HorizontalScrollView>
 
-    <View
-        android:id="@+id/dividerNote1"
+    <com.kutoru.mikunotes.ui.EditTextLarge
+        android:id="@+id/etlNoteTitle"
         android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:background="?android:attr/listDivider"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/margin"
+        android:layout_marginEnd="@dimen/margin"
+        android:layout_marginTop="@dimen/margin"
+        app:paddingVertical="@dimen/margin_half"
+        app:textSize="22sp"
+        app:hint="Note title..."
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/svNoteInfoContainer" />
-
-    <EditText
-        android:id="@+id/etNoteTitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:background="@null"
-        android:ems="10"
-        android:hint="Note title..."
-        android:inputType="text"
-        android:paddingVertical="4dp"
-        android:textSize="22sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/dividerNote1" />
-
-    <View
-        android:id="@+id/dividerNote2"
-        android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:background="?android:attr/listDivider"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/etNoteTitle" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvNoteTags"
@@ -197,48 +172,21 @@
         app:icon="@drawable/ic_add"
         app:iconPadding="0dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/dividerNote2" />
+        app:layout_constraintTop_toBottomOf="@+id/etlNoteTitle" />
 
-    <View
-        android:id="@+id/dividerNote3"
-        android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:background="?android:attr/listDivider"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnNoteAddTag" />
-
-    <EditText
-        android:id="@+id/etNoteText"
+    <com.kutoru.mikunotes.ui.EditTextLarge
+        android:id="@+id/etlNoteText"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:background="@null"
-        android:ems="10"
-        android:gravity="start|top"
-        android:hint="Note text..."
-        android:inputType="text|textMultiLine|textNoSuggestions"
-        android:scrollbars="vertical"
-        app:layout_constraintBottom_toTopOf="@+id/dividerNote4"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/dividerNote3" />
-
-    <View
-        android:id="@+id/dividerNote4"
-        android:layout_width="0dp"
-        android:layout_height="1dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:background="?android:attr/listDivider"
+        android:layout_marginStart="@dimen/margin"
+        android:layout_marginEnd="@dimen/margin"
+        android:layout_marginTop="@dimen/margin"
+        app:hint="Note text..."
+        app:multiline="true"
         app:layout_constraintBottom_toTopOf="@+id/fdNoteFiles"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/etNoteText" />
+        app:layout_constraintTop_toBottomOf="@+id/btnNoteAddTag" />
 
     <com.kutoru.mikunotes.ui.FileDrawer
         android:id="@+id/fdNoteFiles"
