@@ -111,73 +111,18 @@
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:background="?android:attr/listDivider"
-        app:layout_constraintBottom_toTopOf="@+id/rvShelfFiles"
+        app:layout_constraintBottom_toTopOf="@+id/fdShelfFiles"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/etShelfText" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvShelfFiles"
+    <com.kutoru.mikunotes.ui.FileDrawer
+        android:id="@+id/fdShelfFiles"
         android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="@dimen/margin_neg"
-        android:clipToPadding="false"
-        android:paddingBottom="64dp"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/dividerShelf2"
-        app:layout_constraintVertical_bias="1.0" />
-
-    <TextView
-        android:id="@+id/tvShelfNoFiles"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="@dimen/margin"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="@dimen/margin"
-        android:text="No files"
-        android:textSize="16sp"
-        android:textStyle="italic"
-        android:visibility="visible"
+        app:initExpanded="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/dividerShelf2" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabShelfMoveFiles"
-        android:layout_width="@dimen/fab_size"
-        android:layout_height="@dimen/fab_size"
-        android:layout_marginStart="@dimen/margin"
-        android:layout_marginTop="@dimen/margin"
-        android:layout_marginBottom="@dimen/margin"
-        android:clickable="true"
-        app:elevation="0dp"
-        app:fabCustomSize="@dimen/fab_size"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/dividerShelf2"
-        app:layout_constraintVertical_bias="1.0"
-        app:maxImageSize="32dp"
-        app:srcCompat="@drawable/ic_down" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabShelfFileUpload"
-        android:layout_width="@dimen/fab_size"
-        android:layout_height="@dimen/fab_size"
-        android:layout_marginTop="@dimen/margin"
-        android:layout_marginEnd="@dimen/margin"
-        android:layout_marginBottom="@dimen/margin"
-        android:clickable="true"
-        android:src="@drawable/ic_upload"
-        app:elevation="0dp"
-        app:fabCustomSize="@dimen/fab_size"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/dividerShelf2"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

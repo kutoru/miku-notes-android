@@ -1,13 +1,8 @@
 package com.kutoru.mikunotes.ui.note
 
-import android.Manifest
-import android.animation.ValueAnimator
 import android.app.AlertDialog
-import android.content.pm.PackageManager
-import android.graphics.Rect
 import android.graphics.drawable.TransitionDrawable
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -15,23 +10,15 @@ import android.view.View
 import android.view.View.OnFocusChangeListener
 import android.widget.EditText
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import androidx.core.view.updatePadding
-import androidx.recyclerview.widget.GridLayoutManager
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityNoteBinding
 import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
 import com.kutoru.mikunotes.logic.AppUtil
-import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
 import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.ApiReadyActivity
 import com.kutoru.mikunotes.ui.TagViewModel
-import com.kutoru.mikunotes.ui.adapters.FileListAdapter
 import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
 import com.kutoru.mikunotes.ui.adapters.TagListAdapter
 import kotlinx.coroutines.launch
@@ -40,16 +27,8 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
     private lateinit var binding: ActivityNoteBinding
     private lateinit var tagAdapter: TagListAdapter
-    private lateinit var fileAdapter: FileListAdapter
     private lateinit var tagDialog: NoteTagDialog
     private var actionMenu: Menu? = null
-
-    private lateinit var filePickActivityLauncher: ActivityResultLauncher<String>
-    private lateinit var storagePermissionActivityLauncher: ActivityResultLauncher<String>
-    private lateinit var notificationPermissionActivityLauncher: ActivityResultLauncher<String>
-
-    private var fileContainerExpanded = false
-    private var lastRootHeight = 0
 
     override val viewModel: NoteViewModel by viewModels { NoteViewModel.Factory }
     private val tagViewModel: TagViewModel by viewModels { TagViewModel.Factory }
@@ -73,6 +52,16 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
             return
         }
 
+        binding.fdNoteFiles.setup<Any>(
+            binding.root,
+            ::showToast,
+            { binding.etNoteText.height },
+            ::uploadFile,
+            ::downloadFile,
+            ::deleteFile,
+            ::registerForActivityResult,
+        )
+
         setInputOnFocusChange(
             binding.etNoteTitle,
             binding.dividerNote1,
@@ -89,45 +78,15 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
             tagDialog.show(viewModel.tags.value!!)
         }
 
-        binding.fabNoteMoveFiles.setOnClickListener {
-            moveFileContainer(true)
-        }
-
-        binding.fabNoteUpload.setOnClickListener {
-            if (!canSendNotifications()) {
-                notificationPermissionActivityLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-
-            if (!readFilePermissionGranted()) {
-                storagePermissionActivityLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-            } else {
-                filePickActivityLauncher.launch("*/*")
-            }
-        }
-
-        val rvItemMargin = resources.getDimension(R.dimen.margin).toInt()
-
         tagAdapter = TagListAdapter(
             listOf(),
             ::removeTag,
         )
 
-        fileAdapter = FileListAdapter(
-            rvItemMargin,
-            listOf(),
-            ::deleteFile,
-            ::downloadFile,
-        )
-
         binding.rvNoteTags.adapter = tagAdapter
-        binding.rvNoteTags.addItemDecoration(ItemMarginDecorator.Tags(rvItemMargin))
-
-        val bottomFilesPadding = resources.getDimension(R.dimen.fab_size).toInt() + fileAdapter.itemMargin * 2
-        binding.rvNoteFiles.updatePadding(bottom = bottomFilesPadding)
-
-        binding.rvNoteFiles.adapter = fileAdapter
-        binding.rvNoteFiles.layoutManager = GridLayoutManager(this, RECYCLER_VIEW_FILE_COLUMNS)
-        binding.rvNoteFiles.addItemDecoration(ItemMarginDecorator.Files(rvItemMargin))
+        binding.rvNoteTags.addItemDecoration(ItemMarginDecorator.Tags(
+            resources.getDimension(R.dimen.margin).toInt(),
+        ))
 
         tagDialog = NoteTagDialog(
             this,
@@ -146,37 +105,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
             ::onTagDialogRemove,
         )
 
-        binding.root.viewTreeObserver.addOnGlobalLayoutListener {
-            val currHeight = Rect().let {
-                binding.root.getWindowVisibleDisplayFrame(it)
-                it.height()
-            }
-
-            if (currHeight != lastRootHeight) {
-                lastRootHeight = currHeight
-                moveFileContainer(false)
-            }
-        }
-
         setNavigationBarColor(binding.root)
-
-        val contentsContract = ActivityResultContracts.GetMultipleContents()
-        val permissionContract = ActivityResultContracts.RequestPermission()
-
-        filePickActivityLauncher = registerForActivityResult(contentsContract, ::uploadFiles)
-        storagePermissionActivityLauncher = registerForActivityResult(permissionContract) {
-            if (it) {
-                filePickActivityLauncher.launch("*/*")
-            } else {
-                showToast("You need to provide access to your files to upload them")
-            }
-        }
-
-        notificationPermissionActivityLauncher = registerForActivityResult(permissionContract) {
-            if (!it) {
-                showToast("You won't see download or upload notifications without the notification permission")
-            }
-        }
     }
 
     private fun setupViewModelObservers() {
@@ -222,21 +151,12 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         }
 
         viewModel.files.observe(this) {
-            if (it.isEmpty()) {
-                binding.rvNoteFiles.visibility = View.INVISIBLE
-                binding.tvNoteNoFiles.visibility = View.VISIBLE
-            } else {
-                binding.tvNoteNoFiles.visibility = View.INVISIBLE
-                binding.rvNoteFiles.visibility = View.VISIBLE
-            }
-
-            fileAdapter.files = it
-            fileAdapter.notifyDataSetChanged()
+            binding.fdNoteFiles.updateFiles(it)
         }
 
         viewModel.isNewNote.observe(this) {
             initializeActionMenu(it)
-            binding.fabNoteUpload.isEnabled = !it
+            binding.fdNoteFiles.uploadEnabled = !it
             binding.btnNoteAddTag.isEnabled = !it
         }
 
@@ -316,47 +236,6 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         }
     }
 
-    private fun moveFileContainer(swapState: Boolean) {
-        if (!swapState) {
-            // if the container isn't expanded, then there is no
-            // need to change the height, since it is static
-            if (!fileContainerExpanded) {
-                return
-            }
-
-            // otherwise, pre-swapping the state so that in the end
-            // it stays expanded
-            fileContainerExpanded = false
-        }
-
-        val currHeight = binding.rvNoteFiles.height
-        val maxHeight = (binding.etNoteText.height + currHeight) / 2
-        val minHeight = (
-                resources.getDimension(R.dimen.fab_size) + fileAdapter.itemMargin * 2
-            ).toInt()
-
-        val desiredHeight = if (fileContainerExpanded) {
-            fileContainerExpanded = false
-            binding.fabNoteMoveFiles.setImageResource(R.drawable.ic_up)
-            minHeight
-        } else {
-            fileContainerExpanded = true
-            binding.fabNoteMoveFiles.setImageResource(R.drawable.ic_down)
-            maxHeight
-        }
-
-        val animator = ValueAnimator.ofInt(currHeight, desiredHeight)
-        animator.addUpdateListener {
-            val height = it.animatedValue as Int
-            val layoutParams = binding.rvNoteFiles.layoutParams
-            layoutParams.height = height
-            binding.rvNoteFiles.layoutParams = layoutParams
-        }
-
-        animator.duration = if (swapState) ANIMATION_TRANSITION_TIME.toLong() else 0
-        animator.start()
-    }
-
     private fun setInputOnFocusChange(inputView: EditText, dividerTop: View, dividerBottom: View) {
         dividerTop.background = getDrawable(R.drawable.input_transition)
         dividerBottom.background = getDrawable(R.drawable.input_transition)
@@ -387,10 +266,6 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
     }
 
     private fun downloadFile(fileIndex: Int) {
-        if (!canSendNotifications()) {
-            notificationPermissionActivityLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-
         scope.launch {
             val result = handleRequest { viewModel.getFile(fileIndex) }
 
@@ -402,18 +277,16 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         }
     }
 
-    private fun uploadFiles(fileUris: List<Uri>) {
-        fileUris.forEach { uri ->
-            scope.launch {
-                val result = handleRequest { viewModel.postFile(
-                    contentResolver, uri,
-                ) }
+    private fun uploadFile(fileUri: Uri) {
+        scope.launch {
+            val result = handleRequest { viewModel.postFile(
+                contentResolver, fileUri,
+            ) }
 
-                if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
-                    showToast("Upload cancelled")
-                } else if (result.isFailure) {
-                    showToast("Could not upload the file")
-                }
+            if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
+                showToast("Upload cancelled")
+            } else if (result.isFailure) {
+                showToast("Could not upload the file")
             }
         }
     }
@@ -504,25 +377,5 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
                 }
             }
             .show()
-    }
-
-    private fun readFilePermissionGranted(): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return true
-        }
-
-        return ContextCompat.checkSelfPermission(
-            this, Manifest.permission.READ_EXTERNAL_STORAGE,
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun canSendNotifications(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            return true
-        }
-
-        return ActivityCompat.checkSelfPermission(
-            this, Manifest.permission.POST_NOTIFICATIONS,
-        ) == PackageManager.PERMISSION_GRANTED
     }
 }
