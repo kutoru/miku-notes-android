@@ -51,7 +51,6 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
     private var paramMenuIsExpanded = false
     private var inputManager: InputMethodManager? = null
     private var setSearchBarText: ((text: String) -> Unit)? = null
-    private var rvNotesPadding: Int = 0
 
     override val viewModel: NotesViewModel by viewModels { NotesViewModel.Factory }
     private val tagViewModel: TagViewModel by viewModels { TagViewModel.Factory }
@@ -121,7 +120,7 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
             requireActivity().startActivity(intent)
         }
 
-        rvNotesPadding =
+        val rvNotesPadding =
             (resources.getDimension(R.dimen.backdrop_header_height) +
             resources.getDimension(R.dimen.fab_size) +
             resources.getDimension(R.dimen.margin) * 2).toInt()
@@ -254,29 +253,25 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         }
 
         viewModel.notes.observe(viewLifecycleOwner) {
-            if (!it.isNullOrEmpty()) {
+            if (it == null) {
+                binding.rvNotesNotes.visibility = View.INVISIBLE
+                binding.tvNotesNoNotes.visibility = View.INVISIBLE
+                binding.pbNotesNotes.visibility = View.VISIBLE
+                changeContentHeight(false)
+            } else if (it.isEmpty()) {
+                binding.rvNotesNotes.visibility = View.INVISIBLE
+                binding.tvNotesNoNotes.visibility = View.VISIBLE
+                binding.pbNotesNotes.visibility = View.INVISIBLE
+                changeContentHeight(false)
+            } else {
                 noteAdapter.notes = it
                 noteAdapter.notifyDataSetChanged()
-            }
 
-            binding.tvNotesNoNotes.postDelayed({
-                if (it == null) {
-                    binding.rvNotesNotes.visibility = View.INVISIBLE
-                    binding.tvNotesNoNotes.visibility = View.INVISIBLE
-                    binding.pbNotesNotes.visibility = View.VISIBLE
-                    changeContentHeight(false)
-                } else if (it.isEmpty()) {
-                    binding.rvNotesNotes.visibility = View.INVISIBLE
-                    binding.tvNotesNoNotes.visibility = View.VISIBLE
-                    binding.pbNotesNotes.visibility = View.INVISIBLE
-                    changeContentHeight(false)
-                } else {
-                    binding.rvNotesNotes.visibility = View.VISIBLE
-                    binding.tvNotesNoNotes.visibility = View.INVISIBLE
-                    binding.pbNotesNotes.visibility = View.INVISIBLE
-                    changeContentHeight(true)
-                }
-            }, 10)
+                binding.rvNotesNotes.visibility = View.VISIBLE
+                binding.tvNotesNoNotes.visibility = View.INVISIBLE
+                binding.pbNotesNotes.visibility = View.INVISIBLE
+                changeContentHeight(true)
+            }
         }
 
         queryViewModel.title.observe(viewLifecycleOwner) {
@@ -302,19 +297,10 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
 
     private fun changeContentHeight(notesVisible: Boolean) {
         val params = binding.clNotesNotes.layoutParams
-
-        if (notesVisible) {
-            val container = binding.rvNotesNotes
-            val margin = resources.getDimension(R.dimen.margin).toInt()
-            var totalHeight = rvNotesPadding
-
-            for (i in 0..<container.childCount) {
-                totalHeight += container.getChildAt(i).height + margin
-            }
-
-            params.height = totalHeight
+        params.height = if (!notesVisible) {
+            binding.nsvNotesContent.height - binding.clNotesTags.height
         } else {
-            params.height = binding.svNotesContent.height - binding.clNotesTags.height
+            -1
         }
 
         binding.clNotesNotes.layoutParams = params

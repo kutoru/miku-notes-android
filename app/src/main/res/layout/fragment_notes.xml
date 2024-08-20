@@ -14,11 +14,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <ScrollView
-            android:id="@+id/svNotesContent"
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/nsvNotesContent"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:clipToPadding="false"
+            android:scrollbars="vertical"
             android:scrollbarStyle="outsideOverlay"
             android:overScrollMode="always"
             app:layout_constraintTop_toTopOf="parent"
@@ -26,7 +27,8 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <LinearLayout
+                android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
@@ -35,10 +37,7 @@
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/clNotesTags"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent">
+                    android:layout_height="wrap_content">
 
                     <HorizontalScrollView
                         android:id="@+id/hsvNotesTags"
@@ -90,24 +89,17 @@
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/clNotesNotes"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/clNotesTags"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/rvNotesNotes"
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
                         android:clipToPadding="false"
-                        android:isScrollContainer="false"
-                        android:overScrollMode="never"
                         android:padding="@dimen/margin"
-                        android:scrollbarStyle="outsideOverlay"
-                        android:scrollbars="none"
                         android:visibility="invisible"
+                        android:nestedScrollingEnabled="false"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
@@ -142,9 +134,9 @@
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
+            </LinearLayout>
 
-        </ScrollView>
+        </androidx.core.widget.NestedScrollView>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabAddNote"
