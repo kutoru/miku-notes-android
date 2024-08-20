@@ -10,12 +10,15 @@ import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewGroup.MarginLayoutParams
 import android.view.inputmethod.InputMethodManager
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.allViews
 import androidx.core.view.get
+import androidx.core.view.updatePadding
 import androidx.fragment.app.viewModels
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.chip.Chip
 import com.kutoru.mikunotes.R
@@ -48,6 +51,7 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
     private var paramMenuIsExpanded = false
     private var inputManager: InputMethodManager? = null
     private var setSearchBarText: ((text: String) -> Unit)? = null
+    private var rvNotesPadding: Int = 0
 
     override val viewModel: NotesViewModel by viewModels { NotesViewModel.Factory }
     private val tagViewModel: TagViewModel by viewModels { TagViewModel.Factory }
@@ -67,6 +71,12 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         chip.text = span
 
         setupViewModelObservers()
+
+        val fabParams = binding.fabAddNote.layoutParams as MarginLayoutParams
+        fabParams.bottomMargin =
+            (resources.getDimension(R.dimen.backdrop_header_height) +
+            resources.getDimension(R.dimen.margin)).toInt()
+        binding.fabAddNote.layoutParams = fabParams
 
         binding.fabAddNote.setOnClickListener {
             val intent = Intent(requireActivity(), NoteActivity::class.java)
@@ -109,6 +119,18 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
             val intent = Intent(requireActivity(), NoteActivity::class.java)
             intent.putExtra(SELECTED_NOTE, viewModel.notes.value!![it])
             requireActivity().startActivity(intent)
+        }
+
+        rvNotesPadding =
+            (resources.getDimension(R.dimen.backdrop_header_height) +
+            resources.getDimension(R.dimen.fab_size) +
+            resources.getDimension(R.dimen.margin) * 2).toInt()
+        binding.rvNotesNotes.updatePadding(bottom = rvNotesPadding)
+
+        binding.rvNotesNotes.layoutManager = object : LinearLayoutManager(requireContext()) {
+            override fun canScrollVertically(): Boolean {
+                return false
+            }
         }
 
         binding.rvNotesNotes.adapter = noteAdapter
@@ -232,22 +254,29 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         }
 
         viewModel.notes.observe(viewLifecycleOwner) {
-            if (it == null) {
-                binding.rvNotesNotes.visibility = View.INVISIBLE
-                binding.tvNotesNoNotes.visibility = View.INVISIBLE
-                binding.pbNotesNotes.visibility = View.VISIBLE
-            } else if (it.isEmpty()) {
-                binding.rvNotesNotes.visibility = View.INVISIBLE
-                binding.tvNotesNoNotes.visibility = View.VISIBLE
-                binding.pbNotesNotes.visibility = View.INVISIBLE
-            } else {
-                binding.rvNotesNotes.visibility = View.VISIBLE
-                binding.tvNotesNoNotes.visibility = View.INVISIBLE
-                binding.pbNotesNotes.visibility = View.INVISIBLE
-
+            if (!it.isNullOrEmpty()) {
                 noteAdapter.notes = it
                 noteAdapter.notifyDataSetChanged()
             }
+
+            binding.tvNotesNoNotes.postDelayed({
+                if (it == null) {
+                    binding.rvNotesNotes.visibility = View.INVISIBLE
+                    binding.tvNotesNoNotes.visibility = View.INVISIBLE
+                    binding.pbNotesNotes.visibility = View.VISIBLE
+                    changeContentHeight(false)
+                } else if (it.isEmpty()) {
+                    binding.rvNotesNotes.visibility = View.INVISIBLE
+                    binding.tvNotesNoNotes.visibility = View.VISIBLE
+                    binding.pbNotesNotes.visibility = View.INVISIBLE
+                    changeContentHeight(false)
+                } else {
+                    binding.rvNotesNotes.visibility = View.VISIBLE
+                    binding.tvNotesNoNotes.visibility = View.INVISIBLE
+                    binding.pbNotesNotes.visibility = View.INVISIBLE
+                    changeContentHeight(true)
+                }
+            }, 10)
         }
 
         queryViewModel.title.observe(viewLifecycleOwner) {
@@ -269,6 +298,26 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
                 }
             }
         }
+    }
+
+    private fun changeContentHeight(notesVisible: Boolean) {
+        val params = binding.clNotesNotes.layoutParams
+
+        if (notesVisible) {
+            val container = binding.rvNotesNotes
+            val margin = resources.getDimension(R.dimen.margin).toInt()
+            var totalHeight = rvNotesPadding
+
+            for (i in 0..<container.childCount) {
+                totalHeight += container.getChildAt(i).height + margin
+            }
+
+            params.height = totalHeight
+        } else {
+            params.height = binding.svNotesContent.height - binding.clNotesTags.height
+        }
+
+        binding.clNotesNotes.layoutParams = params
     }
 
     private suspend fun refreshTags(silent: Boolean) {

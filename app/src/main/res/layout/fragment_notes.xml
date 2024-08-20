@@ -12,101 +12,146 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingBottom="@dimen/backdrop_header_height">
+        android:layout_height="match_parent">
 
-        <HorizontalScrollView
-            android:id="@+id/hsvNotesTags"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:clipToPadding="false"
-            android:padding="@dimen/margin"
-            android:scrollbarStyle="outsideOverlay"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/cgNotesTags"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                app:chipSpacingHorizontal="@dimen/margin"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:singleLine="true">
-
-                <com.google.android.material.chip.Chip
-                    style="@style/Theme.MikuNotes.Chip.Choice"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="no tags"
-                    android:textStyle="bold|italic" />
-
-            </com.google.android.material.chip.ChipGroup>
-
-        </HorizontalScrollView>
-
-        <View
-            android:id="@+id/divider2"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_marginStart="@dimen/margin"
-            android:layout_marginEnd="@dimen/margin"
-            android:background="@color/fg"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/hsvNotesTags" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvNotesNotes"
+        <ScrollView
+            android:id="@+id/svNotesContent"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:clipToPadding="false"
-            android:padding="@dimen/margin"
             android:scrollbarStyle="outsideOverlay"
-            android:scrollbars="vertical"
-            android:visibility="invisible"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            app:layout_constraintBottom_toBottomOf="parent"
+            android:overScrollMode="always"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/divider2" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
 
-        <ProgressBar
-            android:id="@+id/pbNotesNotes"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:indeterminate="true"
-            android:visibility="invisible"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/divider2" />
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@+id/tvNotesNoNotes"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/card_inner_margin"
-            android:layout_marginBottom="@dimen/card_inner_margin"
-            android:text="No notes"
-            android:textSize="18sp"
-            android:textStyle="italic"
-            android:visibility="visible"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/divider2" />
+                <!--tag container-->
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/clNotesTags"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent">
+
+                    <HorizontalScrollView
+                        android:id="@+id/hsvNotesTags"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:padding="@dimen/margin"
+                        android:scrollbarStyle="outsideOverlay"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
+
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/cgNotesTags"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            app:chipSpacingHorizontal="@dimen/margin"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:singleLine="true">
+
+                            <com.google.android.material.chip.Chip
+                                style="@style/Theme.MikuNotes.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="no tags"
+                                android:textStyle="bold|italic" />
+
+                        </com.google.android.material.chip.ChipGroup>
+
+                    </HorizontalScrollView>
+
+                    <View
+                        android:id="@+id/divider2"
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="@dimen/margin"
+                        android:layout_marginEnd="@dimen/margin"
+                        android:background="@color/fg"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/hsvNotesTags" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <!--note container-->
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/clNotesNotes"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/clNotesTags"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvNotesNotes"
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:clipToPadding="false"
+                        android:isScrollContainer="false"
+                        android:overScrollMode="never"
+                        android:padding="@dimen/margin"
+                        android:scrollbarStyle="outsideOverlay"
+                        android:scrollbars="none"
+                        android:visibility="invisible"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <ProgressBar
+                        android:id="@+id/pbNotesNotes"
+                        style="?android:attr/progressBarStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:indeterminate="true"
+                        android:visibility="invisible"
+                        android:layout_marginBottom="@dimen/backdrop_header_height"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/tvNotesNoNotes"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="@dimen/backdrop_header_height"
+                        android:text="No notes"
+                        android:textSize="18sp"
+                        android:textStyle="italic"
+                        android:visibility="visible"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </ScrollView>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fabAddNote"
             android:layout_width="@dimen/fab_size"
             android:layout_height="@dimen/fab_size"
             android:layout_marginEnd="8dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="@dimen/backdrop_header_height"
             android:clickable="true"
             android:src="@drawable/ic_add"
             app:fabCustomSize="@dimen/fab_size"
@@ -121,6 +166,7 @@
         android:id="@+id/clNotesParamMenu"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@android:color/transparent"
         android:orientation="vertical"
         app:behavior_peekHeight="@dimen/backdrop_header_height"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
@@ -133,8 +179,8 @@
             android:layout_height="@dimen/backdrop_header_height"
             android:background="@drawable/shape_notes_param_menu_header"
             android:elevation="4dp"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <ImageView
@@ -142,16 +188,16 @@
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:src="@drawable/ic_filter"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent" />
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <!--body-->
 
-<!--        <include layout="@layout/content_notes_param_menu" />-->
+        <!--<include layout="@layout/content_notes_param_menu" />-->
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
