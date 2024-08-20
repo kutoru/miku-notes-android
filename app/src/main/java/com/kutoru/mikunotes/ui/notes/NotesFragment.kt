@@ -3,10 +3,7 @@ package com.kutoru.mikunotes.ui.notes
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.Intent
-import android.graphics.Typeface
 import android.os.Bundle
-import android.text.SpannableString
-import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,11 +11,10 @@ import android.view.ViewGroup.MarginLayoutParams
 import android.view.inputmethod.InputMethodManager
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.view.allViews
-import androidx.core.view.get
 import androidx.core.view.updatePadding
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.chip.Chip
 import com.kutoru.mikunotes.R
@@ -30,6 +26,7 @@ import com.kutoru.mikunotes.ui.ApiReadyFragment
 import com.kutoru.mikunotes.ui.TagViewModel
 import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
 import com.kutoru.mikunotes.ui.adapters.NoteListAdapter
+import com.kutoru.mikunotes.ui.adapters.NoteParamTagAdapter
 import com.kutoru.mikunotes.ui.main.MainActivity
 import com.kutoru.mikunotes.ui.main.NotesCallbacks
 import com.kutoru.mikunotes.ui.note.NoteActivity
@@ -46,11 +43,13 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
     private lateinit var paramMenuSheet: BottomSheetBehavior<ConstraintLayout>
     private lateinit var noteParamMenu: NoteParamMenu
     private lateinit var noteTagDialog: NoteTagDialog
+    private lateinit var tagAdapter: NoteParamTagAdapter
 
     private var paramMenuLastOffset = 0f
     private var paramMenuIsExpanded = false
     private var inputManager: InputMethodManager? = null
     private var setSearchBarText: ((text: String) -> Unit)? = null
+    private var lastTagListRowCount = 3
 
     override val viewModel: NotesViewModel by viewModels { NotesViewModel.Factory }
     private val tagViewModel: TagViewModel by viewModels { TagViewModel.Factory }
@@ -64,10 +63,20 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         super.onCreateView(inflater, container, savedInstanceState)
         binding = FragmentNotesBinding.inflate(inflater, container, false)
 
-        val chip = binding.cgNotesTags[0] as Chip
-        val span = SpannableString("no tags")
-        span.setSpan(StyleSpan(Typeface.ITALIC), 0, span.length, 0)
-        chip.text = span
+        tagAdapter = NoteParamTagAdapter(
+            listOf(Tag(0, 0, "no tags", null, 0)),
+            ::onTagClick,
+            ::getTagCheckedState,
+        )
+
+        binding.rvNotesTags.addItemDecoration(ItemMarginDecorator.TagsInParamMenu(
+            resources.getDimension(R.dimen.margin).toInt(),
+        ))
+        binding.rvNotesTags.adapter = tagAdapter
+        binding.rvNotesTags.layoutManager = StaggeredGridLayoutManager(
+            lastTagListRowCount,
+            LinearLayoutManager.HORIZONTAL,
+        )
 
         setupViewModelObservers()
 
@@ -198,8 +207,47 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         } else if (paramMenuIsExpanded) {
             hideParamMenu()
             return false
+        }
+
+        return true
+    }
+
+    private fun onTagClick(position: Int, isChecked: Boolean) {
+        val tags = tagViewModel.tags.value
+
+        val tagId = if (
+            (tags.isNullOrEmpty() && position == 0) ||
+            (position == tags?.size)
+        ) {
+            0
         } else {
-            return true
+            tags!![position].id
+        }
+
+        if (isChecked) {
+            queryViewModel.addTag(tagId)
+        } else {
+            queryViewModel.removeTag(tagId)
+        }
+    }
+
+    private fun getTagCheckedState(tagId: Int): Boolean {
+        return queryViewModel.tags.value?.contains(tagId) ?: false
+    }
+
+    private fun setTagListRows(tagCount: Int) {
+        val rowCount = when {
+            tagCount < 5 -> 1
+            tagCount < 10 -> 2
+            else -> 3
+        }
+
+        if (rowCount != lastTagListRowCount) {
+            lastTagListRowCount = rowCount
+            binding.rvNotesTags.layoutManager = StaggeredGridLayoutManager(
+                rowCount,
+                LinearLayoutManager.HORIZONTAL,
+            )
         }
     }
 
@@ -227,30 +275,9 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
 
     private fun setupViewModelObservers() {
         tagViewModel.tags.observe(viewLifecycleOwner) { tags ->
-            binding.cgNotesTags.removeAllViews()
-
-            (tags + listOf(Tag(0, 0, "no tags", null, 0))).forEach { tag ->
-                val chip = View.inflate(requireContext(), R.layout.chip_tag_choice, null) as Chip
-                chip.id = tag.id
-
-                if (tag.id == 0) {
-                    val span = SpannableString(tag.name)
-                    span.setSpan(StyleSpan(Typeface.ITALIC), 0, span.length, 0)
-                    chip.text = span
-                } else {
-                    chip.text = tag.name
-                }
-
-                chip.setOnClickListener {
-                    if ((it as Chip).isChecked) {
-                        queryViewModel.addTag(tag.id)
-                    } else {
-                        queryViewModel.removeTag(tag.id)
-                    }
-                }
-
-                binding.cgNotesTags.addView(chip)
-            }
+            setTagListRows(tags.size)
+            tagAdapter.tags = tags + Tag(0, 0, "no tags", null, 0)
+            tagAdapter.notifyDataSetChanged()
         }
 
         viewModel.notes.observe(viewLifecycleOwner) {
@@ -280,8 +307,12 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         }
 
         queryViewModel.tags.observe(viewLifecycleOwner) { tagIds ->
-            binding.cgNotesTags.allViews.forEach {
-                val chip = it as? Chip ?: return@forEach
+            for (pos in 0..<tagAdapter.itemCount) {
+                val chip = binding.rvNotesTags
+                    .findViewHolderForAdapterPosition(pos)
+                    ?.itemView as? Chip
+                    ?: continue
+
                 val chipState = tagIds != null && tagIds.contains(chip.id)
                 if (chip.isChecked != chipState) {
                     chip.isChecked = chipState
