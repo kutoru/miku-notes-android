@@ -149,6 +149,7 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         noteTagDialog = NoteTagDialog(
             requireContext(),
             viewLifecycleOwner,
+            // todo: this line right here causes the app to crash on theme change. fix it at some point i guess
             requireActivity().findViewById<CoordinatorLayout>(R.id.app_bar_main),
             false,
             tagViewModel,

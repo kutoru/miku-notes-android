@@ -21,6 +21,27 @@
             android:layout_height="wrap_content"
             android:padding="0dp">
 
+            <ImageView
+                android:id="@+id/ivCardNoteFileCount"
+                android:layout_width="@dimen/note_card_icon_side_len"
+                android:layout_height="@dimen/note_card_icon_side_len"
+                android:layout_marginStart="@dimen/card_inner_margin"
+                app:layout_constraintBottom_toBottomOf="@+id/tvCardNoteTitle"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/tvCardNoteTitle"
+                app:srcCompat="@drawable/ic_file"
+                app:tint="@color/fg_sec" />
+
+            <TextView
+                android:id="@+id/tvCardNoteFileCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/card_inner_margin"
+                android:text="22"
+                app:layout_constraintBottom_toBottomOf="@+id/ivCardNoteFileCount"
+                app:layout_constraintStart_toEndOf="@id/ivCardNoteFileCount"
+                app:layout_constraintTop_toTopOf="@+id/ivCardNoteFileCount" />
+
             <TextView
                 android:id="@+id/tvCardNoteTitle"
                 android:layout_width="0dp"
@@ -34,134 +55,84 @@
                 android:text="This is going to be the note title, and even though it's quite long, you'll just have to deal with it"
                 android:textColor="@color/fg"
                 android:textSize="16sp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintStart_toEndOf="@id/tvCardNoteFileCount"
+                app:layout_constraintEnd_toStartOf="@id/tvCardNoteTagCount"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <HorizontalScrollView
-                android:id="@+id/horizontalScrollView"
+            <TextView
+                android:id="@+id/tvCardNoteTagCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/card_inner_margin"
-                android:clipToPadding="false"
-                android:overScrollMode="ifContentScrolls"
-                android:paddingHorizontal="@dimen/card_inner_margin"
-                android:scrollbars="none"
+                android:layout_marginEnd="@dimen/card_inner_margin"
+                android:text="22"
+                app:layout_constraintBottom_toBottomOf="@+id/ivCardNoteTagCount"
+                app:layout_constraintEnd_toStartOf="@id/ivCardNoteTagCount"
+                app:layout_constraintTop_toTopOf="@+id/ivCardNoteTagCount" />
+
+            <ImageView
+                android:id="@+id/ivCardNoteTagCount"
+                android:layout_width="@dimen/note_card_icon_side_len"
+                android:layout_height="@dimen/note_card_icon_side_len"
+                android:layout_marginEnd="@dimen/card_inner_margin"
+                app:layout_constraintBottom_toBottomOf="@id/tvCardNoteTitle"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tvCardNoteTitle"
+                app:srcCompat="@drawable/ic_tag"
+                app:tint="@color/fg_sec" />
+
+            <ImageView
+                android:id="@+id/ivCardNoteCreated"
+                android:layout_width="@dimen/note_card_icon_side_len"
+                android:layout_height="@dimen/note_card_icon_side_len"
+                android:layout_marginStart="@dimen/card_inner_margin"
+                android:layout_marginTop="@dimen/card_inner_margin"
+                app:tint="@color/fg_sec"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/tvCardNoteTitle">
+                app:layout_constraintTop_toBottomOf="@id/tvCardNoteTitle"
+                app:srcCompat="@drawable/ic_bulb" />
 
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent">
+            <TextView
+                android:id="@+id/tvCardNoteCreated"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/card_inner_margin"
+                android:text="24/08/17 12:38"
+                app:layout_constraintBottom_toBottomOf="@id/ivCardNoteCreated"
+                app:layout_constraintStart_toEndOf="@+id/ivCardNoteCreated"
+                app:layout_constraintTop_toTopOf="@id/ivCardNoteCreated" />
 
-                    <ImageView
-                        android:id="@+id/ivCardNoteCreated"
-                        android:layout_width="@dimen/note_card_icon_side_len"
-                        android:layout_height="@dimen/note_card_icon_side_len"
-                        app:tint="@color/fg_sec"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:srcCompat="@drawable/ic_bulb" />
+            <TextView
+                android:id="@+id/tvCardNoteModified"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/card_inner_margin"
+                android:text="24/08/17 12:38"
+                app:layout_constraintBottom_toBottomOf="@id/ivCardNoteModified"
+                app:layout_constraintEnd_toStartOf="@id/ivCardNoteModified"
+                app:layout_constraintTop_toTopOf="@id/ivCardNoteModified" />
 
-                    <TextView
-                        android:id="@+id/tvCardNoteCreated"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/card_inner_margin"
-                        android:text="24/08/17 12:38"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@+id/ivCardNoteCreated"
-                        app:layout_constraintTop_toTopOf="parent" />
+            <ImageView
+                android:id="@+id/ivCardNoteModified"
+                android:layout_width="@dimen/note_card_icon_side_len"
+                android:layout_height="@dimen/note_card_icon_side_len"
+                android:layout_marginEnd="@dimen/card_inner_margin"
+                android:layout_marginTop="@dimen/card_inner_margin"
+                app:tint="@color/fg_sec"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvCardNoteTitle"
+                app:srcCompat="@drawable/ic_edit" />
 
-                    <ImageView
-                        android:id="@+id/ivCardNoteModified"
-                        android:layout_width="@dimen/note_card_icon_side_len"
-                        android:layout_height="@dimen/note_card_icon_side_len"
-                        android:layout_marginStart="@dimen/card_inner_margin"
-                        app:tint="@color/fg_sec"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/tvCardNoteCreated"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:srcCompat="@drawable/ic_edit" />
-
-                    <TextView
-                        android:id="@+id/tvCardNoteModified"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/card_inner_margin"
-                        android:text="24/08/17 12:38"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@+id/ivCardNoteModified"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <ImageView
-                        android:id="@+id/ivCardNoteModifCount"
-                        android:layout_width="@dimen/note_card_icon_side_len"
-                        android:layout_height="@dimen/note_card_icon_side_len"
-                        android:layout_marginStart="@dimen/card_inner_margin"
-                        app:tint="@color/fg_sec"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/tvCardNoteModified"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:srcCompat="@drawable/ic_hash" />
-
-                    <TextView
-                        android:id="@+id/tvCardNoteModifCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/card_inner_margin"
-                        android:text="22"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@+id/ivCardNoteModifCount"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <ImageView
-                        android:id="@+id/ivCardNoteFileCount"
-                        android:layout_width="@dimen/note_card_icon_side_len"
-                        android:layout_height="@dimen/note_card_icon_side_len"
-                        android:layout_marginStart="@dimen/card_inner_margin"
-                        app:tint="@color/fg_sec"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/tvCardNoteModifCount"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:srcCompat="@drawable/ic_file" />
-
-                    <TextView
-                        android:id="@+id/tvCardNoteFileCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/card_inner_margin"
-                        android:text="22"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@+id/ivCardNoteFileCount"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                    <ImageView
-                        android:id="@+id/ivCardNoteTagCount"
-                        android:layout_width="@dimen/note_card_icon_side_len"
-                        android:layout_height="@dimen/note_card_icon_side_len"
-                        android:layout_marginStart="@dimen/card_inner_margin"
-                        app:tint="@color/fg_sec"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/tvCardNoteFileCount"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:srcCompat="@drawable/ic_tag" />
-
-                    <TextView
-                        android:id="@+id/tvCardNoteTagCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/card_inner_margin"
-                        android:text="22"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@+id/ivCardNoteTagCount"
-                        app:layout_constraintTop_toTopOf="parent" />
-
-                </androidx.constraintlayout.widget.ConstraintLayout>
-
-            </HorizontalScrollView>
+            <View
+                android:id="@+id/divider3"
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginStart="@dimen/card_inner_margin"
+                android:layout_marginEnd="@dimen/card_inner_margin"
+                android:layout_marginTop="@dimen/card_inner_margin"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvCardNoteModified" />
 
             <TextView
                 android:id="@+id/tvCardNoteText"
@@ -177,7 +148,7 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/horizontalScrollView" />
+                app:layout_constraintTop_toBottomOf="@+id/divider3" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
