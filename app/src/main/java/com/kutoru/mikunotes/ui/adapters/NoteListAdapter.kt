@@ -29,15 +29,24 @@ class NoteListAdapter (
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val cardView = itemView.findViewById<CardView>(R.id.cardView)
         private val tvTitle = cardView.findViewById<TextView>(R.id.tvCardNoteTitle)
-        private val tvDate = cardView.findViewById<TextView>(R.id.tvCardNoteDate)
+        private val tvCreated = cardView.findViewById<TextView>(R.id.tvCardNoteCreated)
+        private val tvModified = cardView.findViewById<TextView>(R.id.tvCardNoteModified)
+        private val tvModifCount = cardView.findViewById<TextView>(R.id.tvCardNoteModifCount)
+        private val tvFileCount = cardView.findViewById<TextView>(R.id.tvCardNoteFileCount)
+        private val tvTagCount = cardView.findViewById<TextView>(R.id.tvCardNoteTagCount)
         private val tvText = cardView.findViewById<TextView>(R.id.tvCardNoteText)
 
         fun bind(position: Int) {
             val note = notes[position]
 
             cardView.setOnClickListener { noteOnClick(position) }
+
             tvTitle.text = note.title.trim()
-            tvDate.text = AppUtil.formatDateTime(note.last_edited)
+            tvCreated.text = AppUtil.formatDateTime(note.created)
+            tvModified.text = AppUtil.formatDateTime(note.last_edited)
+            tvModifCount.text = note.times_edited.toString()
+            tvFileCount.text = note.files.size.toString()
+            tvTagCount.text = note.tags.size.toString()
             tvText.text = note.text.trim()
         }
     }

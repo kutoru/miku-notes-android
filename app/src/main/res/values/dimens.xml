@@ -6,4 +6,5 @@
     <dimen name="card_inner_margin">4dp</dimen>
     <dimen name="margin_half">4dp</dimen>
     <dimen name="icon_button_side_len">40dp</dimen>
+    <dimen name="note_card_icon_side_len">19dp</dimen>
 </resources>
