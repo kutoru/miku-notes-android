@@ -103,8 +103,6 @@ class RequestManager(
             }
         }
 
-        println("Got a response with ${response.status}")
-
         when (response.status.value) {
             200, 201 -> return response
             401 -> throw Unauthorized()

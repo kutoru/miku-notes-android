@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
+import android.app.job.JobParameters
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -21,9 +22,18 @@ class NotificationHelper(
 
     private var maxNotificationIndex = 1
     private val notificationManager = NotificationManagerCompat.from(context)
+    var setServiceNotification: ((
+        params: JobParameters?,
+        notificationId: Int,
+        notification: Notification,
+    ) -> Unit)? = null
 
-    @SuppressLint("MissingPermission")
-    fun showDownloadInProgress(notificationIndex: Int?, fileName: String, progress: Int): Int {
+    fun showDownloadInProgress(
+        notificationIndex: Int?,
+        fileName: String,
+        progress: Int,
+        params: JobParameters? = null,
+    ): Int {
         val intent = Intent(FILE_NOTIFICATION_BROADCAST)
         var requestCode = 0
 
@@ -49,11 +59,14 @@ class NotificationHelper(
             .addAction(R.drawable.ic_cross, "Cancel", pendingIntent)
             .build()
 
-        return showNotification(notificationIndex, notification)
+        return showNotification(notificationIndex, notification, params)
     }
 
-    @SuppressLint("MissingPermission")
-    fun showDownloadFinished(notificationIndex: Int?, file: File) {
+    fun showDownloadFinished(
+        notificationIndex: Int?,
+        file: File,
+        params: JobParameters? = null,
+    ) {
         val uri = FileProvider.getUriForFile(context, context.applicationContext.packageName + ".provider", file)
         val intent = Intent(Intent.ACTION_VIEW, uri)
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -74,10 +87,34 @@ class NotificationHelper(
             .setAutoCancel(true)
             .build()
 
-        showNotification(notificationIndex, notification)
+        showNotification(notificationIndex, notification, params)
     }
 
-    fun showUploadInProgress(notificationIndex: Int?, fileName: String, progress: Int): Int {
+    fun showDownloadFailed(
+        notificationIndex: Int?,
+        fileName: String,
+        params: JobParameters? = null,
+    ) {
+        val notification = NotificationCompat
+            .Builder(context, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_download)
+            .setContentTitle("Download")
+            .setContentText("Could not download $fileName")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(false)
+            .setOnlyAlertOnce(true)
+            .setAutoCancel(true)
+            .build()
+
+        showNotification(notificationIndex, notification, params)
+    }
+
+    fun showUploadInProgress(
+        notificationIndex: Int?,
+        fileName: String,
+        progress: Int,
+        params: JobParameters? = null,
+    ): Int {
         val intent = Intent(FILE_NOTIFICATION_BROADCAST)
         var requestCode = 0
 
@@ -103,10 +140,14 @@ class NotificationHelper(
             .addAction(R.drawable.ic_cross, "Cancel", pendingIntent)
             .build()
 
-        return showNotification(notificationIndex, notification)
+        return showNotification(notificationIndex, notification, params)
     }
 
-    fun showUploadFinished(notificationIndex: Int?, fileName: String) {
+    fun showUploadFinished(
+        notificationIndex: Int?,
+        fileName: String,
+        params: JobParameters? = null,
+    ) {
         val notification = NotificationCompat
             .Builder(context, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_upload)
@@ -118,7 +159,26 @@ class NotificationHelper(
             .setAutoCancel(true)
             .build()
 
-        showNotification(notificationIndex, notification)
+        showNotification(notificationIndex, notification, params)
+    }
+
+    fun showUploadFailed(
+        notificationIndex: Int?,
+        fileName: String,
+        params: JobParameters? = null,
+    ) {
+        val notification = NotificationCompat
+            .Builder(context, DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_upload)
+            .setContentTitle("Upload")
+            .setContentText("Could not upload $fileName")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(false)
+            .setOnlyAlertOnce(true)
+            .setAutoCancel(true)
+            .build()
+
+        showNotification(notificationIndex, notification, params)
     }
 
     fun hide(notificationIndex: Int?) {
@@ -128,13 +188,22 @@ class NotificationHelper(
     }
 
     @SuppressLint("MissingPermission")
-    private fun showNotification(notificationIndex: Int?, notification: Notification): Int {
+    private fun showNotification(
+        notificationIndex: Int?,
+        notification: Notification,
+        params: JobParameters?,
+    ): Int {
         val currentIndex = notificationIndex ?: maxNotificationIndex++
         if (!canSend()) {
             return currentIndex
         }
 
-        notificationManager.notify(currentIndex, notification)
+        if (Build.VERSION.SDK_INT >= 34) {
+            setServiceNotification!!.invoke(params, currentIndex, notification)
+        } else {
+            notificationManager.notify(currentIndex, notification)
+        }
+
         return currentIndex
     }
 
