@@ -2,11 +2,21 @@ package com.kutoru.mikunotes.ui
 
 import android.Manifest
 import android.animation.ValueAnimator
+import android.app.job.JobInfo
+import android.app.job.JobScheduler
+import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Rect
+import android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET
+import android.net.NetworkCapabilities.NET_CAPABILITY_NOT_METERED
+import android.net.NetworkRequest
 import android.net.Uri
 import android.os.Build
+import android.os.PersistableBundle
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
@@ -19,11 +29,24 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.updatePadding
+import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.logic.ANIMATION_TRANSITION_TIME
+import com.kutoru.mikunotes.logic.FILE_CHANGE_ADDED
+import com.kutoru.mikunotes.logic.FILE_CHANGE_BROADCAST
+import com.kutoru.mikunotes.logic.FILE_CHANGE_DELETED
+import com.kutoru.mikunotes.logic.FILE_SERVICE_DELETE
+import com.kutoru.mikunotes.logic.FILE_SERVICE_DOWNLOAD
+import com.kutoru.mikunotes.logic.FILE_SERVICE_FILE_HASH
+import com.kutoru.mikunotes.logic.FILE_SERVICE_FILE_ID
+import com.kutoru.mikunotes.logic.FILE_SERVICE_IS_SHELF
+import com.kutoru.mikunotes.logic.FILE_SERVICE_ITEM_ID
+import com.kutoru.mikunotes.logic.FILE_SERVICE_UPLOAD
+import com.kutoru.mikunotes.logic.FILE_SERVICE_URIS
+import com.kutoru.mikunotes.logic.FileRequestService
 import com.kutoru.mikunotes.models.File
 import com.kutoru.mikunotes.ui.adapters.FileListAdapter
 import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
@@ -40,21 +63,22 @@ class FileDrawer(
 
     private val defaultDuration = ANIMATION_TRANSITION_TIME.toLong()
     private val fileAdapter: FileListAdapter
+    private val fileChangeBroadcastReceiver: FileChangeBroadcastReceiver
 
     private lateinit var filePickActivityLauncher: ActivityResultLauncher<String>
-    private lateinit var storagePermissionActivityLauncher: ActivityResultLauncher<String>
+    private lateinit var readStoragePermissionActivityLauncher: ActivityResultLauncher<String>
+    private lateinit var writeStoragePermissionActivityLauncher: ActivityResultLauncher<String>
     private lateinit var notificationPermissionActivityLauncher: ActivityResultLauncher<String>
 
-    private lateinit var extUploadFile: (fileUri: Uri) -> Unit
-    private lateinit var extDownloadFile: (position: Int) -> Unit
-    private lateinit var extDeleteFile: (position: Int) -> Unit
+    private lateinit var fileViewModel: FileHoldingViewModel
     private lateinit var showMessage: (message: String?) -> Unit
     private var getExtraSpace: () -> Int
 
     var uploadEnabled
         get() = fabUpload.isEnabled
-        set(value) = fabUpload.setEnabled(value)
+        set(value) { fabUpload.isEnabled = value }
 
+    private var lastFileJobId = 0
     private var lastRootHeight = 0
     private val minHeight: Int
     var expanded = false
@@ -73,6 +97,14 @@ class FileDrawer(
             listOf(),
             ::deleteFile,
             ::downloadFile,
+        )
+
+        fileChangeBroadcastReceiver = FileChangeBroadcastReceiver()
+        ContextCompat.registerReceiver(
+            context,
+            fileChangeBroadcastReceiver,
+            IntentFilter(FILE_CHANGE_BROADCAST),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
         )
 
         // ui elements
@@ -100,7 +132,7 @@ class FileDrawer(
             }
 
             if (!readStoragePermissionGranted()) {
-                storagePermissionActivityLauncher.launch(
+                readStoragePermissionActivityLauncher.launch(
                     Manifest.permission.READ_EXTERNAL_STORAGE
                 )
             } else {
@@ -127,12 +159,11 @@ class FileDrawer(
     // this ain't pretty, but its prettier than writing this code outside of the view
     fun <O>setup(
         root: ViewGroup,
+        lifecycleOwner: LifecycleOwner,
+        fileHoldingViewModel: FileHoldingViewModel,
 
         showMessage: (message: String?) -> Unit,
         getExtraSpace: () -> Int,
-        extUploadFile: (fileUri: Uri) -> Unit,
-        extDownloadFile: (position: Int) -> Unit,
-        extDeleteFile: (position: Int) -> Unit,
 
         registerForActivityResult: (
             contract: ActivityResultContract<String, O>,
@@ -153,11 +184,13 @@ class FileDrawer(
             }
         }
 
+        fileViewModel = fileHoldingViewModel
+        fileViewModel.files.observe(lifecycleOwner) {
+            updateFiles(it)
+        }
+
         this.showMessage = showMessage
         this.getExtraSpace = getExtraSpace
-        this.extUploadFile = extUploadFile
-        this.extDownloadFile = extDownloadFile
-        this.extDeleteFile = extDeleteFile
 
         val contentsContract = ActivityResultContracts.GetMultipleContents() as ActivityResultContract<String, O>
         val permissionContract = ActivityResultContracts.RequestPermission() as ActivityResultContract<String, O>
@@ -166,11 +199,17 @@ class FileDrawer(
             uploadFiles(it as List<Uri>)
         }
 
-        storagePermissionActivityLauncher = registerForActivityResult(permissionContract) {
+        readStoragePermissionActivityLauncher = registerForActivityResult(permissionContract) {
             if (it as Boolean) {
                 filePickActivityLauncher.launch("*/*")
             } else {
                 showMessage("You need to provide access to your files to upload them")
+            }
+        }
+
+        writeStoragePermissionActivityLauncher = registerForActivityResult(permissionContract) {
+            if (!(it as Boolean)) {
+                showMessage("You need to provide access to your storage to download the files")
             }
         }
 
@@ -191,6 +230,16 @@ class FileDrawer(
         ) == PackageManager.PERMISSION_GRANTED
     }
 
+    private fun writeStoragePermissionGranted(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return true
+        }
+
+        return ContextCompat.checkSelfPermission(
+            context, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
     private fun notificationPermissionGranted(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             return true
@@ -201,9 +250,15 @@ class FileDrawer(
         ) == PackageManager.PERMISSION_GRANTED
     }
 
+    fun onDestroy() {
+        context.unregisterReceiver(
+            fileChangeBroadcastReceiver,
+        )
+    }
+
     // file stuff
 
-    fun updateFiles(files: List<File>) {
+    private fun updateFiles(files: List<File>) {
         if (files.isEmpty()) {
             rvFiles.visibility = View.INVISIBLE
             tvNoFiles.visibility = View.VISIBLE
@@ -216,24 +271,111 @@ class FileDrawer(
         }
     }
 
-    private fun uploadFiles(fileUris: List<Uri>) {
-        fileUris.forEach { uri ->
-            extUploadFile.invoke(uri)
-        }
-    }
-
-    private fun downloadFile(fileIndex: Int) {
+    fun uploadFiles(fileUris: List<Uri>) {
         if (!notificationPermissionGranted()) {
             notificationPermissionActivityLauncher.launch(
                 Manifest.permission.POST_NOTIFICATIONS,
             )
         }
 
-        extDownloadFile.invoke(fileIndex)
+        val bundle = PersistableBundle()
+        bundle.putBoolean(FILE_SERVICE_UPLOAD, true)
+
+        bundle.putStringArray(
+            FILE_SERVICE_URIS,
+            fileUris.map { it.toString() }.toTypedArray(),
+        )
+        bundle.putInt(
+            FILE_SERVICE_ITEM_ID,
+            fileViewModel.itemId,
+        )
+        bundle.putInt(
+            FILE_SERVICE_IS_SHELF,
+            if (fileViewModel.isAttachedToShelf) 1 else 0,
+        )
+
+        startFileService(bundle)
+    }
+
+    private fun downloadFile(fileIndex: Int) {
+        if (!writeStoragePermissionGranted()) {
+            writeStoragePermissionActivityLauncher.launch(
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            )
+
+            return
+        }
+
+        if (!notificationPermissionGranted()) {
+            notificationPermissionActivityLauncher.launch(
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+        }
+
+        val fileHash = fileAdapter.files[fileIndex].hash
+
+        val bundle = PersistableBundle()
+        bundle.putBoolean(FILE_SERVICE_DOWNLOAD, true)
+        bundle.putString(FILE_SERVICE_FILE_HASH, fileHash)
+
+        startFileService(bundle)
     }
 
     private fun deleteFile(fileIndex: Int) {
-        extDeleteFile.invoke(fileIndex)
+        val fileId = fileAdapter.files[fileIndex].id
+
+        val bundle = PersistableBundle()
+        bundle.putBoolean(FILE_SERVICE_DELETE, true)
+        bundle.putInt(FILE_SERVICE_FILE_ID, fileId)
+
+        startFileService(bundle)
+    }
+
+    private fun startFileService(bundle: PersistableBundle) {
+        val jobBuilder = JobInfo.Builder(++lastFileJobId, ComponentName(
+            context, FileRequestService::class.java,
+        ))
+            .setExtras(bundle)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val networkRequest = NetworkRequest.Builder()
+                .addCapability(NET_CAPABILITY_INTERNET)
+                .addCapability(NET_CAPABILITY_NOT_METERED)
+                .build()
+
+            jobBuilder
+                .setUserInitiated(true)
+                .setRequiredNetwork(networkRequest)
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            jobBuilder.setOverrideDeadline(0)
+        }
+
+        val jobScheduler = context.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
+        jobScheduler.schedule(jobBuilder.build())
+    }
+
+    inner class FileChangeBroadcastReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            println("FileChangeBroadcastReceiver")
+
+            if (intent != null) {
+                if (intent.hasExtra(FILE_CHANGE_ADDED)) {
+                    val file = intent.getSerializableExtra(FILE_CHANGE_ADDED) as File
+                    println(file)
+                    fileViewModel.fileUploaded(file)
+                }
+
+                if (intent.hasExtra(FILE_CHANGE_DELETED)) {
+                    val fileId = intent.getIntExtra(FILE_CHANGE_DELETED, 0)
+                    println(fileId)
+                    if (fileId > 0) {
+                        fileViewModel.fileDeleted(fileId)
+                    }
+                }
+            }
+        }
     }
 
     // expansion stuff

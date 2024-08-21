@@ -29,7 +29,7 @@ class NotificationHelper(
 
         if (notificationIndex != null) {
             intent.putExtra(FILE_NOTIFICATION_IDENTIFIER, notificationIndex)
-            requestCode = 100 + notificationIndex
+            requestCode = FILE_NOTIFICATION_INTENT_OFFSET + notificationIndex
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -83,7 +83,7 @@ class NotificationHelper(
 
         if (notificationIndex != null) {
             intent.putExtra(FILE_NOTIFICATION_IDENTIFIER, notificationIndex)
-            requestCode = 100 + notificationIndex
+            requestCode = FILE_NOTIFICATION_INTENT_OFFSET + notificationIndex
         }
 
         val pendingIntent = PendingIntent.getBroadcast(

@@ -9,7 +9,6 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.logic.AppUtil
-import com.kutoru.mikunotes.logic.RECYCLER_VIEW_FILE_COLUMNS
 import com.kutoru.mikunotes.models.File
 import kotlin.math.ceil
 import kotlin.math.round
@@ -22,9 +21,11 @@ class FileListAdapter(
 ) : RecyclerView.Adapter<FileListAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val columnCount = 2
+
         val cardWidth = ceil(
-            parent.width.toFloat() / RECYCLER_VIEW_FILE_COLUMNS -
-            itemMargin * (1f + 100f / RECYCLER_VIEW_FILE_COLUMNS / 100f)
+            parent.width.toFloat() / columnCount -
+            itemMargin * (1f + 100f / columnCount / 100f)
         ).toInt()
         val cardHeight = (cardWidth / 1.5).toInt()
 

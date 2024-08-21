@@ -13,7 +13,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.viewModels
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.FragmentShelfBinding
-import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.ui.RequestReadyFragment
 import com.kutoru.mikunotes.ui.main.MainActivity
 import com.kutoru.mikunotes.ui.main.ShelfCallbacks
@@ -41,11 +40,10 @@ class ShelfFragment : RequestReadyFragment<ShelfViewModel>() {
 
         binding.fdShelfFiles.setup<Any>(
             binding.root,
+            viewLifecycleOwner,
+            viewModel,
             ::showMessage,
             { binding.etlShelfText.height },
-            ::uploadFile,
-            ::downloadFile,
-            ::deleteFile,
             ::registerForActivityResult,
         )
 
@@ -102,6 +100,11 @@ class ShelfFragment : RequestReadyFragment<ShelfViewModel>() {
         super.onPause()
     }
 
+    override fun onDestroy() {
+        binding.fdShelfFiles.onDestroy()
+        super.onDestroy()
+    }
+
     override fun setupViewModelObservers() {
         viewModel.text.observe(viewLifecycleOwner) {
             if (binding.etlShelfText.text != it) {
@@ -119,47 +122,6 @@ class ShelfFragment : RequestReadyFragment<ShelfViewModel>() {
 
         viewModel.timesEdited.observe(viewLifecycleOwner) {
             binding.tvShelfCount.text = it.toString()
-        }
-
-        viewModel.files.observe(viewLifecycleOwner) {
-            binding.fdShelfFiles.updateFiles(it)
-        }
-    }
-
-    private fun uploadFile(fileUri: Uri) {
-        scope.launch {
-            val result = handleRequest { viewModel.postFile(
-                requireContext().contentResolver, fileUri,
-            ) }
-
-            if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
-                showMessage("Upload cancelled")
-            } else if (result.isFailure) {
-                showMessage("Could not upload the file")
-            }
-        }
-    }
-
-    private fun downloadFile(fileIndex: Int) {
-        scope.launch {
-            val result = handleRequest { viewModel.getFile(fileIndex) }
-
-            if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
-                showMessage("Download cancelled")
-            } else if (result.isFailure) {
-                showMessage("Could not download the file")
-            }
-        }
-    }
-
-    private fun deleteFile(fileIndex: Int) {
-        scope.launch {
-            val result = handleRequest { viewModel.deleteFile(fileIndex) }
-            if (result.isFailure) {
-                showMessage("Could not delete the file")
-            } else {
-                showMessage("The file has been deleted")
-            }
         }
     }
 
@@ -222,13 +184,14 @@ class ShelfFragment : RequestReadyFragment<ShelfViewModel>() {
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Convert") { _, _ ->
                 val title = etNoteTitle.text.toString().trim()
+                val text = binding.etlShelfText.text
                 if (title.isEmpty()) {
                     showMessage("Cannot convert with an empty title")
                     return@setPositiveButton
                 }
 
                 scope.launch {
-                    val result = handleRequest { viewModel.postShelfToNote(title) }
+                    val result = handleRequest { viewModel.postShelfToNote(title, text) }
                     if (result.isFailure) {
                         showMessage("Could not convert the shelf")
                     }
@@ -253,9 +216,7 @@ class ShelfFragment : RequestReadyFragment<ShelfViewModel>() {
 
     fun handleSharedFiles(fileUris: List<Uri>) {
         onShare = {
-            fileUris.forEach {
-                uploadFile(it)
-            }
+            binding.fdShelfFiles.uploadFiles(fileUris)
         }
     }
 }

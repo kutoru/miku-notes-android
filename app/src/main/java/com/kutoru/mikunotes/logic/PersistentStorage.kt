@@ -13,18 +13,18 @@ class PersistentStorage(context: Context) {
 
     var domain: String?
         get() {
-            return storage.getString(DOMAIN_STORAGE_KEY, null)
+            return storage.getString(STORAGE_KEY_DOMAIN, null)
         }
         set(value) {
             storage.edit {
-                putString(DOMAIN_STORAGE_KEY, value)
+                putString(STORAGE_KEY_DOMAIN, value)
             }
         }
 
     var port: Int?
         get() {
-            return if (storage.contains(PORT_STORAGE_KEY)) {
-                 storage.getInt(PORT_STORAGE_KEY, 0)
+            return if (storage.contains(STORAGE_KEY_PORT)) {
+                 storage.getInt(STORAGE_KEY_PORT, 0)
             } else {
                 null
             }
@@ -32,17 +32,17 @@ class PersistentStorage(context: Context) {
         set(value) {
             storage.edit {
                 if (value != null) {
-                    putInt(PORT_STORAGE_KEY, value)
+                    putInt(STORAGE_KEY_PORT, value)
                 } else {
-                    remove(PORT_STORAGE_KEY)
+                    remove(STORAGE_KEY_PORT)
                 }
             }
         }
 
     var isSecure: Boolean?
         get() {
-            return if (storage.contains(IS_SECURE_STORAGE_KEY)) {
-                storage.getBoolean(IS_SECURE_STORAGE_KEY, false)
+            return if (storage.contains(STORAGE_KEY_IS_SECURE)) {
+                storage.getBoolean(STORAGE_KEY_IS_SECURE, false)
             } else {
                 null
             }
@@ -50,40 +50,40 @@ class PersistentStorage(context: Context) {
         set(value) {
             storage.edit {
                 if (value != null) {
-                    putBoolean(IS_SECURE_STORAGE_KEY, value)
+                    putBoolean(STORAGE_KEY_IS_SECURE, value)
                 } else {
-                    remove(IS_SECURE_STORAGE_KEY)
+                    remove(STORAGE_KEY_IS_SECURE)
                 }
             }
         }
 
     var accessCookie: String?
         get() {
-            return storage.getString(ACCESS_TOKEN_STORAGE_KEY, null)
+            return storage.getString(STORAGE_KEY_ACCESS_TOKEN, null)
         }
         set(value) {
             storage.edit {
-                putString(ACCESS_TOKEN_STORAGE_KEY, value)
+                putString(STORAGE_KEY_ACCESS_TOKEN, value)
             }
         }
 
     var refreshCookie: String?
         get() {
-            return storage.getString(REFRESH_TOKEN_STORAGE_KEY, null)
+            return storage.getString(STORAGE_KEY_REFRESH_TOKEN, null)
         }
         set(value) {
             storage.edit {
-                putString(REFRESH_TOKEN_STORAGE_KEY, value)
+                putString(STORAGE_KEY_REFRESH_TOKEN, value)
             }
         }
 
     var email: String?
         get() {
-            return storage.getString(EMAIL_STORAGE_KEY, null)
+            return storage.getString(STORAGE_KEY_EMAIL, null)
         }
         set(value) {
             storage.edit {
-                putString(EMAIL_STORAGE_KEY, value)
+                putString(STORAGE_KEY_EMAIL, value)
             }
         }
 }

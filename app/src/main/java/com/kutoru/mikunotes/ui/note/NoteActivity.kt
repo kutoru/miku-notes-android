@@ -1,17 +1,14 @@
 package com.kutoru.mikunotes.ui.note
 
 import android.app.AlertDialog
-import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.Toast
 import androidx.activity.viewModels
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityNoteBinding
 import com.kutoru.mikunotes.logic.AppUtil
-import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.models.Tag
 import com.kutoru.mikunotes.ui.RequestReadyActivity
 import com.kutoru.mikunotes.ui.TagViewModel
@@ -41,18 +38,17 @@ class NoteActivity : RequestReadyActivity<NoteViewModel>() {
 
         val result = runCatching { viewModel.parseFromIntent(intent) }
         if (result.isFailure) {
-            Toast.makeText(this, "Tried to open an invalid note", Toast.LENGTH_LONG).show()
+            showMessage("Tried to open an invalid note")
             finish()
             return
         }
 
         binding.fdNoteFiles.setup<Any>(
             binding.root,
+            this,
+            viewModel,
             ::showMessage,
             { binding.etlNoteText.height },
-            ::uploadFile,
-            ::downloadFile,
-            ::deleteFile,
             ::registerForActivityResult,
         )
 
@@ -130,10 +126,6 @@ class NoteActivity : RequestReadyActivity<NoteViewModel>() {
             tagAdapter.notifyDataSetChanged()
         }
 
-        viewModel.files.observe(this) {
-            binding.fdNoteFiles.updateFiles(it)
-        }
-
         viewModel.isNewNote.observe(this) {
             initializeActionMenu(it)
             binding.fdNoteFiles.uploadEnabled = !it
@@ -182,6 +174,11 @@ class NoteActivity : RequestReadyActivity<NoteViewModel>() {
         return true
     }
 
+    override fun onDestroy() {
+        binding.fdNoteFiles.onDestroy()
+        super.onDestroy()
+    }
+
     override fun afterUrlDialogSave() {
         scope.launch {
             refreshNote(true)
@@ -219,43 +216,6 @@ class NoteActivity : RequestReadyActivity<NoteViewModel>() {
             tagDialog.hide()
         } else {
             super.onBackPressed()
-        }
-    }
-
-    private fun deleteFile(fileIndex: Int) {
-        scope.launch {
-            val result = handleRequest { viewModel.deleteFile(fileIndex) }
-            if (result.isFailure) {
-                showMessage("Could not delete the file")
-            } else {
-                showMessage("The file has been deleted")
-            }
-        }
-    }
-
-    private fun downloadFile(fileIndex: Int) {
-        scope.launch {
-            val result = handleRequest { viewModel.getFile(fileIndex) }
-
-            if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
-                showMessage("Download cancelled")
-            } else if (result.isFailure) {
-                showMessage("Could not download the file")
-            }
-        }
-    }
-
-    private fun uploadFile(fileUri: Uri) {
-        scope.launch {
-            val result = handleRequest { viewModel.postFile(
-                contentResolver, fileUri,
-            ) }
-
-            if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
-                showMessage("Upload cancelled")
-            } else if (result.isFailure) {
-                showMessage("Could not upload the file")
-            }
         }
     }
 
