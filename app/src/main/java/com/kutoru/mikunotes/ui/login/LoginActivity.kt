@@ -7,16 +7,18 @@ import android.view.MenuItem
 import androidx.activity.viewModels
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityLoginBinding
+import com.kutoru.mikunotes.logic.AppUtil
 import com.kutoru.mikunotes.logic.BadRequest
 import com.kutoru.mikunotes.logic.InvalidUrl
 import com.kutoru.mikunotes.logic.LAUNCHED_LOGIN_FROM_ERROR
 import com.kutoru.mikunotes.logic.ServerError
-import com.kutoru.mikunotes.ui.ApiReadyActivity
+import com.kutoru.mikunotes.ui.RequestReadyActivity
 import kotlinx.coroutines.launch
 
-class LoginActivity : ApiReadyActivity<LoginViewModel>() {
+class LoginActivity : RequestReadyActivity<LoginViewModel>() {
 
     private lateinit var binding: ActivityLoginBinding
+
     override val viewModel: LoginViewModel by viewModels { LoginViewModel.Factory }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,7 +34,7 @@ class LoginActivity : ApiReadyActivity<LoginViewModel>() {
         setSupportActionBar(binding.toolbarLogin)
         supportActionBar?.title = "Log In or Register"
 
-        setNavigationBarColor(binding.root)
+        AppUtil.setNavigationBarColor(window, binding.root)
 
         val fromError = intent.getBooleanExtra(LAUNCHED_LOGIN_FROM_ERROR, false)
         if (fromError) {
@@ -53,7 +55,7 @@ class LoginActivity : ApiReadyActivity<LoginViewModel>() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.actionLoginPropertyDialog -> {
-                urlDialog.show(true, null) { viewModel.updateUrl() }
+                urlDialog!!.show(true, null) { viewModel.updateUrl() }
             }
             else -> return super.onOptionsItemSelected(item)
         }
@@ -61,8 +63,11 @@ class LoginActivity : ApiReadyActivity<LoginViewModel>() {
         return true
     }
 
-    private fun showMessage(message: String) {
-        binding.tvLoginMessage.text = message
+    override fun setupViewModelObservers() {}
+    override fun afterUrlDialogSave() {}
+
+    override fun showMessage(message: String?) {
+        binding.tvLoginMessage.text = message ?: ""
     }
 
     private fun handleLogin() {

@@ -4,13 +4,11 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.Parcelable
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -22,6 +20,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.ActivityMainBinding
+import com.kutoru.mikunotes.logic.AppUtil
 import com.kutoru.mikunotes.logic.DOWNLOAD_NOTIFICATION_CHANNEL_ID
 import com.kutoru.mikunotes.ui.notes.NotesFragment
 import com.kutoru.mikunotes.ui.shelf.ShelfFragment
@@ -50,7 +49,7 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         binding.navView.setupWithNavController(navController)
 
-        setNavigationBarColor()
+        AppUtil.setNavigationBarColor(window, binding.root)
 
         createNotificationChannels()
         handleSharedData(intent)
@@ -166,22 +165,5 @@ class MainActivity : AppCompatActivity() {
                 actionBarManager.setSettingsFragment()
             }
         }
-    }
-
-    private fun setNavigationBarColor() {
-        val color = getColor(R.color.nav_bar_bg)
-        val darkness = 1 - (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255
-        val isLight = darkness < 0.5
-
-        window.navigationBarColor = color
-
-        var flags = binding.root.systemUiVisibility
-        if (isLight) {
-            flags = flags or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-        } else {
-            flags = flags and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
-        }
-
-        binding.root.systemUiVisibility = flags
     }
 }

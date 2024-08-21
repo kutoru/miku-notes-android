@@ -8,12 +8,12 @@ import android.view.ViewGroup
 import androidx.fragment.app.viewModels
 import com.kutoru.mikunotes.databinding.FragmentSettingsBinding
 import com.kutoru.mikunotes.logic.PersistentStorage
-import com.kutoru.mikunotes.ui.ApiReadyFragment
+import com.kutoru.mikunotes.ui.RequestReadyFragment
 import com.kutoru.mikunotes.ui.login.LoginActivity
 import com.kutoru.mikunotes.ui.main.MainActivity
 import kotlinx.coroutines.launch
 
-class SettingsFragment : ApiReadyFragment<SettingsViewModel>() {
+class SettingsFragment : RequestReadyFragment<SettingsViewModel>() {
 
     private lateinit var binding: FragmentSettingsBinding
 
@@ -33,7 +33,7 @@ class SettingsFragment : ApiReadyFragment<SettingsViewModel>() {
             scope.launch {
                 val result = handleRequest { viewModel.getLogout() }
                 if (result.isFailure) {
-                    showToast("Could not log out")
+                    showMessage("Could not log out")
                     return@launch
                 }
 
@@ -43,7 +43,7 @@ class SettingsFragment : ApiReadyFragment<SettingsViewModel>() {
         }
 
         binding.btnSettingsEditUrl.setOnClickListener {
-            urlDialog.show(true, null) { viewModel.updateUrl() }
+            urlDialog!!.show(true, null) { viewModel.updateUrl() }
         }
 
         (requireActivity() as MainActivity).setSettingsOptionsMenu()
@@ -55,6 +55,10 @@ class SettingsFragment : ApiReadyFragment<SettingsViewModel>() {
         refreshEmail()
         super.onResume()
     }
+
+    override fun afterUrlDialogSave() {}
+
+    override fun setupViewModelObservers() {}
 
     private fun refreshEmail() {
         val email = PersistentStorage(requireContext()).email

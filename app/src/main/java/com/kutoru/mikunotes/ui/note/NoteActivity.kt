@@ -13,13 +13,13 @@ import com.kutoru.mikunotes.databinding.ActivityNoteBinding
 import com.kutoru.mikunotes.logic.AppUtil
 import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.models.Tag
-import com.kutoru.mikunotes.ui.ApiReadyActivity
+import com.kutoru.mikunotes.ui.RequestReadyActivity
 import com.kutoru.mikunotes.ui.TagViewModel
 import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
 import com.kutoru.mikunotes.ui.adapters.TagListAdapter
 import kotlinx.coroutines.launch
 
-class NoteActivity : ApiReadyActivity<NoteViewModel>() {
+class NoteActivity : RequestReadyActivity<NoteViewModel>() {
 
     private lateinit var binding: ActivityNoteBinding
     private lateinit var tagAdapter: TagListAdapter
@@ -35,8 +35,6 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         binding = ActivityNoteBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        setupViewModelObservers()
-
         setSupportActionBar(binding.toolbarNote)
         supportActionBar?.title = "Note"
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -50,7 +48,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
         binding.fdNoteFiles.setup<Any>(
             binding.root,
-            ::showToast,
+            ::showMessage,
             { binding.etlNoteText.height },
             ::uploadFile,
             ::downloadFile,
@@ -80,7 +78,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
 
             tagViewModel,
             ::handleRequest,
-            ::showToast,
+            ::showMessage,
 
             // if i really want the button to be animated: https://stackoverflow.com/a/73798434
             { binding.btnNoteAddTag.isEnabled = false },
@@ -89,10 +87,10 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
             ::onTagDialogRemove,
         )
 
-        setNavigationBarColor(binding.root)
+        AppUtil.setNavigationBarColor(window, binding.root)
     }
 
-    private fun setupViewModelObservers() {
+    override fun setupViewModelObservers() {
         viewModel.title.observe(this) {
             if (binding.etlNoteTitle.text != it) {
                 binding.etlNoteTitle.text = it
@@ -184,6 +182,12 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         return true
     }
 
+    override fun afterUrlDialogSave() {
+        scope.launch {
+            refreshNote(true)
+        }
+    }
+
     private fun initializeActionMenu(isNewNote: Boolean) {
         if (isNewNote) {
             supportActionBar?.title = "New note"
@@ -222,9 +226,9 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         scope.launch {
             val result = handleRequest { viewModel.deleteFile(fileIndex) }
             if (result.isFailure) {
-                showToast("Could not delete the file")
+                showMessage("Could not delete the file")
             } else {
-                showToast("The file has been deleted")
+                showMessage("The file has been deleted")
             }
         }
     }
@@ -234,9 +238,9 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
             val result = handleRequest { viewModel.getFile(fileIndex) }
 
             if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
-                showToast("Download cancelled")
+                showMessage("Download cancelled")
             } else if (result.isFailure) {
-                showToast("Could not download the file")
+                showMessage("Could not download the file")
             }
         }
     }
@@ -248,9 +252,9 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
             ) }
 
             if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
-                showToast("Upload cancelled")
+                showMessage("Upload cancelled")
             } else if (result.isFailure) {
-                showToast("Could not upload the file")
+                showMessage("Could not upload the file")
             }
         }
     }
@@ -259,7 +263,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         scope.launch {
             val result = handleRequest { viewModel.postNotesTag(tag) }
             if (result.isFailure) {
-                showToast("Could not add the tag")
+                showMessage("Could not add the tag")
             } else {
                 updateMoveButton()
             }
@@ -275,7 +279,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         scope.launch {
             val result = handleRequest { viewModel.deleteNotesTag(position) }
             if (result.isFailure) {
-                showToast("Could not remove the tag")
+                showMessage("Could not remove the tag")
             } else {
                 updateMoveButton?.invoke()
             }
@@ -287,9 +291,9 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
             val result = handleRequest { viewModel.getNote() }
             if (!silent) {
                 if (result.isFailure) {
-                    showToast("Could not refresh the note")
+                    showMessage("Could not refresh the note")
                 } else {
-                    showToast("Note has been refreshed")
+                    showMessage("Note has been refreshed")
                 }
             }
         }
@@ -300,12 +304,12 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
         val title = binding.etlNoteTitle.text
 
         if (title.isBlank()) {
-            if (!silent) showToast("Can't save the note with an empty title")
+            if (!silent) showMessage("Can't save the note with an empty title")
             return
         }
 
         if (viewModel.text.value == text && viewModel.title.value == title) {
-            if (!silent) showToast("Note's text or title haven't changed since last save")
+            if (!silent) showMessage("Note's text or title haven't changed since last save")
             return
         }
 
@@ -317,9 +321,9 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
             }
 
             if (result.isFailure) {
-                showToast("Could not save the note")
+                showMessage("Could not save the note")
             } else if (!silent) {
-                showToast("Note has been saved")
+                showMessage("Note has been saved")
             }
         }
     }
@@ -334,7 +338,7 @@ class NoteActivity : ApiReadyActivity<NoteViewModel>() {
                     val result = handleRequest { viewModel.deleteNote() }
 
                     if (result.isFailure) {
-                        showToast("Could not delete the note")
+                        showMessage("Could not delete the note")
                     } else {
                         this@NoteActivity.finish()
                     }

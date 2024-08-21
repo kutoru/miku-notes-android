@@ -22,7 +22,7 @@ import com.kutoru.mikunotes.databinding.FragmentNotesBinding
 import com.kutoru.mikunotes.logic.CREATE_NEW_NOTE
 import com.kutoru.mikunotes.logic.SELECTED_NOTE
 import com.kutoru.mikunotes.models.Tag
-import com.kutoru.mikunotes.ui.ApiReadyFragment
+import com.kutoru.mikunotes.ui.RequestReadyFragment
 import com.kutoru.mikunotes.ui.TagViewModel
 import com.kutoru.mikunotes.ui.adapters.ItemMarginDecorator
 import com.kutoru.mikunotes.ui.adapters.NoteListAdapter
@@ -35,7 +35,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 
-class NotesFragment : ApiReadyFragment<NotesViewModel>() {
+class NotesFragment : RequestReadyFragment<NotesViewModel>() {
 
     private lateinit var binding: FragmentNotesBinding
     private lateinit var loadDialog: ProgressDialog
@@ -77,8 +77,6 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
             lastTagListRowCount,
             LinearLayoutManager.HORIZONTAL,
         )
-
-        setupViewModelObservers()
 
         val fabParams = binding.fabAddNote.layoutParams as MarginLayoutParams
         fabParams.bottomMargin =
@@ -163,7 +161,7 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
             false,
             tagViewModel,
             ::handleRequest,
-            ::showToast,
+            ::showMessage,
         )
 
         noteParamMenu = NoteParamMenu(
@@ -195,7 +193,6 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
 
     override fun afterUrlDialogSave() {
         noteTagDialog.hide()
-        viewModel.updateUrl()
         refreshFragment(true)
     }
 
@@ -209,6 +206,57 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         }
 
         return true
+    }
+
+    override fun setupViewModelObservers() {
+        tagViewModel.tags.observe(viewLifecycleOwner) { tags ->
+            setTagListRows(tags.size)
+            tagAdapter.tags = tags + Tag(0, 0, "no tags", null, 0)
+            tagAdapter.notifyDataSetChanged()
+        }
+
+        viewModel.notes.observe(viewLifecycleOwner) {
+            if (it == null) {
+                binding.rvNotesNotes.visibility = View.INVISIBLE
+                binding.tvNotesNoNotes.visibility = View.INVISIBLE
+                binding.pbNotesNotes.visibility = View.VISIBLE
+            } else if (it.isEmpty()) {
+                binding.rvNotesNotes.visibility = View.INVISIBLE
+                binding.tvNotesNoNotes.visibility = View.VISIBLE
+                binding.pbNotesNotes.visibility = View.INVISIBLE
+            } else {
+                noteAdapter.notes = it
+                noteAdapter.notifyDataSetChanged()
+
+                binding.rvNotesNotes.visibility = View.VISIBLE
+                binding.tvNotesNoNotes.visibility = View.INVISIBLE
+                binding.pbNotesNotes.visibility = View.INVISIBLE
+            }
+        }
+
+        queryViewModel.title.observe(viewLifecycleOwner) {
+            setSearchBarText?.invoke(it)
+        }
+
+        queryViewModel.tags.observe(viewLifecycleOwner) { tagIds ->
+            for (pos in 0..<tagAdapter.itemCount) {
+                val chip = binding.rvNotesTags
+                    .findViewHolderForAdapterPosition(pos)
+                    ?.itemView as? Chip
+                    ?: continue
+
+                val chipState = tagIds != null && tagIds.contains(chip.id)
+                if (chip.isChecked != chipState) {
+                    chip.isChecked = chipState
+                }
+            }
+
+            if (paramMenuSheet.state == BottomSheetBehavior.STATE_COLLAPSED) {
+                scope.launch {
+                    refreshNotes(true)
+                }
+            }
+        }
     }
 
     private fun onTagClick(position: Int, isChecked: Boolean) {
@@ -272,75 +320,10 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
         }
     }
 
-    private fun setupViewModelObservers() {
-        tagViewModel.tags.observe(viewLifecycleOwner) { tags ->
-            setTagListRows(tags.size)
-            tagAdapter.tags = tags + Tag(0, 0, "no tags", null, 0)
-            tagAdapter.notifyDataSetChanged()
-        }
-
-        viewModel.notes.observe(viewLifecycleOwner) {
-            if (it == null) {
-                binding.rvNotesNotes.visibility = View.INVISIBLE
-                binding.tvNotesNoNotes.visibility = View.INVISIBLE
-                binding.pbNotesNotes.visibility = View.VISIBLE
-                changeContentHeight(false)
-            } else if (it.isEmpty()) {
-                binding.rvNotesNotes.visibility = View.INVISIBLE
-                binding.tvNotesNoNotes.visibility = View.VISIBLE
-                binding.pbNotesNotes.visibility = View.INVISIBLE
-                changeContentHeight(false)
-            } else {
-                noteAdapter.notes = it
-                noteAdapter.notifyDataSetChanged()
-
-                binding.rvNotesNotes.visibility = View.VISIBLE
-                binding.tvNotesNoNotes.visibility = View.INVISIBLE
-                binding.pbNotesNotes.visibility = View.INVISIBLE
-                changeContentHeight(true)
-            }
-        }
-
-        queryViewModel.title.observe(viewLifecycleOwner) {
-            setSearchBarText?.invoke(it)
-        }
-
-        queryViewModel.tags.observe(viewLifecycleOwner) { tagIds ->
-            for (pos in 0..<tagAdapter.itemCount) {
-                val chip = binding.rvNotesTags
-                    .findViewHolderForAdapterPosition(pos)
-                    ?.itemView as? Chip
-                    ?: continue
-
-                val chipState = tagIds != null && tagIds.contains(chip.id)
-                if (chip.isChecked != chipState) {
-                    chip.isChecked = chipState
-                }
-            }
-
-            if (paramMenuSheet.state == BottomSheetBehavior.STATE_COLLAPSED) {
-                scope.launch {
-                    refreshNotes(true)
-                }
-            }
-        }
-    }
-
-    private fun changeContentHeight(notesVisible: Boolean) {
-        val params = binding.clNotesNotes.layoutParams
-        params.height = if (!notesVisible) {
-            binding.nsvNotesContent.height - binding.clNotesTags.height
-        } else {
-            -1
-        }
-
-        binding.clNotesNotes.layoutParams = params
-    }
-
     private suspend fun refreshTags(silent: Boolean) {
         val result = handleRequest { tagViewModel.getTags() }
         if (!silent && result.isFailure) {
-            showToast("Could not refresh the tags")
+            showMessage("Could not refresh the tags")
         }
     }
 
@@ -350,13 +333,13 @@ class NotesFragment : ApiReadyFragment<NotesViewModel>() {
 
         val result = handleRequest { viewModel.getNotes(parameters) }
         if (result.isFailure) {
-            if (!silent) showToast("Could not refresh the shelf")
+            if (!silent) showMessage("Could not refresh the shelf")
             return
         }
 
         loadDialog.dismiss()
 
-        if (!silent) showToast("Notes have been refreshed")
+        if (!silent) showMessage("Notes have been refreshed")
     }
 
     private fun hideParamMenu() {

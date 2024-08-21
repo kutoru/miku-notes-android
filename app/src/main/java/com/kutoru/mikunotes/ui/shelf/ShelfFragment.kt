@@ -14,7 +14,7 @@ import androidx.fragment.app.viewModels
 import com.kutoru.mikunotes.R
 import com.kutoru.mikunotes.databinding.FragmentShelfBinding
 import com.kutoru.mikunotes.logic.RequestCancel
-import com.kutoru.mikunotes.ui.ApiReadyFragment
+import com.kutoru.mikunotes.ui.RequestReadyFragment
 import com.kutoru.mikunotes.ui.main.MainActivity
 import com.kutoru.mikunotes.ui.main.ShelfCallbacks
 import kotlinx.coroutines.launch
@@ -22,7 +22,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
+class ShelfFragment : RequestReadyFragment<ShelfViewModel>() {
 
     private lateinit var binding: FragmentShelfBinding
 
@@ -39,11 +39,9 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
         super.onCreateView(inflater, container, savedInstanceState)
         binding = FragmentShelfBinding.inflate(inflater, container, false)
 
-        setupViewModelObservers()
-
         binding.fdShelfFiles.setup<Any>(
             binding.root,
-            ::showToast,
+            ::showMessage,
             { binding.etlShelfText.height },
             ::uploadFile,
             ::downloadFile,
@@ -104,7 +102,7 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
         super.onPause()
     }
 
-    private fun setupViewModelObservers() {
+    override fun setupViewModelObservers() {
         viewModel.text.observe(viewLifecycleOwner) {
             if (binding.etlShelfText.text != it) {
                 binding.etlShelfText.text = it
@@ -135,9 +133,9 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
             ) }
 
             if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
-                showToast("Upload cancelled")
+                showMessage("Upload cancelled")
             } else if (result.isFailure) {
-                showToast("Could not upload the file")
+                showMessage("Could not upload the file")
             }
         }
     }
@@ -147,9 +145,9 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
             val result = handleRequest { viewModel.getFile(fileIndex) }
 
             if (result.isFailure && result.exceptionOrNull() is RequestCancel) {
-                showToast("Download cancelled")
+                showMessage("Download cancelled")
             } else if (result.isFailure) {
-                showToast("Could not download the file")
+                showMessage("Could not download the file")
             }
         }
     }
@@ -158,9 +156,9 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
         scope.launch {
             val result = handleRequest { viewModel.deleteFile(fileIndex) }
             if (result.isFailure) {
-                showToast("Could not delete the file")
+                showMessage("Could not delete the file")
             } else {
-                showToast("The file has been deleted")
+                showMessage("The file has been deleted")
             }
         }
     }
@@ -169,20 +167,20 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
         scope.launch {
             val result = handleRequest { viewModel.getShelf() }
             if (result.isFailure) {
-                if (!silent) showToast("Could not refresh the shelf")
+                if (!silent) showMessage("Could not refresh the shelf")
                 return@launch
             }
 
             loadDialog.dismiss()
 
-            if (!silent) showToast("The shelf has been refreshed")
+            if (!silent) showMessage("The shelf has been refreshed")
         }
     }
 
     private fun saveShelf(silent: Boolean) {
         val newText = binding.etlShelfText.text
         if (viewModel.text.value == newText) {
-            if (!silent) showToast("The shelf hasn't changed since last save")
+            if (!silent) showMessage("The shelf hasn't changed since last save")
             return
         }
 
@@ -190,9 +188,9 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
             val result = handleRequest { viewModel.patchShelf(newText) }
             if (!silent) {
                 if (result.isFailure) {
-                    showToast("Could not save the shelf")
+                    showMessage("Could not save the shelf")
                 } else {
-                    showToast("The shelf has been saved")
+                    showMessage("The shelf has been saved")
                 }
             }
         }
@@ -207,7 +205,7 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
                 scope.launch {
                     val result = handleRequest { viewModel.deleteShelf() }
                     if (result.isFailure) {
-                        showToast("Could not clear the shelf")
+                        showMessage("Could not clear the shelf")
                     }
                 }
             }
@@ -225,14 +223,14 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
             .setPositiveButton("Convert") { _, _ ->
                 val title = etNoteTitle.text.toString().trim()
                 if (title.isEmpty()) {
-                    showToast("Cannot convert with an empty title")
+                    showMessage("Cannot convert with an empty title")
                     return@setPositiveButton
                 }
 
                 scope.launch {
                     val result = handleRequest { viewModel.postShelfToNote(title) }
                     if (result.isFailure) {
-                        showToast("Could not convert the shelf")
+                        showMessage("Could not convert the shelf")
                     }
                 }
             }
@@ -243,7 +241,7 @@ class ShelfFragment : ApiReadyFragment<ShelfViewModel>() {
         val clipboard = requireContext().getSystemService(ClipboardManager::class.java)
         val clipData = ClipData.newPlainText("shelf text", viewModel.text.value)
         clipboard.setPrimaryClip(clipData)
-        showToast("Text has been copied")
+        showMessage("Text has been copied")
     }
 
     fun handleSharedText(text: String) {
