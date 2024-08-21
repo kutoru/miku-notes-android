@@ -129,6 +129,8 @@ class FileDrawer(
                 notificationPermissionActivityLauncher.launch(
                     Manifest.permission.POST_NOTIFICATIONS,
                 )
+
+                return@setOnClickListener
             }
 
             if (!readStoragePermissionGranted()) {
@@ -215,7 +217,7 @@ class FileDrawer(
 
         notificationPermissionActivityLauncher = registerForActivityResult(permissionContract) {
             if (!(it as Boolean)) {
-                showMessage("You won't see download notifications without the notification permission")
+                showMessage("You won't be able to upload or download files without the notification permission")
             }
         }
     }
@@ -276,6 +278,8 @@ class FileDrawer(
             notificationPermissionActivityLauncher.launch(
                 Manifest.permission.POST_NOTIFICATIONS,
             )
+
+            return
         }
 
         val bundle = PersistableBundle()
@@ -298,18 +302,20 @@ class FileDrawer(
     }
 
     private fun downloadFile(fileIndex: Int) {
+        if (!notificationPermissionGranted()) {
+            notificationPermissionActivityLauncher.launch(
+                Manifest.permission.POST_NOTIFICATIONS,
+            )
+
+            return
+        }
+
         if (!writeStoragePermissionGranted()) {
             writeStoragePermissionActivityLauncher.launch(
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
             )
 
             return
-        }
-
-        if (!notificationPermissionGranted()) {
-            notificationPermissionActivityLauncher.launch(
-                Manifest.permission.POST_NOTIFICATIONS,
-            )
         }
 
         val fileHash = fileAdapter.files[fileIndex].hash

@@ -1,5 +1,6 @@
 package com.kutoru.mikunotes.logic.requests
 
+import android.app.job.JobParameters
 import android.content.ContentResolver
 import android.net.Uri
 import android.os.Environment
@@ -8,6 +9,7 @@ import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.models.File
 import io.ktor.client.call.body
 import io.ktor.client.plugins.onUpload
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.forms.InputProvider
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.prepareFormWithBinaryData
@@ -31,24 +33,43 @@ private fun getFileInfo(contentResolver: ContentResolver, fileUri: Uri, openable
     return name
 }
 
-suspend fun RequestManager.postFileToNote(contentResolver: ContentResolver, fileUri: Uri, noteId: Int): File {
-    return postFile(contentResolver, fileUri, noteId, "note_id")
+suspend fun RequestManager.postFileToNote(
+    contentResolver: ContentResolver,
+    fileUri: Uri,
+    noteId: Int,
+    notificationId: Int,
+    params: JobParameters?,
+): File {
+    return postFile(contentResolver, fileUri, noteId, "note_id", notificationId, params)
 }
 
-suspend fun RequestManager.postFileToShelf(contentResolver: ContentResolver, filePath: Uri, shelfId: Int): File {
-    return postFile(contentResolver, filePath, shelfId, "shelf_id")
+suspend fun RequestManager.postFileToShelf(
+    contentResolver: ContentResolver,
+    filePath: Uri,
+    shelfId: Int,
+    notificationId: Int,
+    params: JobParameters?,
+): File {
+    return postFile(contentResolver, filePath, shelfId, "shelf_id", notificationId, params)
 }
 
-private suspend fun RequestManager.postFile(contentResolver: ContentResolver, fileUri: Uri, attachId: Int, attachKey: String): File {
+private suspend fun RequestManager.postFile(
+    contentResolver: ContentResolver,
+    fileUri: Uri,
+    attachId: Int,
+    attachKey: String,
+    notificationId: Int,
+    params: JobParameters?,
+): File {
 
     // preparing request data
     val fileStream = contentResolver.openInputStream(fileUri)!!
     val fileName = getFileInfo(contentResolver, fileUri, OpenableColumns.DISPLAY_NAME)
-    val fileSize = getFileInfo(contentResolver, fileUri, OpenableColumns.SIZE).toFloat()
+    val fileSize = getFileInfo(contentResolver, fileUri, OpenableColumns.SIZE)
 
     val form = formData {
         append(attachKey, "$attachId")
-        append("file_size", "${fileSize.toLong()}")
+        append("file_size", fileSize)
 
         val headersBuilder = HeadersBuilder()
         headersBuilder.append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
@@ -62,29 +83,30 @@ private suspend fun RequestManager.postFile(contentResolver: ContentResolver, fi
 
     // uploading the file
     var lastUpdated = Calendar.getInstance().timeInMillis
-    val currentNotificationIndex = notificationHelper.showUploadInProgress(null, fileName, 0)
+    notificationHelper.showUploadInProgress(notificationId, fileName, 0, params)
 
     val req = httpClient.prepareFormWithBinaryData("$apiUrl/files", form) {
+        timeout { this.requestTimeoutMillis = 86_400_000 }
         headers.append("Cookie", accessCookie)
 
         onUpload { bytesSentTotal, _ ->
             // on upload cancel
-            if (requestsToStop.contains(currentNotificationIndex)) {
+            if (requestsToStop.contains(notificationId)) {
                 fileStream.close()
 
-                notificationHelper.hide(currentNotificationIndex)
-                requestsToStop.remove(currentNotificationIndex)
+                requestsToStop.remove(notificationId)
 
                 throw RequestCancel("Upload has been cancelled by the user")
             }
 
             // notification stuff
-            val progress = ((bytesSentTotal / fileSize) * 100).toInt()
             val currentTime = Calendar.getInstance().timeInMillis
 
             if (lastUpdated + 1000 <= currentTime) {
                 lastUpdated = currentTime
-                notificationHelper.showUploadInProgress(currentNotificationIndex, fileName, progress)
+
+                val progress = ((bytesSentTotal / fileSize.toFloat()) * 100).toInt()
+                notificationHelper.showUploadInProgress(notificationId, fileName, progress, params)
             }
         }
     }
@@ -95,14 +117,18 @@ private suspend fun RequestManager.postFile(contentResolver: ContentResolver, fi
         fileStream.close()
     }
 
-    notificationHelper.showUploadFinished(currentNotificationIndex, fileName)
+    notificationHelper.showUploadFinished(notificationId, fileName, params)
 
     return fileInfo
 }
 
-suspend fun RequestManager.getFile(fileHash: String) {
-    val res = executeRequestUntilResponse("$apiUrl/files/dl/$fileHash", HttpMethod.Get)
-    val contentLength = res.contentLength()?.toFloat()
+suspend fun RequestManager.getFile(
+    fileHash: String,
+    notificationId: Int,
+    params: JobParameters?,
+) {
+    val res = executeRequestUntilResponse("$apiUrl/files/dl/$fileHash", HttpMethod.Get, requestTimeout = 86_400_000)
+    val contentLength = res.contentLength()
 
     // getting file path
     val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
@@ -120,7 +146,7 @@ suspend fun RequestManager.getFile(fileHash: String) {
     }
 
     // the download itself
-    val currentNotificationIndex = notificationHelper.showDownloadInProgress(null, fileName, 0)
+    notificationHelper.showDownloadInProgress(notificationId, fileName, 0, params)
 
     val channel: ByteReadChannel = res.body()
     var lastUpdated = Calendar.getInstance().timeInMillis
@@ -131,12 +157,11 @@ suspend fun RequestManager.getFile(fileHash: String) {
         while (!packet.isEmpty) {
 
             // on download cancel
-            if (requestsToStop.contains(currentNotificationIndex)) {
+            if (requestsToStop.contains(notificationId)) {
                 channel.cancel()
                 file.delete()
 
-                notificationHelper.hide(currentNotificationIndex)
-                requestsToStop.remove(currentNotificationIndex)
+                requestsToStop.remove(notificationId)
 
                 throw RequestCancel("Download has been cancelled by the user")
             }
@@ -146,21 +171,23 @@ suspend fun RequestManager.getFile(fileHash: String) {
             file.appendBytes(bytes)
 
             // handling notification
-            val progress = if (contentLength != null) {
-                ((file.length() / contentLength) * 100).toInt()
-            } else {
-                100
-            }
-
             val currentTime = Calendar.getInstance().timeInMillis
+
             if (lastUpdated + 1000 <= currentTime) {
                 lastUpdated = currentTime
-                notificationHelper.showDownloadInProgress(currentNotificationIndex, fileName, progress)
+
+                val progress = if (contentLength != null) {
+                    ((file.length() / contentLength.toFloat()) * 100).toInt()
+                } else {
+                    100
+                }
+
+                notificationHelper.showDownloadInProgress(notificationId, fileName, progress, params)
             }
         }
     }
 
-    notificationHelper.showDownloadFinished(currentNotificationIndex, file)
+    notificationHelper.showDownloadFinished(notificationId, file, params)
 }
 
 suspend fun RequestManager.deleteFile(fileId: Int) {

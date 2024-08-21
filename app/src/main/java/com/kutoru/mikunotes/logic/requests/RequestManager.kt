@@ -17,7 +17,9 @@ import com.kutoru.mikunotes.models.ResultBody
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.prepareRequest
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -46,6 +48,7 @@ class RequestManager(
         private set
 
     val httpClient = HttpClient(CIO) {
+        install(HttpTimeout)
         install(ContentNegotiation) {
             json()
         }
@@ -77,7 +80,7 @@ class RequestManager(
         refreshCookie = persistentStorage.refreshCookie ?: ""
     }
 
-    suspend inline fun <reified T>buildRequest(url: String, method: HttpMethod, body: T?): HttpStatement {
+    suspend inline fun <reified T>buildRequest(url: String, method: HttpMethod, body: T?, requestTimeout: Long?): HttpStatement {
         return httpClient.prepareRequest(url) {
             this.method = method
             headers.append("Cookie", refreshCookie)
@@ -86,6 +89,10 @@ class RequestManager(
             if (body != null) {
                 contentType(ContentType.Application.Json)
                 setBody(body)
+            }
+
+            if (requestTimeout != null) {
+                timeout { this.requestTimeoutMillis = requestTimeout }
             }
         }
     }
@@ -111,23 +118,23 @@ class RequestManager(
         }
     }
 
-    suspend inline fun executeRequestUntilResponse(url: String, method: HttpMethod): HttpResponse {
-        val request = buildRequest<Unit>(url, method, null)
+    suspend inline fun executeRequestUntilResponse(url: String, method: HttpMethod, requestTimeout: Long? = null): HttpResponse {
+        val request = buildRequest<Unit>(url, method, null, requestTimeout)
         return executeRequestUntilResponse(request)
     }
 
     suspend inline fun <reified T>executeRequestUntilResponse(url: String, method: HttpMethod, body: T): HttpResponse {
-        val request = buildRequest(url, method, body)
+        val request = buildRequest(url, method, body, null)
         return executeRequestUntilResponse(request)
     }
 
     suspend inline fun <reified U>executeRequestUntilBody(url: String, method: HttpMethod): U {
-        val request = buildRequest<Unit>(url, method, null)
+        val request = buildRequest<Unit>(url, method, null, null)
         return executeRequestUntilBody(request)
     }
 
     suspend inline fun <reified T, reified U>executeRequestUntilBody(url: String, method: HttpMethod, body: T): U {
-        val request = buildRequest(url, method, body)
+        val request = buildRequest(url, method, body, null)
         return executeRequestUntilBody(request)
     }
 
