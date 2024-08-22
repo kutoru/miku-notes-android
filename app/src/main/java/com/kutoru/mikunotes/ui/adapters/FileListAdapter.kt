@@ -14,7 +14,7 @@ import kotlin.math.ceil
 import kotlin.math.round
 
 class FileListAdapter(
-    val itemMargin: Int,
+    private val itemMargin: Int,
     var files: List<File>,
     private val deleteFile: (position: Int) -> Unit,
     private val downloadFile: (position: Int) -> Unit,

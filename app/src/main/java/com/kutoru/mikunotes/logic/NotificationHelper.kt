@@ -66,7 +66,7 @@ class NotificationHelper(
         val uri = FileProvider.getUriForFile(context, context.applicationContext.packageName + ".provider", file)
         val intent = Intent(Intent.ACTION_VIEW, uri)
         intent.setPackage(context.packageName)
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
         val pendingIntent = PendingIntent.getActivity(
             context, 0, intent, PendingIntent.FLAG_IMMUTABLE,
