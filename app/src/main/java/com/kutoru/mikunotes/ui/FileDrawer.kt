@@ -364,18 +364,14 @@ class FileDrawer(
 
     inner class FileChangeBroadcastReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            println("FileChangeBroadcastReceiver")
-
             if (intent != null) {
                 if (intent.hasExtra(FILE_CHANGE_ADDED)) {
                     val file = intent.getSerializableExtra(FILE_CHANGE_ADDED) as File
-                    println(file)
                     fileViewModel.fileUploaded(file)
                 }
 
                 if (intent.hasExtra(FILE_CHANGE_DELETED)) {
                     val fileId = intent.getIntExtra(FILE_CHANGE_DELETED, 0)
-                    println(fileId)
                     if (fileId > 0) {
                         fileViewModel.fileDeleted(fileId)
                     }

@@ -99,7 +99,6 @@ class FileRequestService : JobService() {
     }
 
     override fun onStopJob(params: JobParameters?): Boolean {
-        println("onStopJob: ${params?.extras}")
         return false
     }
 
