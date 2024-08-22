@@ -7,7 +7,6 @@ import android.os.Environment
 import android.provider.OpenableColumns
 import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.models.File
-import io.ktor.client.call.body
 import io.ktor.client.plugins.onUpload
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.forms.InputProvider
@@ -18,7 +17,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.contentLength
 import io.ktor.utils.io.ByteReadChannel
-import io.ktor.utils.io.cancel
 import io.ktor.utils.io.core.isEmpty
 import io.ktor.utils.io.core.readBytes
 import io.ktor.utils.io.streams.asInput
@@ -127,12 +125,12 @@ suspend fun RequestManager.getFile(
     notificationId: Int,
     params: JobParameters?,
 ) {
-    val res = executeRequestUntilResponse("$apiUrl/files/dl/$fileHash", HttpMethod.Get, requestTimeout = 86_400_000)
-    val contentLength = res.contentLength()
+    val headRes = executeRequestUntilResponse("$apiUrl/files/dl/$fileHash", HttpMethod.Head)
+    val contentLength = headRes.contentLength()
 
     // getting file path
     val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
-    var fileName = res.headers["content-disposition"]?.split('=')?.get(1)?.trim('"') ?: "file.bin"
+    var fileName = headRes.headers["content-disposition"]?.split('=')?.get(1)?.trim('"') ?: "file.bin"
     var file = java.io.File("$downloadDir/$fileName")
 
     // updating the file name if it already exists
@@ -145,10 +143,11 @@ suspend fun RequestManager.getFile(
         file = java.io.File("$downloadDir/$fileName")
     }
 
-    // the download itself
+    // the actual download
     notificationHelper.showDownloadInProgress(notificationId, fileName, 0, params)
 
-    val channel: ByteReadChannel = res.body()
+    val req = buildRequest<Unit>("$apiUrl/files/dl/$fileHash", HttpMethod.Get, null, requestTimeout = 86_400_000)
+    val channel: ByteReadChannel = req.body()
     var lastUpdated = Calendar.getInstance().timeInMillis
 
     while (!channel.isClosedForRead) {
@@ -158,7 +157,7 @@ suspend fun RequestManager.getFile(
 
             // on download cancel
             if (requestsToStop.contains(notificationId)) {
-                channel.cancel()
+                channel.cancel(null)
                 file.delete()
 
                 requestsToStop.remove(notificationId)
@@ -166,7 +165,7 @@ suspend fun RequestManager.getFile(
                 throw RequestCancel("Download has been cancelled by the user")
             }
 
-            // appending data
+            // appending the data
             val bytes = packet.readBytes()
             file.appendBytes(bytes)
 
