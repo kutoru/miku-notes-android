@@ -30,6 +30,7 @@ import io.ktor.http.URLParserException
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import java.net.ConnectException
+import java.net.NoRouteToHostException
 import java.nio.channels.UnresolvedAddressException
 
 class RequestManager(
@@ -102,6 +103,7 @@ class RequestManager(
             request.execute()
         } catch (e: Exception) {
             throw when (e) {
+                is NoRouteToHostException,
                 is ConnectException,
                 is UnresolvedAddressException,
                 is URLParserException,
