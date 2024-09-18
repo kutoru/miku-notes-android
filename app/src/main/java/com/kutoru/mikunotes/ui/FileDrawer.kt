@@ -63,7 +63,7 @@ class FileDrawer(
 
     private val defaultDuration = ANIMATION_TRANSITION_TIME.toLong()
     private val fileAdapter: FileListAdapter
-    private val fileChangeBroadcastReceiver: FileChangeBroadcastReceiver
+    private var fileChangeBroadcastReceiver: FileChangeBroadcastReceiver? = null
 
     private lateinit var filePickActivityLauncher: ActivityResultLauncher<String>
     private lateinit var readStoragePermissionActivityLauncher: ActivityResultLauncher<String>
@@ -97,14 +97,6 @@ class FileDrawer(
             listOf(),
             ::deleteFile,
             ::downloadFile,
-        )
-
-        fileChangeBroadcastReceiver = FileChangeBroadcastReceiver()
-        ContextCompat.registerReceiver(
-            context,
-            fileChangeBroadcastReceiver,
-            IntentFilter(FILE_CHANGE_BROADCAST),
-            ContextCompat.RECEIVER_NOT_EXPORTED,
         )
 
         // ui elements
@@ -252,10 +244,22 @@ class FileDrawer(
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun onDestroy() {
-        context.unregisterReceiver(
+    fun onResume() {
+        fileChangeBroadcastReceiver = FileChangeBroadcastReceiver()
+        ContextCompat.registerReceiver(
+            context,
             fileChangeBroadcastReceiver,
+            IntentFilter(FILE_CHANGE_BROADCAST),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
         )
+    }
+
+    fun onPause() {
+        if (fileChangeBroadcastReceiver != null) {
+            context.unregisterReceiver(
+                fileChangeBroadcastReceiver,
+            )
+        }
     }
 
     // file stuff

@@ -71,6 +71,7 @@ class ShelfFragment : RequestReadyFragment<ShelfViewModel>() {
     override fun onResume() {
         super.onResume()
 
+        binding.fdShelfFiles.onResume()
         loadDialog.show()
 
         scope.launch {
@@ -91,6 +92,8 @@ class ShelfFragment : RequestReadyFragment<ShelfViewModel>() {
     }
 
     override fun onPause() {
+        binding.fdShelfFiles.onPause()
+
         if (viewModel.initialized) {
             scope.launch {
                 saveShelf(true)
@@ -98,11 +101,6 @@ class ShelfFragment : RequestReadyFragment<ShelfViewModel>() {
         }
 
         super.onPause()
-    }
-
-    override fun onDestroy() {
-        binding.fdShelfFiles.onDestroy()
-        super.onDestroy()
     }
 
     override fun setupViewModelObservers() {

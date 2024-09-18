@@ -157,6 +157,7 @@ class NoteActivity : RequestReadyActivity<NoteViewModel>() {
         }
 
         super.onResume()
+        binding.fdNoteFiles.onResume()
     }
 
     override fun onPause() {
@@ -165,6 +166,7 @@ class NoteActivity : RequestReadyActivity<NoteViewModel>() {
         }
 
         super.onPause()
+        binding.fdNoteFiles.onPause()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -172,11 +174,6 @@ class NoteActivity : RequestReadyActivity<NoteViewModel>() {
         actionMenu = menu
         initializeActionMenu(viewModel.isNewNote.value!!)
         return true
-    }
-
-    override fun onDestroy() {
-        binding.fdNoteFiles.onDestroy()
-        super.onDestroy()
     }
 
     override fun afterUrlDialogSave() {
