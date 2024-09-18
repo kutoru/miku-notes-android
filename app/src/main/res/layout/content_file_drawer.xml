@@ -40,22 +40,6 @@
         android:id="@+id/fabFileListMoveFiles"
         android:layout_width="@dimen/fab_size"
         android:layout_height="@dimen/fab_size"
-        android:layout_marginStart="@dimen/margin"
-        android:layout_marginTop="@dimen/margin"
-        android:layout_marginBottom="@dimen/margin"
-        android:clickable="true"
-        app:elevation="0dp"
-        app:fabCustomSize="@dimen/fab_size"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintVertical_bias="1.0"
-        app:maxImageSize="32dp"
-        app:srcCompat="@drawable/ic_up" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabFileListUpload"
-        android:layout_width="@dimen/fab_size"
-        android:layout_height="@dimen/fab_size"
         android:layout_marginTop="@dimen/margin"
         android:layout_marginEnd="@dimen/margin"
         android:layout_marginBottom="@dimen/margin"
@@ -64,6 +48,22 @@
         app:fabCustomSize="@dimen/fab_size"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="1.0"
+        app:maxImageSize="32dp"
+        app:srcCompat="@drawable/ic_up" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabFileListUpload"
+        android:layout_width="@dimen/fab_size"
+        android:layout_height="@dimen/fab_size"
+        android:layout_marginStart="@dimen/margin"
+        android:layout_marginTop="@dimen/margin"
+        android:layout_marginBottom="@dimen/margin"
+        android:clickable="true"
+        app:elevation="0dp"
+        app:fabCustomSize="@dimen/fab_size"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintVertical_bias="1.0"
         app:srcCompat="@drawable/ic_upload" />
 
