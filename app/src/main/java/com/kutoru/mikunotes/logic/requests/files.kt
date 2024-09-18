@@ -114,16 +114,21 @@ suspend fun RequestManager.getFile(
 
     // getting file path
     val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
-    var fileName = headRes.headers["content-disposition"]?.split('=')?.get(1)?.trim('"') ?: "file.bin"
+    var fileName = headRes.headers["content-disposition"]?.split('=')?.getOrNull(1)?.trim('"') ?: "file.bin"
     var file = java.io.File("$downloadDir/$fileName")
 
     // updating the file name if it already exists
     var fileIdx = 0
-    val (filePrefix, fileExt) = fileName.split('.')
+    val splitName = fileName.split('.')
+    val filePrefix = splitName[0]
+    val fileExt = splitName.getOrNull(1)
 
     while (!file.createNewFile()) {
         fileIdx++
-        fileName = "$filePrefix ($fileIdx).$fileExt"
+        fileName = "$filePrefix ($fileIdx)"
+        if (fileExt != null) {
+            fileName += ".$fileExt"
+        }
         file = java.io.File("$downloadDir/$fileName")
     }
 
