@@ -1,10 +1,7 @@
 package com.kutoru.mikunotes.logic.requests
 
 import android.app.job.JobParameters
-import android.content.ContentResolver
-import android.net.Uri
 import android.os.Environment
-import android.provider.OpenableColumns
 import com.kutoru.mikunotes.logic.RequestCancel
 import com.kutoru.mikunotes.models.File
 import io.ktor.client.plugins.onUpload
@@ -20,40 +17,35 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.core.isEmpty
 import io.ktor.utils.io.core.readBytes
 import io.ktor.utils.io.streams.asInput
+import java.io.InputStream
 import java.util.Calendar
 
-private fun getFileInfo(contentResolver: ContentResolver, fileUri: Uri, openableColumn: String): String {
-    val returnCursor = contentResolver.query(fileUri, null, null, null, null)!!
-    val nameIndex = returnCursor.getColumnIndex(openableColumn)
-    returnCursor.moveToFirst()
-    val name = returnCursor.getString(nameIndex)
-    returnCursor.close()
-    return name
-}
-
 suspend fun RequestManager.postFileToNote(
-    contentResolver: ContentResolver,
-    fileUri: Uri,
+    fileStream: InputStream,
+    fileName: String,
+    fileSize: String,
     noteId: Int,
     notificationId: Int,
     params: JobParameters?,
 ): File {
-    return postFile(contentResolver, fileUri, noteId, "note_id", notificationId, params)
+    return postFile(fileStream, fileName, fileSize, noteId, "note_id", notificationId, params)
 }
 
 suspend fun RequestManager.postFileToShelf(
-    contentResolver: ContentResolver,
-    filePath: Uri,
+    fileStream: InputStream,
+    fileName: String,
+    fileSize: String,
     shelfId: Int,
     notificationId: Int,
     params: JobParameters?,
 ): File {
-    return postFile(contentResolver, filePath, shelfId, "shelf_id", notificationId, params)
+    return postFile(fileStream, fileName, fileSize, shelfId, "shelf_id", notificationId, params)
 }
 
 private suspend fun RequestManager.postFile(
-    contentResolver: ContentResolver,
-    fileUri: Uri,
+    fileStream: InputStream,
+    fileName: String,
+    fileSize: String,
     attachId: Int,
     attachKey: String,
     notificationId: Int,
@@ -61,10 +53,6 @@ private suspend fun RequestManager.postFile(
 ): File {
 
     // preparing request data
-    val fileStream = contentResolver.openInputStream(fileUri)!!
-    val fileName = getFileInfo(contentResolver, fileUri, OpenableColumns.DISPLAY_NAME)
-    val fileSize = getFileInfo(contentResolver, fileUri, OpenableColumns.SIZE)
-
     val form = formData {
         append(attachKey, "$attachId")
         append("file_size", fileSize)
@@ -109,11 +97,7 @@ private suspend fun RequestManager.postFile(
         }
     }
 
-    val fileInfo = try {
-        executeRequestUntilBody<File>(req)
-    } finally {
-        fileStream.close()
-    }
+    val fileInfo = executeRequestUntilBody<File>(req)
 
     notificationHelper.showUploadFinished(notificationId, fileName, params)
 

@@ -103,16 +103,19 @@ class FileRequestService : JobService() {
     }
 
     private suspend fun uploadFile(fileUri: Uri, itemId: Int, isShelf: Boolean, params: JobParameters?) {
+        val fileName = AppUtil.getFileName(applicationContext, fileUri)
+        val fileSize = AppUtil.getFileSize(applicationContext, fileUri)
         val notificationId = requestManager.notificationHelper.getNewNotificationIndex()
 
-        val result = if (isShelf) {
-            handleRequest { requestManager.postFileToShelf(
-                contentResolver, fileUri, itemId, notificationId, params,
-            ) }
-        } else {
-            handleRequest { requestManager.postFileToNote(
-                contentResolver, fileUri, itemId, notificationId, params,
-            ) }
+        val result = handleRequest {
+            val fileStream = contentResolver.openInputStream(fileUri)!!
+            val res = if (isShelf) {
+                requestManager.postFileToShelf(fileStream, fileName, fileSize, itemId, notificationId, params)
+            } else {
+                requestManager.postFileToNote(fileStream, fileName, fileSize, itemId, notificationId, params)
+            }
+            fileStream.close()
+            return@handleRequest res
         }
 
         if (result.isFailure) {

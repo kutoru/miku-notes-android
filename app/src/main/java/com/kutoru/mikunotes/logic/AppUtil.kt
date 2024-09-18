@@ -1,8 +1,14 @@
 package com.kutoru.mikunotes.logic
 
+import android.content.ContentResolver
+import android.content.Context
 import android.graphics.Color
+import android.net.Uri
+import android.provider.OpenableColumns
 import android.view.View
 import android.view.Window
+import android.webkit.MimeTypeMap
+import androidx.documentfile.provider.DocumentFile
 import com.kutoru.mikunotes.R
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -42,6 +48,36 @@ class AppUtil {
             }
 
             root.systemUiVisibility = flags
+        }
+
+        private fun getFileInfo(contentResolver: ContentResolver, fileUri: Uri, openableColumn: String): String {
+            val returnCursor = contentResolver.query(fileUri, null, null, null, null)!!
+            val nameIndex = returnCursor.getColumnIndex(openableColumn)
+            returnCursor.moveToFirst()
+            val name = returnCursor.getString(nameIndex)
+            returnCursor.close()
+            return name
+        }
+
+        fun getFileSize(context: Context, fileUri: Uri): String {
+            return getFileInfo(context.contentResolver, fileUri, OpenableColumns.SIZE)
+        }
+
+        fun getFileName(context: Context, fileUri: Uri): String {
+            val documentFile = DocumentFile.fromSingleUri(context, fileUri)
+            if (documentFile?.name == null || documentFile.type == null) {
+                return getFileInfo(context.contentResolver, fileUri, OpenableColumns.DISPLAY_NAME)
+            }
+
+            var fileName = documentFile.name!!
+            val existingExt = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileName.split('.').last())
+
+            if (existingExt == null) {
+                val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(documentFile.type)
+                fileName = "$fileName.$extension"
+            }
+
+            return fileName
         }
     }
 }
